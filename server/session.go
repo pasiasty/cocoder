@@ -27,15 +27,16 @@ func newSession(id SessionID) *Session {
 	}
 }
 
-func (s *Session) addUser(user UserID) error {
+func (s *Session) addUser(user UserID) (chan string, error) {
 	s.m.Lock()
 	defer s.m.Unlock()
 
 	if _, ok := s.users[user]; ok {
-		return fmt.Errorf("user '%s' already added to the session '%s", user, s.id)
+		return nil, fmt.Errorf("user '%s' already added to the session '%s", user, s.id)
 	}
-	s.users[user] = make(chan string, MaxHangingMessages)
-	return nil
+	c := make(chan string, MaxHangingMessages)
+	s.users[user] = c
+	return c, nil
 }
 
 func (s *Session) removeUser(user UserID) error {

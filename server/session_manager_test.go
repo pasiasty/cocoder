@@ -24,14 +24,14 @@ func TestAddUserToSession(t *testing.T) {
 	if _, err := sm.AddUserToSession(u1, sessionID); err != nil {
 		t.Errorf("Adding user shouldn't failed but did: %v", err)
 	}
+	if _, err := sm.AddUserToSession(u1, sessionID); err != nil {
+		t.Errorf("Adding user shouldn't failed but did: %v", err)
+	}
 	if _, err := sm.AddUserToSession(u2, sessionID); err != nil {
 		t.Errorf("Adding user shouldn't failed but did: %v", err)
 	}
-	if _, err := sm.AddUserToSession(u1, sessionID); err == nil {
-		t.Errorf("Adding user should've failed but didn't")
-	}
-	if _, err := sm.AddUserToSession(u2, sessionID); err == nil {
-		t.Errorf("Adding user should've failed but didn't")
+	if _, err := sm.AddUserToSession(u2, sessionID); err != nil {
+		t.Errorf("Adding user shouldn't failed but did: %v", err)
 	}
 }
 

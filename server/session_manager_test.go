@@ -8,7 +8,7 @@ func TestNewSession(t *testing.T) {
 	sm := NewSessionManager()
 	createdIDs := make(map[SessionID]interface{})
 	for i := 0; i < 100; i++ {
-		newID, _ := sm.NewSession("a")
+		newID := sm.NewSession()
 		if _, ok := createdIDs[newID]; ok {
 			t.Errorf("session IDs should not duplicate, but %s did", newID)
 		}
@@ -18,29 +18,35 @@ func TestNewSession(t *testing.T) {
 
 func TestAddUserToSession(t *testing.T) {
 	sm := NewSessionManager()
-	firstUserID := UserID("a")
-	newUserID := UserID("b")
-	sessionID, _ := sm.NewSession(firstUserID)
-	if _, err := sm.AddUserToSession(newUserID, sessionID); err != nil {
+	u1 := UserID("a")
+	u2 := UserID("b")
+	sessionID := sm.NewSession()
+	if _, err := sm.AddUserToSession(u1, sessionID); err != nil {
 		t.Errorf("Adding user shouldn't failed but did: %v", err)
 	}
-	if _, err := sm.AddUserToSession(firstUserID, sessionID); err == nil {
+	if _, err := sm.AddUserToSession(u2, sessionID); err != nil {
+		t.Errorf("Adding user shouldn't failed but did: %v", err)
+	}
+	if _, err := sm.AddUserToSession(u1, sessionID); err == nil {
 		t.Errorf("Adding user should've failed but didn't")
 	}
-	if _, err := sm.AddUserToSession(newUserID, sessionID); err == nil {
+	if _, err := sm.AddUserToSession(u2, sessionID); err == nil {
 		t.Errorf("Adding user should've failed but didn't")
 	}
 }
 
 func TestRemoveUserFromSession(t *testing.T) {
 	sm := NewSessionManager()
-	firstUserID := UserID("a")
-	newUserID := UserID("b")
-	sessionID, _ := sm.NewSession(firstUserID)
-	if err := sm.RemoveUserFromSession(firstUserID, sessionID); err != nil {
+	u1 := UserID("a")
+	u2 := UserID("b")
+	sessionID := sm.NewSession()
+	if _, err := sm.AddUserToSession(u1, sessionID); err != nil {
 		t.Errorf("Adding user shouldn't failed but did: %v", err)
 	}
-	if err := sm.RemoveUserFromSession(newUserID, sessionID); err == nil {
+	if err := sm.RemoveUserFromSession(u1, sessionID); err != nil {
+		t.Errorf("Adding user shouldn't failed but did: %v", err)
+	}
+	if err := sm.RemoveUserFromSession(u2, sessionID); err == nil {
 		t.Errorf("Adding user should've failed but didn't")
 	}
 }
@@ -74,7 +80,8 @@ func TestUpdateSessionFlow(t *testing.T) {
 	fruit of the year is: banana
 	`
 
-	s, c1 := sm.NewSession(u1)
+	s := sm.NewSession()
+	c1, _ := sm.AddUserToSession(u1, s)
 	c2, _ := sm.AddUserToSession(u2, s)
 
 	text, err := sm.UpdateSessionText(s, u1, "", initialEdit)

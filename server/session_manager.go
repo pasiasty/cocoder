@@ -16,12 +16,11 @@ func NewSessionManager() *SessionManager {
 	}
 }
 
-func (m *SessionManager) NewSession(user UserID) (SessionID, chan string) {
+func (m *SessionManager) NewSession() SessionID {
 	newSessionID := SessionID(uuid.New().String())
 	newSession := newSession(newSessionID)
-	c, _ := newSession.addUser(user)
 	m.sessions[newSessionID] = newSession
-	return newSessionID, c
+	return newSessionID
 }
 
 func (m *SessionManager) AddUserToSession(user UserID, session SessionID) (chan string, error) {

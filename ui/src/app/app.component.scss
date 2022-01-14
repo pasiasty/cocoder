@@ -1,0 +1,58 @@
+.textarea-container {
+  flex-grow: 5;
+  padding-bottom: 0%;
+}
+
+::ng-deep .mat-form-field-wrapper {
+  margin-bottom: -1.25em;
+}
+
+.session-input {
+  width: 100%;
+  height: 100%;
+}
+
+.go-button {
+  flex-grow: 1;
+}
+
+.load-session-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.new-session-button {
+  width: 100%;
+}
+
+.content-container {
+  display: flex;
+  flex-direction: column;
+  min-width: 40em;
+  gap: 10px;
+}
+
+.main-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+}
+
+.row-content-container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  justify-content: center;
+}
+
+.bg-img {
+  opacity: 0.6;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: auto;
+}

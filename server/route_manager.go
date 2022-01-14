@@ -17,12 +17,6 @@ func NewRouterManager() *RouteManager {
 	r := gin.Default()
 	sm := NewSessionManager()
 
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-
 	r.GET("/new_session", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"sessionID": sm.NewSession(),
@@ -65,4 +59,8 @@ func NewRouterManager() *RouteManager {
 		r:  r,
 		sm: sm,
 	}
+}
+
+func (m *RouteManager) Router() *gin.Engine {
+	return m.r
 }

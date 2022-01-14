@@ -25,7 +25,7 @@ func (m *SessionManager) NewSession() SessionID {
 
 func (m *SessionManager) AddUserToSession(user UserID, session SessionID) (chan string, error) {
 	if s, ok := m.sessions[session]; ok {
-		return s.addUser(user)
+		return s.addUser(user), nil
 	}
 	return nil, fmt.Errorf("session: '%s' not found, failed to add user: '%s'", session, user)
 }

@@ -1,0 +1,14 @@
+<div class="main-container">
+    <div class="row-content-container">
+      <div class="content-container">
+        <div class="load-session-row">
+          <mat-form-field class="textarea-container" appearance="fill">
+            <mat-label>Session ID</mat-label>
+            <input class="session-input" #sessionInput matInput placeholder="Ex. 123e4567-e89b-12d3-a456-426614174000">
+          </mat-form-field>
+          <a mat-raised-button class="go-button" color="primary" [routerLink]="['/', sessionInput.value]">Go!</a>
+        </div>
+        <button class="new-session-button" mat-raised-button color="primary">Start new session</button>
+      </div>
+    </div>
+  </div>

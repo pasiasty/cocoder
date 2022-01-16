@@ -1,6 +1,7 @@
 <div class="main-container">
     <div class="row-content-container">
       <div class="content-container">
+        <mat-card class="mat-elevation-z0 logo">coCoder</mat-card>
         <div class="load-session-row">
           <mat-form-field class="textarea-container" appearance="fill">
             <mat-label>Session ID</mat-label>
@@ -8,7 +9,7 @@
           </mat-form-field>
           <a mat-raised-button class="go-button" color="primary" [routerLink]="['/', sessionInput.value]">Go!</a>
         </div>
-        <button class="new-session-button" mat-raised-button color="primary">Start new session</button>
+        <button class="new-session-button" mat-raised-button color="primary" (click)="newSession()">Start new session</button>
       </div>
     </div>
   </div>

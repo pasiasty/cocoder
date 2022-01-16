@@ -1,3 +1,7 @@
+@import "~@angular/material/theming";
+
+@include mat-core();
+
 .textarea-container {
   flex-grow: 5;
   padding-bottom: 0%;
@@ -46,4 +50,12 @@
   flex-direction: row;
   width: 100%;
   justify-content: center;
+}
+
+.logo {
+  background-color: #673ab7 !important;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 2em;
+  text-align: center;
+  text-shadow: 1px 1px #999999;
 }

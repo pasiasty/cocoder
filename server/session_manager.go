@@ -23,23 +23,14 @@ func (m *SessionManager) NewSession() SessionID {
 	return newSessionID
 }
 
-func (m *SessionManager) AddUserToSession(user UserID, session SessionID) (chan string, error) {
-	if s, ok := m.sessions[session]; ok {
-		return s.addUser(user), nil
-	}
-	return nil, fmt.Errorf("session: '%s' not found, failed to add user: '%s'", session, user)
+func (m *SessionManager) SessionExists(session SessionID) bool {
+	_, ok := m.sessions[session]
+	return ok
 }
 
-func (m *SessionManager) RemoveUserFromSession(user UserID, session SessionID) error {
+func (m *SessionManager) UpdateSessionText(session SessionID, editState EditState) (EditState, error) {
 	if s, ok := m.sessions[session]; ok {
-		return s.removeUser(user)
+		return s.updateText(editState), nil
 	}
-	return fmt.Errorf("session: '%s' not found, failed to remove user: '%s'", session, user)
-}
-
-func (m *SessionManager) UpdateSessionText(session SessionID, user UserID, baseText, newText string) (string, error) {
-	if s, ok := m.sessions[session]; ok {
-		return s.updateText(user, baseText, newText), nil
-	}
-	return "", fmt.Errorf("session: '%s' not found, failed to update text by user: '%s'", session, user)
+	return EditState{}, fmt.Errorf("session: '%s' not found, failed to update text", session)
 }

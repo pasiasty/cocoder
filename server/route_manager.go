@@ -2,8 +2,8 @@ package server
 
 import (
 	"fmt"
-	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,35 +41,39 @@ func NewRouterManager() *RouteManager {
 		})
 	})
 
-	r.GET("/:session_id/:user_id/stream", func(c *gin.Context) {
+	r.GET("/:session_id", func(c *gin.Context) {
 		sessionID := SessionID(c.Param("session_id"))
-		userID := UserID(c.Param("user_id"))
-		uc, err := sm.AddUserToSession(userID, sessionID)
-		if err != nil {
-			c.String(http.StatusNotAcceptable, fmt.Sprintf("Failed to add user '%s' to session '%s'", userID, sessionID))
+
+		if sm.SessionExists(sessionID) {
+			c.String(http.StatusOK, "ok")
+		} else {
+			c.String(http.StatusNotFound, fmt.Sprintf("session '%s' not found", sessionID))
 		}
-		c.Stream(func(w io.Writer) bool {
-			if msg, ok := <-uc; ok {
-				c.SSEvent("text", msg)
-				return true
-			}
-			return false
-		})
 	})
 
-	r.POST("/:session_id/:user_id/update_text", func(c *gin.Context) {
+	r.POST("/:session_id/update_text", func(c *gin.Context) {
 		sessionID := SessionID(c.Param("session_id"))
-		userID := UserID(c.Param("user_id"))
-		oldText := c.PostForm("old_text")
+		baseText := c.PostForm("base_text")
 		newText := c.PostForm("new_text")
+		cursorPos, err := strconv.ParseInt(c.PostForm("cursor_pos"), 10, 32)
+		if err != nil {
+			c.String(http.StatusBadRequest, fmt.Sprintf("Failed to parse cursor_pos as integer (%v)", err))
+			return
+		}
 
-		text, err := sm.UpdateSessionText(sessionID, userID, oldText, newText)
+		es, err := sm.UpdateSessionText(sessionID,
+			EditState{
+				BaseText:  baseText,
+				NewText:   newText,
+				CursorPos: int(cursorPos),
+			})
 		if err != nil {
 			c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to update session text: %v", err))
 			return
 		}
 		c.JSON(200, gin.H{
-			"text": text,
+			"new_text":   es.BaseText,
+			"cursor_pos": es.CursorPos,
 		})
 	})
 

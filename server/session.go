@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
@@ -9,67 +8,37 @@ import (
 
 var MaxHangingMessages = 10
 
-type UserID string
 type SessionID string
 
 type Session struct {
-	m     sync.Mutex
-	id    SessionID
-	users map[UserID]chan string
+	m  sync.Mutex
+	id SessionID
 
 	text string
 }
 
+type EditState struct {
+	BaseText  string
+	NewText   string
+	CursorPos int
+}
+
 func newSession(id SessionID) *Session {
 	return &Session{
-		id:    id,
-		users: make(map[UserID]chan string),
+		id: id,
 	}
 }
 
-func (s *Session) addUser(user UserID) chan string {
-	s.m.Lock()
-	defer s.m.Unlock()
-
-	if c, ok := s.users[user]; ok {
-		return c
-	}
-	c := make(chan string, MaxHangingMessages)
-	s.users[user] = c
-	return c
-}
-
-func (s *Session) removeUser(user UserID) error {
-	s.m.Lock()
-	defer s.m.Unlock()
-
-	if userChan, ok := s.users[user]; !ok {
-		return fmt.Errorf("user '%s' not found in the session '%s'", user, s.id)
-	} else {
-		close(userChan)
-		delete(s.users, user)
-	}
-
-	return nil
-}
-
-func (s *Session) updateText(user UserID, baseText, newText string) string {
+func (s *Session) updateText(editState EditState) EditState {
 	s.m.Lock()
 	defer s.m.Unlock()
 
 	dmp := diffmatchpatch.New()
-	userPatches := dmp.PatchMake(dmp.DiffMain(baseText, newText, false))
+	userPatches := dmp.PatchMake(dmp.DiffMain(editState.BaseText, editState.NewText, false))
 	s.text, _ = dmp.PatchApply(userPatches, s.text)
 
-	for u, c := range s.users {
-		if u == user {
-			continue
-		}
-
-		if len(c) < cap(c) {
-			c <- s.text
-		}
+	return EditState{
+		NewText:   s.text,
+		CursorPos: -1,
 	}
-
-	return s.text
 }

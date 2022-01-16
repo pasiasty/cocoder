@@ -16,45 +16,24 @@ func TestNewSession(t *testing.T) {
 	}
 }
 
-func TestAddUserToSession(t *testing.T) {
+func TestSessionExists(t *testing.T) {
 	sm := NewSessionManager()
-	u1 := UserID("a")
-	u2 := UserID("b")
-	sessionID := sm.NewSession()
-	if _, err := sm.AddUserToSession(u1, sessionID); err != nil {
-		t.Errorf("Adding user shouldn't failed but did: %v", err)
-	}
-	if _, err := sm.AddUserToSession(u1, sessionID); err != nil {
-		t.Errorf("Adding user shouldn't failed but did: %v", err)
-	}
-	if _, err := sm.AddUserToSession(u2, sessionID); err != nil {
-		t.Errorf("Adding user shouldn't failed but did: %v", err)
-	}
-	if _, err := sm.AddUserToSession(u2, sessionID); err != nil {
-		t.Errorf("Adding user shouldn't failed but did: %v", err)
-	}
-}
 
-func TestRemoveUserFromSession(t *testing.T) {
-	sm := NewSessionManager()
-	u1 := UserID("a")
-	u2 := UserID("b")
-	sessionID := sm.NewSession()
-	if _, err := sm.AddUserToSession(u1, sessionID); err != nil {
-		t.Errorf("Adding user shouldn't failed but did: %v", err)
+	s := sm.NewSession()
+
+	if !sm.SessionExists(s) {
+		t.Errorf("Session '%v' should exist but doesn't", s)
 	}
-	if err := sm.RemoveUserFromSession(u1, sessionID); err != nil {
-		t.Errorf("Adding user shouldn't failed but did: %v", err)
-	}
-	if err := sm.RemoveUserFromSession(u2, sessionID); err == nil {
-		t.Errorf("Adding user should've failed but didn't")
+
+	s = "abc"
+
+	if sm.SessionExists(s) {
+		t.Errorf("Session '%v' should not exist but does", s)
 	}
 }
 
 func TestUpdateSessionFlow(t *testing.T) {
 	sm := NewSessionManager()
-	u1 := UserID("a")
-	u2 := UserID("b")
 
 	initialEdit := `Here's something original
 	
@@ -81,39 +60,28 @@ func TestUpdateSessionFlow(t *testing.T) {
 	`
 
 	s := sm.NewSession()
-	c1, _ := sm.AddUserToSession(u1, s)
-	c2, _ := sm.AddUserToSession(u2, s)
 
-	text, err := sm.UpdateSessionText(s, u1, "", initialEdit)
+	es, err := sm.UpdateSessionText(s, EditState{NewText: initialEdit})
 	if err != nil {
 		t.Errorf("Unexpected error while updating the text: %v", err)
 	}
-	if text != initialEdit {
-		t.Errorf("UpdateSessionText returned wrong value, want:\n%v\n\n got:\n%v\n", initialEdit, text)
-	}
-	if u2Rec := <-c2; u2Rec != text {
-		t.Errorf("User2 has received wrong notification, want:\n%v\n\n got:\n%v\n", text, u2Rec)
+	if es.NewText != initialEdit {
+		t.Errorf("UpdateSessionText returned wrong value, want:\n%v\n\n got:\n%v\n", initialEdit, es.NewText)
 	}
 
-	text, err = sm.UpdateSessionText(s, u1, initialEdit, u1Edit)
+	es, err = sm.UpdateSessionText(s, EditState{BaseText: initialEdit, NewText: u1Edit})
 	if err != nil {
 		t.Errorf("Unexpected error while updating the text: %v", err)
 	}
-	if text != u1Edit {
-		t.Errorf("UpdateSessionText returned wrong value, want:\n%v\n\n got:\n%v\n", u1Edit, text)
-	}
-	if u2Rec := <-c2; u2Rec != text {
-		t.Errorf("User2 has received wrong notification, want:\n%v\n\n got:\n%v\n", text, u2Rec)
+	if es.NewText != u1Edit {
+		t.Errorf("UpdateSessionText returned wrong value, want:\n%v\n\n got:\n%v\n", u1Edit, es.NewText)
 	}
 
-	text, err = sm.UpdateSessionText(s, u2, initialEdit, u2Edit)
+	es, err = sm.UpdateSessionText(s, EditState{BaseText: initialEdit, NewText: u2Edit})
 	if err != nil {
 		t.Errorf("Unexpected error while updating the text: %v", err)
 	}
-	if text != merged {
-		t.Errorf("UpdateSessionText returned wrong value, want:\n%v\n\n got:\n%v\n", merged, text)
-	}
-	if u1Rec := <-c1; u1Rec != text {
-		t.Errorf("User1 has received wrong notification, want:\n%v\n\n got:\n%v\n", text, u1Rec)
+	if es.NewText != merged {
+		t.Errorf("UpdateSessionText returned wrong value, want:\n%v\n\n got:\n%v\n", merged, es.NewText)
 	}
 }

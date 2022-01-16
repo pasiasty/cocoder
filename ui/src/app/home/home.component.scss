@@ -1,4 +1,5 @@
 @import "~@angular/material/theming";
+@import "../common.scss";
 
 @include mat-core();
 
@@ -35,21 +36,6 @@
   flex-direction: column;
   min-width: 40em;
   gap: 10px;
-}
-
-.main-container {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  justify-content: center;
-}
-
-.row-content-container {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  justify-content: center;
 }
 
 .logo {

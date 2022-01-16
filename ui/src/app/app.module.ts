@@ -12,17 +12,20 @@ import { MatButtonModule } from '@angular/material/button';
 import { SessionViewComponent } from './session-view/session-view.component';
 import { HomeComponent } from './home/home.component';
 import { MatCardModule } from '@angular/material/card';
+import { PageNotFoundComponent } from './page-not-found/page-not-found.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: ':session_id', component: SessionViewComponent },
+  { path: '**', component: PageNotFoundComponent },
 ];
 
 @NgModule({
   declarations: [
     AppComponent,
     SessionViewComponent,
-    HomeComponent
+    HomeComponent,
+    PageNotFoundComponent
   ],
   imports: [
     BrowserModule,

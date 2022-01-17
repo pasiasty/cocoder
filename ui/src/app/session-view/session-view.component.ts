@@ -3,6 +3,7 @@ import { MatSelectChange } from '@angular/material/select';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import * as monaco from "monaco-editor";
+import { CookieService } from 'ngx-cookie-service';
 
 @Component({
   selector: 'app-session-view',
@@ -11,11 +12,14 @@ import * as monaco from "monaco-editor";
 })
 export class SessionViewComponent implements OnInit {
 
-  editorOptions = { language: 'plaintext' };
+  editorOptions = { language: 'plaintext', theme: 'vs' };
   editor: monaco.editor.IStandaloneCodeEditor | null;
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "typescript", "r");
 
-  constructor(private route: ActivatedRoute, private router: Router) {
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private cookieService: CookieService) {
     this.editor = null;
   }
 
@@ -25,10 +29,20 @@ export class SessionViewComponent implements OnInit {
         this.editorOptions.language = params['language'];
       }
     });
+    this.editorOptions.theme = this.cookieService.get('theme');
+  }
+
+  updateThemeOnEditor() {
+    if (this.editorOptions.theme != "" && this.editor !== null) {
+      this.editor.updateOptions({
+        theme: this.editorOptions.theme,
+      });
+    }
   }
 
   onInit(editor: monaco.editor.IStandaloneCodeEditor) {
     this.editor = editor;
+    this.updateThemeOnEditor();
   }
 
   onLanguageChange(ev: MatSelectChange) {
@@ -43,7 +57,12 @@ export class SessionViewComponent implements OnInit {
       }).then(
         () => { window.location.reload(); }
       );
+  }
 
+  onThemeChange(ev: MatSelectChange) {
+    this.editorOptions.theme = ev.value;
+    this.cookieService.set('theme', ev.value);
+    this.updateThemeOnEditor();
   }
 
 }

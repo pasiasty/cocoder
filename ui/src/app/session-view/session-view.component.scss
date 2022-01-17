@@ -3,3 +3,19 @@
   height: 100%;
   position: relative;
 }
+
+.dropdowns-container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  gap: 20px;
+}
+
+.top-bar {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 2em;
+  color: black;
+  //   text-shadow: 1px 1px #999999;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}

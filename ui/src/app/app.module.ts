@@ -12,7 +12,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { SessionViewComponent } from './session-view/session-view.component';
 import { HomeComponent } from './home/home.component';
 import { MatCardModule } from '@angular/material/card';
+import { MatSelectModule } from '@angular/material/select';
 import { PageNotFoundComponent } from './page-not-found/page-not-found.component';
+import { MonacoEditorModule } from 'ngx-monaco-editor';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -37,6 +39,8 @@ const routes: Routes = [
     RouterModule.forRoot(routes),
     HttpClientModule,
     MatCardModule,
+    MonacoEditorModule.forRoot(),
+    MatSelectModule,
   ],
   exports: [RouterModule],
   providers: [],

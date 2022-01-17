@@ -1,1 +1,10 @@
 <p>session-view works!</p>
+<mat-form-field appearance="fill">
+    <mat-label>Language</mat-label>
+    <mat-select (selectionChange)="onLanguageChange($event)" [(value)]="editorOptions.language">
+      <mat-option *ngFor="let language of languages" [value]="language">
+          {{language}}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+<ngx-monaco-editor [options]="editorOptions" (onInit)="onInit($event)" class="editor-field"></ngx-monaco-editor>

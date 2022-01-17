@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,6 +34,7 @@ func NewRouterManager() *RouteManager {
 	r := gin.Default()
 	sm := NewSessionManager()
 
+	r.Use(limits.RequestSizeLimiter(1024 * 1024))
 	r.Use(CORSMiddleware())
 
 	g := r.Group("/api")
@@ -53,9 +55,9 @@ func NewRouterManager() *RouteManager {
 
 	g.POST("/:session_id", func(c *gin.Context) {
 		sessionID := SessionID(c.Param("session_id"))
-		baseText := c.PostForm("base_text")
-		newText := c.PostForm("new_text")
-		cursorPos, err := strconv.ParseInt(c.PostForm("cursor_pos"), 10, 32)
+		baseText := c.PostForm("BaseText")
+		newText := c.PostForm("NewText")
+		cursorPos, err := strconv.ParseInt(c.PostForm("CursorPos"), 10, 32)
 		if err != nil {
 			c.String(http.StatusBadRequest, fmt.Sprintf("Failed to parse cursor_pos as integer (%v)", err))
 			return
@@ -72,8 +74,8 @@ func NewRouterManager() *RouteManager {
 			return
 		}
 		c.JSON(200, gin.H{
-			"new_text":   es.BaseText,
-			"cursor_pos": es.CursorPos,
+			"NewText":   es.NewText,
+			"CursorPos": es.CursorPos,
 		})
 	})
 

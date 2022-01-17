@@ -83,6 +83,16 @@ func TestUpdateSessionText(t *testing.T) {
 		animal of the year is: gorilla|
 		fruit of the year is: banana
 		`,
+	}, {
+		name: "cursor_at_whitespaces",
+		clientEditState: `abc
+		
+		
+		|`,
+		wantEditState: `abc
+		
+		
+		|`,
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
 			sm := NewSessionManager()

@@ -100,8 +100,11 @@ export class SessionViewComponent implements OnInit {
     ).subscribe(
       data => {
         this.lastBaseText = data.NewText;
-        this.editor!.setValue(data.NewText);
-        this.editor!.setPosition(this.numberToPosition(data.CursorPos, data.NewText));
+
+        if (this.editor!.getValue() != data.NewText) {
+          this.editor!.setValue(data.NewText);
+          this.editor!.setPosition(this.numberToPosition(data.CursorPos, data.NewText));
+        }
       },
       err => {
         console.log("Failed to update session:", err);

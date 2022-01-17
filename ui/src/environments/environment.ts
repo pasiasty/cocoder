@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  api: 'http://localhost:5000',
+  api: 'http://cocoder-backend-env.eba-572jgcc2.eu-west-3.elasticbeanstalk.com',
 };
 
 /*

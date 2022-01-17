@@ -2,11 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { retry } from 'rxjs/operators';
-
-type NewSessionResponse = {
-  sessionID: string
-}
+import { map, retry } from 'rxjs/operators';
 
 @Component({
   selector: 'app-home',
@@ -22,10 +18,11 @@ export class HomeComponent implements OnInit {
 
   newSession(): void {
 
-    this.httpClient.get<NewSessionResponse>(environment.api + '/api/new_session').pipe(
+    this.httpClient.get<string>(environment.api + '/api/new_session').pipe(
       retry(3)
     ).subscribe((data) => {
-      this.router.navigate(['/s/', data.sessionID]);
+      console.log(data);
+      this.router.navigate(['/s/', data]);
     })
   }
 

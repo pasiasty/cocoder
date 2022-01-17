@@ -38,16 +38,14 @@ func NewRouterManager() *RouteManager {
 	g := r.Group("/api")
 
 	g.GET("/new_session", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"sessionID": sm.NewSession(),
-		})
+		c.String(http.StatusOK, fmt.Sprintf("%q", string(sm.NewSession())))
 	})
 
 	g.GET("/:session_id", func(c *gin.Context) {
 		sessionID := SessionID(c.Param("session_id"))
 
 		if text, err := sm.LoadSession(sessionID); err == nil {
-			c.String(http.StatusOK, text)
+			c.String(http.StatusOK, fmt.Sprintf("%q", text))
 		} else {
 			c.String(http.StatusNotFound, fmt.Sprintf("error while loading session: %v", err))
 		}

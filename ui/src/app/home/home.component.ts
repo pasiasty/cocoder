@@ -25,7 +25,7 @@ export class HomeComponent implements OnInit {
     this.httpClient.get<NewSessionResponse>(environment.api + '/api/new_session').pipe(
       retry(3)
     ).subscribe((data) => {
-      this.router.navigate(['/', data.sessionID]);
+      this.router.navigate(['/s/', data.sessionID]);
     })
   }
 

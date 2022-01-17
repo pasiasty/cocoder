@@ -35,23 +35,25 @@ func NewRouterManager() *RouteManager {
 
 	r.Use(CORSMiddleware())
 
-	r.GET("/new_session", func(c *gin.Context) {
+	g := r.Group("/api")
+
+	g.GET("/new_session", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"sessionID": sm.NewSession(),
 		})
 	})
 
-	r.GET("/:session_id", func(c *gin.Context) {
+	g.GET("/:session_id", func(c *gin.Context) {
 		sessionID := SessionID(c.Param("session_id"))
 
-		if sm.SessionExists(sessionID) {
-			c.String(http.StatusOK, "ok")
+		if text, err := sm.LoadSession(sessionID); err == nil {
+			c.String(http.StatusOK, text)
 		} else {
-			c.String(http.StatusNotFound, fmt.Sprintf("session '%s' not found", sessionID))
+			c.String(http.StatusNotFound, fmt.Sprintf("error while loading session: %v", err))
 		}
 	})
 
-	r.POST("/:session_id/update_text", func(c *gin.Context) {
+	g.POST("/:session_id", func(c *gin.Context) {
 		sessionID := SessionID(c.Param("session_id"))
 		baseText := c.PostForm("base_text")
 		newText := c.PostForm("new_text")

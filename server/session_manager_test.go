@@ -16,18 +16,25 @@ func TestNewSession(t *testing.T) {
 	}
 }
 
-func TestSessionExists(t *testing.T) {
+func TestLoadSession(t *testing.T) {
 	sm := NewSessionManager()
 
-	s := sm.NewSession()
+	sampleText := "abc"
 
-	if !sm.SessionExists(s) {
-		t.Errorf("Session '%v' should exist but doesn't", s)
+	s := sm.NewSession()
+	sm.UpdateSessionText(s, EditState{NewText: sampleText})
+
+	text, err := sm.LoadSession(s)
+	if err != nil {
+		t.Errorf("Session does not exist, but should: %v", err)
+	}
+	if text != sampleText {
+		t.Errorf("Session got wrong text, want: %v, got: %v", sampleText, text)
 	}
 
 	s = "abc"
 
-	if sm.SessionExists(s) {
+	if _, err := sm.LoadSession(s); err == nil {
 		t.Errorf("Session '%v' should not exist but does", s)
 	}
 }

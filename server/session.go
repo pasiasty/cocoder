@@ -29,6 +29,10 @@ func newSession(id SessionID) *Session {
 	}
 }
 
+func (s *Session) Text() string {
+	return s.text
+}
+
 func (s *Session) updateText(editState EditState) EditState {
 	s.m.Lock()
 	defer s.m.Unlock()

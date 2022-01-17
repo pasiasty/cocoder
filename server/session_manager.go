@@ -23,9 +23,11 @@ func (m *SessionManager) NewSession() SessionID {
 	return newSessionID
 }
 
-func (m *SessionManager) SessionExists(session SessionID) bool {
-	_, ok := m.sessions[session]
-	return ok
+func (m *SessionManager) LoadSession(session SessionID) (string, error) {
+	if s, ok := m.sessions[session]; ok {
+		return s.Text(), nil
+	}
+	return "", fmt.Errorf("failed to load session '%s'", session)
 }
 
 func (m *SessionManager) UpdateSessionText(session SessionID, editState EditState) (EditState, error) {

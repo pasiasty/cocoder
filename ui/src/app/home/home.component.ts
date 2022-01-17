@@ -22,7 +22,7 @@ export class HomeComponent implements OnInit {
 
   newSession(): void {
 
-    this.httpClient.get<NewSessionResponse>(environment.api + '/new_session').pipe(
+    this.httpClient.get<NewSessionResponse>(environment.api + '/api/new_session').pipe(
       retry(3)
     ).subscribe((data) => {
       this.router.navigate(['/', data.sessionID]);

@@ -1,7 +1,10 @@
 package server
 
 import (
+	"strings"
 	"testing"
+
+	"github.com/r3labs/diff/v2"
 )
 
 func TestNewSession(t *testing.T) {
@@ -39,56 +42,73 @@ func TestLoadSession(t *testing.T) {
 	}
 }
 
-func TestUpdateSessionFlow(t *testing.T) {
-	sm := NewSessionManager()
+func editStateFromString(es string) EditState {
+	i := strings.Index(es, "|")
+	return EditState{
+		NewText:   strings.Replace(es, "|", "", 1),
+		CursorPos: i,
+	}
+}
 
-	initialEdit := `Here's something original
+func TestUpdateSessionText(t *testing.T) {
+	for _, tc := range []struct {
+		name            string
+		initialState    string
+		clientBase      string
+		clientEditState string
+		wantEditState   string
+	}{{
+		name:            "append_to_empty",
+		clientEditState: "abc|",
+		wantEditState:   "abc|",
+	}, {
+		name: "simultaneous_edit",
+		initialState: `Here's something original
 	
-	animal of the year is:
-	fruit of the year is:
-	`
-
-	u1Edit := `Here's something original
+		animal of the year is:
+		fruit of the year is: banana
+		`,
+		clientBase: `Here's something original
 	
-	animal of the year is: gorilla
-	fruit of the year is:
-	`
-
-	u2Edit := `Here's something original
+		animal of the year is:
+		fruit of the year is:
+		`,
+		clientEditState: `Here's something original
 	
-	animal of the year is:
-	fruit of the year is: banana
-	`
-
-	merged := `Here's something original
+		animal of the year is: gorilla|
+		fruit of the year is:
+		`,
+		wantEditState: `Here's something original
 	
-	animal of the year is: gorilla
-	fruit of the year is: banana
-	`
+		animal of the year is: gorilla|
+		fruit of the year is: banana
+		`,
+	}} {
+		t.Run(tc.name, func(t *testing.T) {
+			sm := NewSessionManager()
+			s := sm.NewSession()
+			_, err := sm.UpdateSessionText(s, EditState{NewText: tc.initialState})
+			if err != nil {
+				t.Fatalf("Initial edit should not fail, but did: %v", err)
+			}
 
-	s := sm.NewSession()
+			es := editStateFromString(tc.clientEditState)
+			es.BaseText = tc.clientBase
 
-	es, err := sm.UpdateSessionText(s, EditState{NewText: initialEdit})
-	if err != nil {
-		t.Errorf("Unexpected error while updating the text: %v", err)
-	}
-	if es.NewText != initialEdit {
-		t.Errorf("UpdateSessionText returned wrong value, want:\n%v\n\n got:\n%v\n", initialEdit, es.NewText)
-	}
+			resEs, err := sm.UpdateSessionText(s, es)
+			if err != nil {
+				t.Fatalf("Test edit fail, but shouldn't: %v", err)
+			}
+			wantEs := editStateFromString(tc.wantEditState)
 
-	es, err = sm.UpdateSessionText(s, EditState{BaseText: initialEdit, NewText: u1Edit})
-	if err != nil {
-		t.Errorf("Unexpected error while updating the text: %v", err)
-	}
-	if es.NewText != u1Edit {
-		t.Errorf("UpdateSessionText returned wrong value, want:\n%v\n\n got:\n%v\n", u1Edit, es.NewText)
-	}
+			changelog, err := diff.Diff(resEs, wantEs)
+			if err != nil {
+				t.Fatalf("Diffing failed, but shouldn't: %v", err)
+			}
 
-	es, err = sm.UpdateSessionText(s, EditState{BaseText: initialEdit, NewText: u2Edit})
-	if err != nil {
-		t.Errorf("Unexpected error while updating the text: %v", err)
-	}
-	if es.NewText != merged {
-		t.Errorf("UpdateSessionText returned wrong value, want:\n%v\n\n got:\n%v\n", merged, es.NewText)
+			if len(changelog) > 0 {
+				t.Errorf("Following changes were detected:\n%v", changelog)
+			}
+		})
 	}
 }

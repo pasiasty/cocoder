@@ -20,6 +20,7 @@ import { CookieService } from 'ngx-cookie-service';
 const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 's/:session_id', component: SessionViewComponent },
+  { path: 's/:session_id/', component: SessionViewComponent },
   { path: '**', component: PageNotFoundComponent },
 ];
 

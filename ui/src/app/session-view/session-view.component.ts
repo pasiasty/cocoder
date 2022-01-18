@@ -1,12 +1,12 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MatSelectChange } from '@angular/material/select';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import * as monaco from "monaco-editor";
 import { CookieService } from 'ngx-cookie-service';
 import { environment } from '../../environments/environment';
-import { retry } from 'rxjs/operators';
+import { retry, filter } from 'rxjs/operators';
 import { interval, Subscription } from 'rxjs';
 
 type EditState = {
@@ -29,6 +29,8 @@ export class SessionViewComponent implements OnInit {
   pollingSubscription!: Subscription;
 
   lastBaseText = "";
+
+  lastEditTimeMs = Date.now();
 
   constructor(
     private route: ActivatedRoute,
@@ -90,6 +92,7 @@ export class SessionViewComponent implements OnInit {
 
 
   pollBackendTextState() {
+    console.log('Polling');
     const currText = this.editor!.getValue();
     const formData = new FormData();
     formData.append("BaseText", this.lastBaseText);
@@ -136,9 +139,15 @@ export class SessionViewComponent implements OnInit {
       });
     });
 
-    this.pollingSubscription = interval(1000).subscribe(
+    this.pollingSubscription = interval(500).pipe(filter(_ => {
+      return (Date.now() - this.lastEditTimeMs) > 1000;
+    })).subscribe(
       _ => { this.pollBackendTextState() }
     );
+
+    this.editor.onKeyDown((e: monaco.IKeyboardEvent) => {
+      this.lastEditTimeMs = Date.now();
+    });
   }
 
   onLanguageChange(ev: MatSelectChange) {

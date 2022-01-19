@@ -71,6 +71,7 @@ func TestUpdateSessionText(t *testing.T) {
 		clientBase      string
 		clientEditState string
 		wantEditState   string
+		wantWasMerged   bool
 	}{{
 		name:            "append_to_empty",
 		clientEditState: "abc|",
@@ -97,6 +98,7 @@ func TestUpdateSessionText(t *testing.T) {
 		animal of the year is: gorilla|
 		fruit of the year is: banana
 		`,
+		wantWasMerged: true,
 	}, {
 		name: "cursor_at_whitespaces",
 		clientEditState: `abc
@@ -130,6 +132,7 @@ func TestUpdateSessionText(t *testing.T) {
 				t.Fatalf("Test edit fail, but shouldn't: %v", err)
 			}
 			wantEs := editStateFromString(tc.wantEditState)
+			wantEs.WasMerged = tc.wantWasMerged
 
 			changelog, err := diff.Diff(resEs, wantEs)
 			if err != nil {

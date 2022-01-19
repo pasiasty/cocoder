@@ -13,6 +13,7 @@ import { Title } from '@angular/platform-browser';
 type EditState = {
   NewText: string
   CursorPos: number
+  WasMerged: boolean
 }
 
 @Component({
@@ -40,8 +41,6 @@ export class SessionViewComponent implements OnInit {
   pollingSubscription!: Subscription;
 
   lastBaseText = "";
-
-  lastEditTimeMs = Date.now();
 
   sessionInvalid = false;
 
@@ -123,15 +122,16 @@ export class SessionViewComponent implements OnInit {
       data => {
         this.lastBaseText = data.NewText;
 
-        if (this.editor!.getValue() != data.NewText) {
+        if (data.WasMerged) {
           this.editor!.setValue(data.NewText);
           this.editor!.setPosition(this.numberToPosition(data.CursorPos, data.NewText));
         }
       },
       err => {
         console.log("Failed to update session:", err);
-      }
-    )
+      },
+      () => { },
+    );
   }
 
   updateEditorOptions() {
@@ -158,15 +158,9 @@ export class SessionViewComponent implements OnInit {
       this.cdRef.detectChanges();
     });
 
-    this.pollingSubscription = interval(500).pipe(filter(_ => {
-      return (Date.now() - this.lastEditTimeMs) > 1000;
-    })).subscribe(
+    this.pollingSubscription = interval(500).subscribe(
       _ => { this.pollBackendTextState() }
     );
-
-    this.editor.onKeyDown((e: monaco.IKeyboardEvent) => {
-      this.lastEditTimeMs = Date.now();
-    });
 
     if (this.editorConstructOptions.language !== undefined)
       this.setLanguage(this.editorConstructOptions.language);

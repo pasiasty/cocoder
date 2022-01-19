@@ -77,6 +77,7 @@ func NewRouterManager(c *redis.Client) *RouteManager {
 		c.JSON(200, gin.H{
 			"NewText":   es.NewText,
 			"CursorPos": es.CursorPos,
+			"WasMerged": es.WasMerged,
 		})
 	})
 

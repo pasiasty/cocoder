@@ -29,6 +29,7 @@ type EditState struct {
 	BaseText  string `diff:"base_text"`
 	NewText   string `diff:"new_text"`
 	CursorPos int    `diff:"cursor_pos"`
+	WasMerged bool   `diff:"was_merged"`
 }
 
 func NewSessionManager(c *redis.Client) *SessionManager {
@@ -68,6 +69,8 @@ func transform(es EditState, text string) EditState {
 		es.CursorPos = 0
 	}
 
+	wasMerged := es.BaseText != text
+
 	es.NewText = es.NewText[:es.CursorPos] + cursorSpecialSequence + es.NewText[es.CursorPos:]
 
 	dmp := diffmatchpatch.New()
@@ -80,6 +83,7 @@ func transform(es EditState, text string) EditState {
 	return EditState{
 		NewText:   text,
 		CursorPos: newCursorPos,
+		WasMerged: wasMerged,
 	}
 }
 

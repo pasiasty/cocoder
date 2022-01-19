@@ -8,6 +8,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { environment } from '../../environments/environment';
 import { retry, filter } from 'rxjs/operators';
 import { interval, Subscription } from 'rxjs';
+import { Title } from '@angular/platform-browser';
 
 type EditState = {
   NewText: string
@@ -39,7 +40,8 @@ export class SessionViewComponent implements OnInit {
     private router: Router,
     private cookieService: CookieService,
     private httpClient: HttpClient,
-    private cdRef: ChangeDetectorRef) {
+    private cdRef: ChangeDetectorRef,
+    private titleService: Title) {
     this.editor = null;
   }
 
@@ -53,6 +55,7 @@ export class SessionViewComponent implements OnInit {
       this.sessionID = params.session_id;
     })
     this.editorOptions.theme = this.cookieService.get('theme');
+    this.titleService.setTitle('coCoder ' + this.sessionID.substr(this.sessionID.length - 6));
   }
 
   ngOnDestroy() {

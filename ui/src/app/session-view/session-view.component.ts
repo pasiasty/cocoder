@@ -22,7 +22,17 @@ type EditState = {
 })
 export class SessionViewComponent implements OnInit {
 
-  editorOptions = { language: 'plaintext', theme: 'vs' };
+  editorConstructOptions: monaco.editor.IStandaloneEditorConstructionOptions = { language: 'plaintext' };
+
+  editorOptions: monaco.editor.IEditorOptions = {
+    cursorBlinking: 'smooth',
+    mouseWheelZoom: true,
+    showUnused: true,
+  };
+  editorGlobalOptions: monaco.editor.IGlobalEditorOptions = {
+    theme: 'vs',
+  };
+
   editor: monaco.editor.IStandaloneCodeEditor | null;
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "typescript", "r");
   sessionID = "";
@@ -48,13 +58,13 @@ export class SessionViewComponent implements OnInit {
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
       if ('language' in params) {
-        this.editorOptions.language = params['language'];
+        this.editorConstructOptions.language = params['language'];
       }
     });
     this.route.params.subscribe(params => {
       this.sessionID = params.session_id;
     })
-    this.editorOptions.theme = this.cookieService.get('theme');
+    this.editorGlobalOptions.theme = this.cookieService.get('theme');
     this.titleService.setTitle('coCoder ' + this.sessionID.substr(this.sessionID.length - 6));
   }
 
@@ -124,17 +134,17 @@ export class SessionViewComponent implements OnInit {
     )
   }
 
-  updateThemeOnEditor() {
-    if (this.editorOptions.theme != "" && this.editor !== null) {
+  updateEditorOptions() {
+    if (this.editor !== null) {
       this.editor.updateOptions({
-        theme: this.editorOptions.theme,
+        ...this.editorOptions, ...this.editorGlobalOptions,
       });
     }
   }
 
   onInit(editor: monaco.editor.IStandaloneCodeEditor) {
     this.editor = editor;
-    this.updateThemeOnEditor();
+    this.updateEditorOptions();
 
     this.httpClient.get<string>(environment.api + this.sessionID).pipe(
       retry(3)
@@ -157,12 +167,19 @@ export class SessionViewComponent implements OnInit {
     this.editor.onKeyDown((e: monaco.IKeyboardEvent) => {
       this.lastEditTimeMs = Date.now();
     });
+
+    if (this.editorConstructOptions.language !== undefined)
+      this.setLanguage(this.editorConstructOptions.language);
+  }
+
+  setLanguage(l: string) {
+    const model = monaco.editor.createModel(this.editor!.getValue(), l, monaco.Uri.parse(l));
+    this.editor?.getModel()?.dispose();
+    this.editor?.setModel(model);
   }
 
   onLanguageChange(ev: MatSelectChange) {
-    const model = monaco.editor.createModel(this.editor!.getValue(), ev.value, ev.value);
-    this.editor?.getModel()?.dispose();
-    this.editor?.setModel(model);
+    this.setLanguage(ev.value);
 
     const queryParams: Params = { language: ev.value };
 
@@ -176,9 +193,9 @@ export class SessionViewComponent implements OnInit {
   }
 
   onThemeChange(ev: MatSelectChange) {
-    this.editorOptions.theme = ev.value;
+    this.editorGlobalOptions.theme = ev.value;
     this.cookieService.set('theme', ev.value, undefined, "/");
-    this.updateThemeOnEditor();
+    this.updateEditorOptions();
   }
 
 }

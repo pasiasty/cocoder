@@ -5,7 +5,7 @@
         <div class="dropdowns-container">
             <mat-form-field appearance="fill">
                 <mat-label>Language</mat-label>
-                <mat-select (selectionChange)="onLanguageChange($event)" [(value)]="editorOptions.language">
+                <mat-select (selectionChange)="onLanguageChange($event)" [(value)]="editorConstructOptions.language">
                     <mat-option *ngFor="let language of languages" [value]="language">
                         {{language}}
                     </mat-option>
@@ -17,12 +17,12 @@
             </mat-form-field>
             <mat-form-field appearance="fill">
                 <mat-label>Theme</mat-label>
-                <mat-select (selectionChange)="onThemeChange($event)" [(value)]="editorOptions.theme">
+                <mat-select (selectionChange)="onThemeChange($event)" [(value)]="editorGlobalOptions.theme">
                     <mat-option value="vs">Light</mat-option>
                     <mat-option value="vs-dark">Dark</mat-option>
                 </mat-select>
             </mat-form-field>
         </div>
-        <ngx-monaco-editor [options]="editorOptions" (onInit)="onInit($event)" class="editor-field"></ngx-monaco-editor>
+        <ngx-monaco-editor [options]="{editorConstructOptions, editorGlobalOptions, editorOptions}" (onInit)="onInit($event)" class="editor-field"></ngx-monaco-editor>
     </div>
 </ng-template>

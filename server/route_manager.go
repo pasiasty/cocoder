@@ -7,6 +7,7 @@ import (
 
 	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 )
 
 type RouteManager struct {
@@ -30,9 +31,9 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-func NewRouterManager() *RouteManager {
+func NewRouterManager(c *redis.Client) *RouteManager {
 	r := gin.Default()
-	sm := NewSessionManager()
+	sm := NewSessionManager(c)
 
 	r.Use(limits.RequestSizeLimiter(1024 * 1024))
 	r.Use(CORSMiddleware())

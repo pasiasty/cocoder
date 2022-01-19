@@ -1,14 +1,35 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"github.com/pasiasty/cocoder/server"
 )
 
 func main() {
-	m := server.NewRouterManager()
+	redisAddr := os.Getenv("REDIS_HOST")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+	redisPassw := os.Getenv("REDIS_PASSWORD")
+	redisDBStr := os.Getenv("REDIS_DB")
+	redisDB, err := strconv.ParseInt(redisDBStr, 10, 32)
+	if err != nil {
+		log.Printf("Failed to parse REDIS_DB (%s) as int", redisDBStr)
+	}
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     redisAddr,
+		Password: redisPassw,
+		DB:       int(redisDB),
+	})
+
+	m := server.NewRouterManager(redisClient)
 	r := m.Router()
 	r.LoadHTMLGlob("templates/*.tmpl.html")
 

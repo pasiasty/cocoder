@@ -4,11 +4,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alicebob/miniredis"
+	"github.com/go-redis/redis"
 	"github.com/r3labs/diff/v2"
 )
 
 func TestNewSession(t *testing.T) {
-	sm := NewSessionManager()
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to setup miniredis: %v", err)
+	}
+	sm := NewSessionManager(redis.NewClient(&redis.Options{
+		Addr: mr.Addr(),
+	}))
 	createdIDs := make(map[SessionID]interface{})
 	for i := 0; i < 100; i++ {
 		newID := sm.NewSession()
@@ -20,7 +28,13 @@ func TestNewSession(t *testing.T) {
 }
 
 func TestLoadSession(t *testing.T) {
-	sm := NewSessionManager()
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to setup miniredis: %v", err)
+	}
+	sm := NewSessionManager(redis.NewClient(&redis.Options{
+		Addr: mr.Addr(),
+	}))
 
 	sampleText := "abc"
 
@@ -95,10 +109,16 @@ func TestUpdateSessionText(t *testing.T) {
 		|`,
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
-			sm := NewSessionManager()
-			s := sm.NewSession()
-			_, err := sm.UpdateSessionText(s, EditState{NewText: tc.initialState})
+			mr, err := miniredis.Run()
 			if err != nil {
+				t.Fatalf("Failed to setup miniredis: %v", err)
+			}
+			sm := NewSessionManager(redis.NewClient(&redis.Options{
+				Addr: mr.Addr(),
+			}))
+			s := sm.NewSession()
+
+			if _, err := sm.UpdateSessionText(s, EditState{NewText: tc.initialState}); err != nil {
 				t.Fatalf("Initial edit should not fail, but did: %v", err)
 			}
 

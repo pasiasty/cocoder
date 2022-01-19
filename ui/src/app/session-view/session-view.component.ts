@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatSelectChange } from '@angular/material/select';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
@@ -32,11 +32,14 @@ export class SessionViewComponent implements OnInit {
 
   lastEditTimeMs = Date.now();
 
+  sessionInvalid = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private cookieService: CookieService,
-    private httpClient: HttpClient) {
+    private httpClient: HttpClient,
+    private cdRef: ChangeDetectorRef) {
     this.editor = null;
   }
 
@@ -54,6 +57,10 @@ export class SessionViewComponent implements OnInit {
 
   ngOnDestroy() {
     this.pollingSubscription.unsubscribe();
+  }
+
+  otherLanguages(): string[] {
+    return monaco.languages.getLanguages().map((v, _) => v.id).filter(v => !this.languages.includes(v));
   }
 
   positionToNumber(p: monaco.Position | null, text: string): number {
@@ -97,7 +104,7 @@ export class SessionViewComponent implements OnInit {
     formData.append("BaseText", this.lastBaseText);
     formData.append("NewText", currText);
     formData.append("CursorPos", this.positionToNumber(this.editor!.getPosition!(), currText).toString());
-    this.httpClient.post<EditState>(environment.api + '/api/' + this.sessionID, formData).pipe(
+    this.httpClient.post<EditState>(environment.api + this.sessionID, formData).pipe(
       retry(3)
     ).subscribe(
       data => {
@@ -126,16 +133,16 @@ export class SessionViewComponent implements OnInit {
     this.editor = editor;
     this.updateThemeOnEditor();
 
-    this.httpClient.get<string>(environment.api + '/api/' + this.sessionID).pipe(
+    this.httpClient.get<string>(environment.api + this.sessionID).pipe(
       retry(3)
     ).subscribe((data) => {
       this.editor?.setValue(data);
       this.lastBaseText = data;
     }, (err) => {
       console.log("Failed to get session:", err);
-      this.router.navigate(['/not_found']).then(() => {
-        window.location.reload();
-      });
+      this.sessionInvalid = true;
+      this.pollingSubscription.unsubscribe();
+      this.cdRef.detectChanges();
     });
 
     this.pollingSubscription = interval(500).pipe(filter(_ => {

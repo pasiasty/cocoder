@@ -1,21 +1,28 @@
-<div class="content-container">
-    <div class="top-bar">coCoder</div>
-    <div class="dropdowns-container">
-        <mat-form-field appearance="fill">
-            <mat-label>Language</mat-label>
-            <mat-select (selectionChange)="onLanguageChange($event)" [(value)]="editorOptions.language">
-                <mat-option *ngFor="let language of languages" [value]="language">
-                    {{language}}
-                </mat-option>
-            </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="fill">
-            <mat-label>Theme</mat-label>
-            <mat-select (selectionChange)="onThemeChange($event)" [(value)]="editorOptions.theme">
-                <mat-option value="vs">Light</mat-option>
-                <mat-option value="vs-dark">Dark</mat-option>
-            </mat-select>
-        </mat-form-field>
+<app-page-not-found *ngIf="sessionInvalid; else normalContent"></app-page-not-found>
+<ng-template #normalContent>
+    <div class="content-container">
+        <div class="top-bar">coCoder</div>
+        <div class="dropdowns-container">
+            <mat-form-field appearance="fill">
+                <mat-label>Language</mat-label>
+                <mat-select (selectionChange)="onLanguageChange($event)" [(value)]="editorOptions.language">
+                    <mat-option *ngFor="let language of languages" [value]="language">
+                        {{language}}
+                    </mat-option>
+                    <mat-divider></mat-divider>
+                    <mat-option *ngFor="let language of otherLanguages()" [value]="language">
+                        {{language}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="fill">
+                <mat-label>Theme</mat-label>
+                <mat-select (selectionChange)="onThemeChange($event)" [(value)]="editorOptions.theme">
+                    <mat-option value="vs">Light</mat-option>
+                    <mat-option value="vs-dark">Dark</mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+        <ngx-monaco-editor [options]="editorOptions" (onInit)="onInit($event)" class="editor-field"></ngx-monaco-editor>
     </div>
-    <ngx-monaco-editor [options]="editorOptions" (onInit)="onInit($event)" class="editor-field"></ngx-monaco-editor>
-</div>
+</ng-template>

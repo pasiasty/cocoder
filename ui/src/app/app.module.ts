@@ -9,6 +9,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
 import { SessionViewComponent } from './session-view/session-view.component';
 import { HomeComponent } from './home/home.component';
 import { MatCardModule } from '@angular/material/card';
@@ -43,6 +44,7 @@ const routes: Routes = [
     MatCardModule,
     MonacoEditorModule.forRoot(),
     MatSelectModule,
+    MatDividerModule,
   ],
   exports: [RouterModule],
   providers: [CookieService],

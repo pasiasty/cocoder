@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
@@ -56,29 +55,21 @@ func NewRouterManager(c *redis.Client) *RouteManager {
 
 	g.POST("/:session_id", func(c *gin.Context) {
 		sessionID := SessionID(c.Param("session_id"))
-		baseText := c.PostForm("BaseText")
-		newText := c.PostForm("NewText")
-		cursorPos, err := strconv.ParseInt(c.PostForm("CursorPos"), 10, 32)
-		if err != nil {
-			c.String(http.StatusBadRequest, fmt.Sprintf("Failed to parse cursor_pos as integer (%v)", err))
+
+		req := &UpdateSessionRequest{}
+
+		if err := c.ShouldBind(req); err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
 
-		es, err := sm.UpdateSessionText(sessionID,
-			EditState{
-				BaseText:  baseText,
-				NewText:   newText,
-				CursorPos: int(cursorPos),
-			})
+		resp, err := sm.UpdateSessionText(sessionID, req)
 		if err != nil {
 			c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to update session text: %v", err))
 			return
 		}
-		c.JSON(200, gin.H{
-			"NewText":   es.NewText,
-			"CursorPos": es.CursorPos,
-			"WasMerged": es.WasMerged,
-		})
+
+		c.JSON(http.StatusOK, resp)
 	})
 
 	return &RouteManager{

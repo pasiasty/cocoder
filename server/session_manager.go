@@ -1,6 +1,8 @@
 package server
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"log"
 	"strings"
@@ -19,17 +21,18 @@ const (
 	cursorSpecialSequence = "阳цąß"
 )
 
+func init() {
+	gob.Register(&Session{})
+}
+
 type SessionID string
 
 type SessionManager struct {
 	c *redis.Client
 }
 
-type EditState struct {
-	BaseText  string `diff:"base_text"`
-	NewText   string `diff:"new_text"`
-	CursorPos int    `diff:"cursor_pos"`
-	WasMerged bool   `diff:"was_merged"`
+type Session struct {
+	Text string `diff:"Text"`
 }
 
 func NewSessionManager(c *redis.Client) *SessionManager {
@@ -44,7 +47,7 @@ func NewSessionManager(c *redis.Client) *SessionManager {
 
 func (m *SessionManager) NewSession() SessionID {
 	newSessionID := SessionID(uuid.New().String())
-	if err := m.c.Set(string(newSessionID), "", sessionExpiry).Err(); err != nil {
+	if err := m.c.Set(string(newSessionID), serializeSession(&Session{}), sessionExpiry).Err(); err != nil {
 		log.Printf("Could not create the session: %v", err)
 		return ""
 	}
@@ -60,49 +63,70 @@ func (m *SessionManager) LoadSession(session SessionID) (string, error) {
 	if val, err := m.c.Get(string(session)).Result(); err != nil && err != redis.Nil {
 		return "", fmt.Errorf("failed to load session '%s'", session)
 	} else {
-		return val, nil
+		return deserializeSession(val).Text, nil
 	}
 }
 
-func transform(es EditState, text string) EditState {
-	if es.CursorPos < 0 || es.CursorPos > len(es.NewText) {
-		es.CursorPos = 0
+func transform(req *UpdateSessionRequest, s *Session) *UpdateSessionResponse {
+	if req.CursorPos < 0 || req.CursorPos > len(req.NewText) {
+		req.CursorPos = 0
 	}
 
-	wasMerged := es.BaseText != text
+	wasMerged := req.BaseText != s.Text
 
-	es.NewText = es.NewText[:es.CursorPos] + cursorSpecialSequence + es.NewText[es.CursorPos:]
+	req.NewText = req.NewText[:req.CursorPos] + cursorSpecialSequence + req.NewText[req.CursorPos:]
 
 	dmp := diffmatchpatch.New()
-	userPatches := dmp.PatchMake(dmp.DiffMain(es.BaseText, es.NewText, false))
-	textWithCursor, _ := dmp.PatchApply(userPatches, text)
+	userPatches := dmp.PatchMake(dmp.DiffMain(req.BaseText, req.NewText, false))
+	textWithCursor, _ := dmp.PatchApply(userPatches, s.Text)
 
 	newCursorPos := strings.Index(textWithCursor, cursorSpecialSequence)
-	text = strings.ReplaceAll(textWithCursor, cursorSpecialSequence, "")
+	s.Text = strings.ReplaceAll(textWithCursor, cursorSpecialSequence, "")
 
-	return EditState{
-		NewText:   text,
+	return &UpdateSessionResponse{
+		NewText:   s.Text,
 		CursorPos: newCursorPos,
 		WasMerged: wasMerged,
 	}
 }
 
-func (m *SessionManager) UpdateSessionText(session SessionID, editState EditState) (EditState, error) {
+func serializeSession(s *Session) string {
+	b := new(bytes.Buffer)
+	e := gob.NewEncoder(b)
+	if err := e.Encode(s); err != nil {
+		panic(fmt.Sprintf("Failed to encode session (%v): %v", s, err))
+	}
+	return b.String()
+}
+
+func deserializeSession(s string) *Session {
+	res := &Session{}
+	b := bytes.NewBuffer([]byte(s))
+	d := gob.NewDecoder(b)
+	if err := d.Decode(res); err != nil {
+		panic(fmt.Sprintf("Failed to decode session (%v): %v", s, err))
+	}
+	return res
+}
+
+func (m *SessionManager) UpdateSessionText(sessionID SessionID, req *UpdateSessionRequest) (*UpdateSessionResponse, error) {
+	resp := &UpdateSessionResponse{}
 	if err := m.c.Watch(func(tx *redis.Tx) error {
-		text, err := tx.Get(string(session)).Result()
+		ss, err := tx.Get(string(sessionID)).Result()
 		if err != nil && err != redis.Nil {
 			return err
 		}
+		session := deserializeSession(ss)
 
 		_, err = tx.Pipelined(func(pipe redis.Pipeliner) error {
-			editState = transform(editState, text)
-			pipe.Set(string(session), editState.NewText, sessionExpiry)
+			resp = transform(req, session)
+			pipe.Set(string(sessionID), serializeSession(session), sessionExpiry)
 			return nil
 		})
 		return err
-	}, string(session)); err != nil {
-		return EditState{}, fmt.Errorf("failed to update session '%s': %v", session, err)
+	}, string(sessionID)); err != nil {
+		return nil, fmt.Errorf("failed to update session '%s': %v", sessionID, err)
 	}
 
-	return editState, nil
+	return resp, nil
 }

@@ -69,12 +69,12 @@ func TestLoadSession(t *testing.T) {
 	s := sm.NewSession()
 	sm.UpdateSessionText(s, &UpdateSessionRequest{NewText: sampleText})
 
-	text, err := sm.LoadSession(s)
+	session, err := sm.LoadSession(s)
 	if err != nil {
 		t.Errorf("Session does not exist, but should: %v", err)
 	}
-	if text != sampleText {
-		t.Errorf("Session got wrong text, want: %v, got: %v", sampleText, text)
+	if session.Text != sampleText {
+		t.Errorf("Session got wrong text, want: %v, got: %v", sampleText, session.Text)
 	}
 
 	s = "abc"

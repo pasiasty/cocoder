@@ -4,7 +4,7 @@
         <div class="top-bar">coCoder</div>
         <div class="dropdowns-container">
             <mat-form-field appearance="fill">
-                <mat-label>Language</mat-label>
+                <mat-label #languageSelect>Language</mat-label>
                 <mat-select (selectionChange)="onLanguageChange($event)" [(value)]="editorConstructOptions.language">
                     <mat-option *ngFor="let language of languages" [value]="language">
                         {{language}}

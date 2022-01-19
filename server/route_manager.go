@@ -46,11 +46,29 @@ func NewRouterManager(c *redis.Client) *RouteManager {
 	g.GET("/:session_id", func(c *gin.Context) {
 		sessionID := SessionID(c.Param("session_id"))
 
-		if text, err := sm.LoadSession(sessionID); err == nil {
-			c.String(http.StatusOK, fmt.Sprintf("%q", text))
+		if s, err := sm.LoadSession(sessionID); err == nil {
+			c.JSON(http.StatusOK, s)
 		} else {
 			c.String(http.StatusNotFound, fmt.Sprintf("error while loading session: %v", err))
 		}
+	})
+
+	g.POST("/:session_id/language", func(c *gin.Context) {
+		sessionID := SessionID(c.Param("session_id"))
+
+		req := &UpdateLanguageRequest{}
+
+		if err := c.ShouldBind(req); err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+
+		if err := sm.UpdateLanguage(sessionID, req); err != nil {
+			c.String(http.StatusBadRequest, fmt.Sprintf("failed to update session language: %v", err))
+			return
+		}
+
+		c.String(http.StatusOK, fmt.Sprintf("\"language set to: %v\"", req.Language))
 	})
 
 	g.POST("/:session_id", func(c *gin.Context) {

@@ -1,19 +1,25 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatSelectChange } from '@angular/material/select';
-import { ActivatedRoute, Params, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import * as monaco from "monaco-editor";
 import { CookieService } from 'ngx-cookie-service';
 import { environment } from '../../environments/environment';
-import { retry, filter } from 'rxjs/operators';
+import { retry } from 'rxjs/operators';
 import { interval, Subscription } from 'rxjs';
 import { Title } from '@angular/platform-browser';
 
-type EditState = {
+type EditResponse = {
   NewText: string
   CursorPos: number
   WasMerged: boolean
+  Language: string
+}
+
+type GetSessionResponse = {
+  Text: string
+  Language: string
 }
 
 @Component({
@@ -22,7 +28,6 @@ type EditState = {
   styleUrls: ['./session-view.component.scss']
 })
 export class SessionViewComponent implements OnInit {
-
   editorConstructOptions: monaco.editor.IStandaloneEditorConstructionOptions = { language: 'plaintext' };
 
   editorOptions: monaco.editor.IEditorOptions = {
@@ -46,7 +51,6 @@ export class SessionViewComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
     private cookieService: CookieService,
     private httpClient: HttpClient,
     private cdRef: ChangeDetectorRef,
@@ -116,11 +120,13 @@ export class SessionViewComponent implements OnInit {
     formData.append("BaseText", this.lastBaseText);
     formData.append("NewText", currText);
     formData.append("CursorPos", this.positionToNumber(this.editor!.getPosition!(), currText).toString());
-    this.httpClient.post<EditState>(environment.api + this.sessionID, formData).pipe(
+    this.httpClient.post<EditResponse>(environment.api + this.sessionID, formData).pipe(
       retry(3)
     ).subscribe(
       data => {
         this.lastBaseText = data.NewText;
+        if (data.Language)
+          this.setLanguage(data.Language);
 
         if (data.WasMerged) {
           this.editor!.setValue(data.NewText);
@@ -129,8 +135,7 @@ export class SessionViewComponent implements OnInit {
       },
       err => {
         console.log("Failed to update session:", err);
-      },
-      () => { },
+      }
     );
   }
 
@@ -146,11 +151,13 @@ export class SessionViewComponent implements OnInit {
     this.editor = editor;
     this.updateEditorOptions();
 
-    this.httpClient.get<string>(environment.api + this.sessionID).pipe(
+    this.httpClient.get<GetSessionResponse>(environment.api + this.sessionID).pipe(
       retry(3)
     ).subscribe((data) => {
-      this.editor?.setValue(data);
-      this.lastBaseText = data;
+      this.editor?.setValue(data.Text);
+      this.lastBaseText = data.Text;
+      this.editorConstructOptions.language = data.Language;
+      this.cdRef.detectChanges();
     }, (err) => {
       console.log("Failed to get session:", err);
       this.sessionInvalid = true;
@@ -167,6 +174,11 @@ export class SessionViewComponent implements OnInit {
   }
 
   setLanguage(l: string) {
+    if (l == this.editorConstructOptions.language) {
+      return;
+    }
+    this.editorConstructOptions.language = l;
+    this.cdRef.detectChanges();
     const model = monaco.editor.createModel(this.editor!.getValue(), l, monaco.Uri.parse(l));
     this.editor?.getModel()?.dispose();
     this.editor?.setModel(model);
@@ -174,16 +186,18 @@ export class SessionViewComponent implements OnInit {
 
   onLanguageChange(ev: MatSelectChange) {
     this.setLanguage(ev.value);
-
-    const queryParams: Params = { language: ev.value };
-
-    this.router.navigate(
-      [],
-      {
-        relativeTo: this.route,
-        queryParams: queryParams,
-        queryParamsHandling: 'merge',
-      });
+    const formData = new FormData();
+    formData.append("Language", ev.value);
+    this.httpClient.post(environment.api + this.sessionID + '/language', formData).pipe(
+      retry(3)
+    ).subscribe(
+      data => {
+        console.log(data)
+      },
+      err => {
+        console.log("Failed to update session language:", err);
+      }
+    );
   }
 
   onThemeChange(ev: MatSelectChange) {

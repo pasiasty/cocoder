@@ -32,7 +32,8 @@ type SessionManager struct {
 }
 
 type Session struct {
-	Text string `diff:"Text"`
+	Text     string `diff:"Text"`
+	Language string `diff:"Text"`
 }
 
 func NewSessionManager(c *redis.Client) *SessionManager {
@@ -54,16 +55,16 @@ func (m *SessionManager) NewSession() SessionID {
 	return newSessionID
 }
 
-func (m *SessionManager) LoadSession(session SessionID) (string, error) {
+func (m *SessionManager) LoadSession(session SessionID) (*Session, error) {
 	if exists, err := m.c.Exists(string(session)).Result(); err != nil && err != redis.Nil {
-		return "", fmt.Errorf("failed to check if session '%s' exists", session)
+		return nil, fmt.Errorf("failed to check if session '%s' exists", session)
 	} else if exists == 0 {
-		return "", fmt.Errorf("session '%s' does not exist", session)
+		return nil, fmt.Errorf("session '%s' does not exist", session)
 	}
 	if val, err := m.c.Get(string(session)).Result(); err != nil && err != redis.Nil {
-		return "", fmt.Errorf("failed to load session '%s'", session)
+		return nil, fmt.Errorf("failed to load session '%s'", session)
 	} else {
-		return deserializeSession(val).Text, nil
+		return deserializeSession(val), nil
 	}
 }
 
@@ -87,6 +88,7 @@ func transform(req *UpdateSessionRequest, s *Session) *UpdateSessionResponse {
 		NewText:   s.Text,
 		CursorPos: newCursorPos,
 		WasMerged: wasMerged,
+		Language:  s.Language,
 	}
 }
 
@@ -129,4 +131,25 @@ func (m *SessionManager) UpdateSessionText(sessionID SessionID, req *UpdateSessi
 	}
 
 	return resp, nil
+}
+
+func (m *SessionManager) UpdateLanguage(sessionID SessionID, req *UpdateLanguageRequest) error {
+	if err := m.c.Watch(func(tx *redis.Tx) error {
+		ss, err := tx.Get(string(sessionID)).Result()
+		if err != nil && err != redis.Nil {
+			return err
+		}
+		session := deserializeSession(ss)
+
+		_, err = tx.Pipelined(func(pipe redis.Pipeliner) error {
+			session.Language = req.Language
+			pipe.Set(string(sessionID), serializeSession(session), sessionExpiry)
+			return nil
+		})
+		return err
+	}, string(sessionID)); err != nil {
+		return fmt.Errorf("failed to update session '%s': %v", sessionID, err)
+	}
+
+	return nil
 }

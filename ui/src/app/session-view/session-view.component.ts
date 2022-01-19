@@ -92,7 +92,6 @@ export class SessionViewComponent implements OnInit {
 
 
   pollBackendTextState() {
-    console.log('Polling');
     const currText = this.editor!.getValue();
     const formData = new FormData();
     formData.append("BaseText", this.lastBaseText);
@@ -151,6 +150,10 @@ export class SessionViewComponent implements OnInit {
   }
 
   onLanguageChange(ev: MatSelectChange) {
+    const model = monaco.editor.createModel(this.editor!.getValue(), ev.value, ev.value);
+    this.editor?.getModel()?.dispose();
+    this.editor?.setModel(model);
+
     const queryParams: Params = { language: ev.value };
 
     this.router.navigate(
@@ -159,9 +162,7 @@ export class SessionViewComponent implements OnInit {
         relativeTo: this.route,
         queryParams: queryParams,
         queryParamsHandling: 'merge',
-      }).then(
-        () => { window.location.reload(); }
-      );
+      });
   }
 
   onThemeChange(ev: MatSelectChange) {

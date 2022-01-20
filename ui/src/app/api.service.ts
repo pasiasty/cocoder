@@ -3,12 +3,20 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map, retry } from 'rxjs/operators';
 import { environment } from '../environments/environment';
+import { v4 as uuidv4 } from 'uuid';
+import { CookieService } from 'ngx-cookie-service';
+
+export type OtherUser = {
+  ID: string
+  CursorPos: number
+}
 
 export type EditResponse = {
   NewText: string
   CursorPos: number
   WasMerged: boolean
   Language: string
+  OtherUsers: OtherUser[]
 }
 
 export type GetSessionResponse = {
@@ -25,10 +33,18 @@ export class ApiService {
 
   languageState: LanguageState = 'stable';
   sessionID !: string;
+  userID: string;
 
   constructor(
     private httpClient: HttpClient,
-  ) { }
+    private cookieService: CookieService,
+  ) {
+    this.userID = this.cookieService.get('user_id');
+    if (this.userID == '') {
+      this.userID = uuidv4();
+      this.cookieService.set('user_id', this.userID, undefined, "/");
+    }
+  }
 
   SetSessionID(sessionID: string) {
     this.sessionID = sessionID;
@@ -42,6 +58,7 @@ export class ApiService {
     formData.append("BaseText", baseText);
     formData.append("NewText", newText);
     formData.append("CursorPos", cursorPos.toString());
+    formData.append("UserID", this.userID);
 
     return this.httpClient.post<EditResponse>(environment.api + this.sessionID, formData).pipe(
       retry(3),

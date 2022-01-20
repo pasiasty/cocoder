@@ -3,6 +3,7 @@ package server
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/alicebob/miniredis"
 	"github.com/go-redis/redis"
@@ -62,6 +63,11 @@ func TestSerializeDeserialize(t *testing.T) {
 func TestLoadSession(t *testing.T) {
 	sm := prepareSessionManager(t)
 
+	userID1 := "user_1"
+	date1 := time.Date(2015, 2, 13, 0, 0, 0, 0, time.UTC)
+	userID2 := "user_1"
+	date2 := time.Date(2018, 9, 26, 0, 0, 0, 0, time.UTC)
+
 	existingSessionID1 := sm.NewSession()
 	existingSessionID2 := sm.NewSession()
 	nonexistingSessionID := "abc123"
@@ -72,13 +78,24 @@ func TestLoadSession(t *testing.T) {
 	anotherSampleText := "def"
 	defaultLanguage := "plaintext"
 
-	if _, err := sm.UpdateSessionText(existingSessionID1, &UpdateSessionRequest{NewText: sampleText}); err != nil {
+	nowSource = func() time.Time { return date1 }
+
+	if _, err := sm.UpdateSessionText(existingSessionID1, &UpdateSessionRequest{
+		NewText: sampleText,
+		UserID:  userID1,
+	}); err != nil {
 		t.Fatalf("Failed to update session text: %v", err)
 	}
 	if err := sm.UpdateLanguage(existingSessionID1, &UpdateLanguageRequest{Language: sampleLanguage}); err != nil {
 		t.Fatalf("Failed to update session language: %v", err)
 	}
-	if _, err := sm.UpdateSessionText(existingSessionID2, &UpdateSessionRequest{NewText: anotherSampleText}); err != nil {
+
+	nowSource = func() time.Time { return date2 }
+
+	if _, err := sm.UpdateSessionText(existingSessionID2, &UpdateSessionRequest{
+		NewText: anotherSampleText,
+		UserID:  userID2,
+	}); err != nil {
 		t.Fatalf("Failed to update session text: %v", err)
 	}
 
@@ -93,6 +110,14 @@ func TestLoadSession(t *testing.T) {
 		wantSession: &Session{
 			Text:     sampleText,
 			Language: sampleLanguage,
+			LastEdit: date1,
+			Users: map[string]*User{
+				userID1: {
+					ID:       userID1,
+					LastEdit: date1,
+					Position: 0,
+				},
+			},
 		},
 	}, {
 		name:      "proper_session_default_language",
@@ -100,6 +125,14 @@ func TestLoadSession(t *testing.T) {
 		wantSession: &Session{
 			Text:     anotherSampleText,
 			Language: defaultLanguage,
+			LastEdit: date2,
+			Users: map[string]*User{
+				userID2: {
+					ID:       userID2,
+					LastEdit: date2,
+					Position: 0,
+				},
+			},
 		},
 	}, {
 		name:      "non_existing_session",
@@ -122,6 +155,8 @@ func TestLoadSession(t *testing.T) {
 
 			if len(changelog) > 0 {
 				t.Errorf("Following changes were detected:\n%v", changelog)
+				t.Errorf("Want:\n%v", tc.wantSession)
+				t.Errorf("Got:\n%v", s)
 			}
 		})
 	}

@@ -15,6 +15,8 @@ import (
 
 var (
 	sessionExpiry = time.Hour * 24 * 7
+
+	nowSource = time.Now
 )
 
 const (
@@ -23,6 +25,7 @@ const (
 
 func init() {
 	gob.Register(&Session{})
+	gob.Register(&User{})
 }
 
 type SessionID string
@@ -31,9 +34,18 @@ type SessionManager struct {
 	c *redis.Client
 }
 
+type User struct {
+	ID       string    `diff:"ID"`
+	Position int       `diff:"Position"`
+	LastEdit time.Time `diff:"LastEdit"`
+}
+
 type Session struct {
-	Text     string `diff:"Text"`
-	Language string `diff:"Language"`
+	Text     string    `diff:"Text"`
+	Language string    `diff:"Language"`
+	LastEdit time.Time `diff:"LastEdit"`
+
+	Users map[string]*User `diff:"Users"`
 }
 
 func NewSessionManager(c *redis.Client) *SessionManager {
@@ -50,6 +62,7 @@ func (m *SessionManager) NewSession() SessionID {
 	newSessionID := SessionID(uuid.New().String())
 	if err := m.c.Set(string(newSessionID), serializeSession(&Session{
 		Language: "plaintext",
+		Users:    make(map[string]*User),
 	}), sessionExpiry).Err(); err != nil {
 		log.Printf("Could not create the session: %v", err)
 		return ""
@@ -87,11 +100,39 @@ func updateSessionTextProcessor(reqInt interface{}, s *Session) interface{} {
 	newCursorPos := strings.Index(textWithCursor, cursorSpecialSequence)
 	s.Text = strings.ReplaceAll(textWithCursor, cursorSpecialSequence, "")
 
+	now := nowSource()
+
+	s.LastEdit = now
+
+	if user, ok := s.Users[req.UserID]; ok {
+		user.Position = newCursorPos
+		user.LastEdit = now
+	} else {
+		s.Users[req.UserID] = &User{
+			ID:       req.UserID,
+			Position: newCursorPos,
+			LastEdit: now,
+		}
+	}
+
+	otherUsers := []OtherUser{}
+
+	for _, u := range s.Users {
+		if u.ID == req.UserID || now.Sub(u.LastEdit) > time.Minute {
+			continue
+		}
+		otherUsers = append(otherUsers, OtherUser{
+			ID:        u.ID,
+			CursorPos: u.Position,
+		})
+	}
+
 	return &UpdateSessionResponse{
-		NewText:   s.Text,
-		CursorPos: newCursorPos,
-		WasMerged: wasMerged,
-		Language:  s.Language,
+		NewText:    s.Text,
+		CursorPos:  newCursorPos,
+		WasMerged:  wasMerged,
+		Language:   s.Language,
+		OtherUsers: otherUsers,
 	}
 }
 

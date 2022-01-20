@@ -35,17 +35,18 @@ type SessionManager struct {
 }
 
 type User struct {
-	ID       string    `diff:"ID"`
-	Position int       `diff:"Position"`
-	LastEdit time.Time `diff:"LastEdit"`
+	ID       string    `json:"ID" diff:"ID"`
+	Index    int       `json:"Index" diff:"Index"`
+	Position int       `json:"Position" diff:"Position"`
+	LastEdit time.Time `json:"LastEdit" diff:"LastEdit"`
 }
 
 type Session struct {
-	Text     string    `diff:"Text"`
-	Language string    `diff:"Language"`
-	LastEdit time.Time `diff:"LastEdit"`
+	Text     string    `json:"Text" diff:"Text"`
+	Language string    `json:"Language" diff:"Language"`
+	LastEdit time.Time `json:"LastEdit" diff:"LastEdit"`
 
-	Users map[string]*User `diff:"Users"`
+	Users map[string]*User `json:"Users" diff:"Users"`
 }
 
 func NewSessionManager(c *redis.Client) *SessionManager {
@@ -110,6 +111,7 @@ func updateSessionTextProcessor(reqInt interface{}, s *Session) interface{} {
 	} else {
 		s.Users[req.UserID] = &User{
 			ID:       req.UserID,
+			Index:    len(s.Users),
 			Position: newCursorPos,
 			LastEdit: now,
 		}
@@ -122,7 +124,7 @@ func updateSessionTextProcessor(reqInt interface{}, s *Session) interface{} {
 			continue
 		}
 		otherUsers = append(otherUsers, OtherUser{
-			ID:        u.ID,
+			Index:     u.Index,
 			CursorPos: u.Position,
 		})
 	}

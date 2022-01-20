@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -65,7 +66,7 @@ func TestLoadSession(t *testing.T) {
 
 	userID1 := "user_1"
 	date1 := time.Date(2015, 2, 13, 0, 0, 0, 0, time.UTC)
-	userID2 := "user_1"
+	userID2 := "user_2"
 	date2 := time.Date(2018, 9, 26, 0, 0, 0, 0, time.UTC)
 
 	existingSessionID1 := sm.NewSession()
@@ -93,6 +94,12 @@ func TestLoadSession(t *testing.T) {
 	nowSource = func() time.Time { return date2 }
 
 	if _, err := sm.UpdateSessionText(existingSessionID2, &UpdateSessionRequest{
+		UserID: userID1,
+	}); err != nil {
+		t.Fatalf("Failed to update session text: %v", err)
+	}
+
+	if _, err := sm.UpdateSessionText(existingSessionID2, &UpdateSessionRequest{
 		NewText: anotherSampleText,
 		UserID:  userID2,
 	}); err != nil {
@@ -114,6 +121,7 @@ func TestLoadSession(t *testing.T) {
 			Users: map[string]*User{
 				userID1: {
 					ID:       userID1,
+					Index:    0,
 					LastEdit: date1,
 					Position: 0,
 				},
@@ -127,8 +135,15 @@ func TestLoadSession(t *testing.T) {
 			Language: defaultLanguage,
 			LastEdit: date2,
 			Users: map[string]*User{
+				userID1: {
+					ID:       userID1,
+					Index:    0,
+					LastEdit: date2,
+					Position: 0,
+				},
 				userID2: {
 					ID:       userID2,
+					Index:    1,
 					LastEdit: date2,
 					Position: 0,
 				},
@@ -155,8 +170,10 @@ func TestLoadSession(t *testing.T) {
 
 			if len(changelog) > 0 {
 				t.Errorf("Following changes were detected:\n%v", changelog)
-				t.Errorf("Want:\n%v", tc.wantSession)
-				t.Errorf("Got:\n%v", s)
+				wsJson, _ := json.MarshalIndent(tc.wantSession, "", "  ")
+				sJson, _ := json.MarshalIndent(s, "", "  ")
+				t.Errorf("Want:\n%v", string(wsJson))
+				t.Errorf("Got:\n%v", string(sJson))
 			}
 		})
 	}

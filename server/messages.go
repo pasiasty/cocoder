@@ -8,8 +8,8 @@ type UpdateSessionRequest struct {
 }
 
 type OtherUser struct {
-	ID        string `json:"ID" diff:"id"`
-	CursorPos int    `json:"CursorPos" diff:"cursor_pos"`
+	Index     int `json:"Index" diff:"index"`
+	CursorPos int `json:"CursorPos" diff:"cursor_pos"`
 }
 
 type UpdateSessionResponse struct {

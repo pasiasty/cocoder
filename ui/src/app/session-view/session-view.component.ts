@@ -138,8 +138,10 @@ export class SessionViewComponent implements OnInit {
 
 
   pollBackendTextState() {
+    if (this.languageState == 'triggered')
+      this.languageState = 'stable';
+
     this.pollingSubscription.unsubscribe();
-    this.languageState = 'stable';
     const currText = this.editor!.getValue();
     const formData = new FormData();
     formData.append("BaseText", this.lastBaseText);

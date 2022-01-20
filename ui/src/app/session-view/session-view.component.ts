@@ -7,7 +7,7 @@ import * as monaco from "monaco-editor";
 import { CookieService } from 'ngx-cookie-service';
 import { environment } from '../../environments/environment';
 import { retry } from 'rxjs/operators';
-import { interval, Subscription } from 'rxjs';
+import { interval, Observable, Subscription } from 'rxjs';
 import { Title } from '@angular/platform-browser';
 
 type EditResponse = {
@@ -43,6 +43,7 @@ export class SessionViewComponent implements OnInit {
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "typescript", "r");
   sessionID = "";
 
+  intervalObservable: Observable<number>;
   pollingSubscription!: Subscription;
 
   lastBaseText = "";
@@ -56,6 +57,7 @@ export class SessionViewComponent implements OnInit {
     private cdRef: ChangeDetectorRef,
     private titleService: Title) {
     this.editor = null;
+    this.intervalObservable = interval(500);
   }
 
   ngOnInit(): void {
@@ -115,6 +117,7 @@ export class SessionViewComponent implements OnInit {
 
 
   pollBackendTextState() {
+    this.pollingSubscription.unsubscribe();
     const currText = this.editor!.getValue();
     const formData = new FormData();
     formData.append("BaseText", this.lastBaseText);
@@ -135,6 +138,11 @@ export class SessionViewComponent implements OnInit {
       },
       err => {
         console.log("Failed to update session:", err);
+      },
+      () => {
+        this.pollingSubscription = this.intervalObservable.subscribe(
+          _ => { this.pollBackendTextState() }
+        );
       }
     );
   }
@@ -165,7 +173,7 @@ export class SessionViewComponent implements OnInit {
       this.cdRef.detectChanges();
     });
 
-    this.pollingSubscription = interval(500).subscribe(
+    this.pollingSubscription = this.intervalObservable.subscribe(
       _ => { this.pollBackendTextState() }
     );
 

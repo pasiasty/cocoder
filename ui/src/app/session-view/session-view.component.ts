@@ -1,28 +1,12 @@
-import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatSelectChange } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
 
 import * as monaco from "monaco-editor";
 import { CookieService } from 'ngx-cookie-service';
-import { environment } from '../../environments/environment';
-import { retry } from 'rxjs/operators';
 import { interval, Observable, Subscription } from 'rxjs';
 import { Title } from '@angular/platform-browser';
-
-type EditResponse = {
-  NewText: string
-  CursorPos: number
-  WasMerged: boolean
-  Language: string
-}
-
-type GetSessionResponse = {
-  Text: string
-  Language: string
-}
-
-type LanguageState = 'stable' | 'triggering' | 'triggered';
+import { ApiService, GetSessionResponse } from '../api.service';
 
 @Component({
   selector: 'app-session-view',
@@ -52,16 +36,14 @@ export class SessionViewComponent implements OnInit {
 
   sessionInvalid = false;
 
-  languageState: LanguageState = 'stable';
-
   initialSessionPromise!: Promise<GetSessionResponse | null>;
 
   constructor(
     private route: ActivatedRoute,
     private cookieService: CookieService,
-    private httpClient: HttpClient,
     private cdRef: ChangeDetectorRef,
-    private titleService: Title) {
+    private titleService: Title,
+    private apiService: ApiService) {
     this.editor = null;
     this.intervalObservable = interval(500);
   }
@@ -74,13 +56,12 @@ export class SessionViewComponent implements OnInit {
     });
     this.route.params.subscribe(params => {
       this.sessionID = params.session_id;
+      this.apiService.SetSessionID(this.sessionID);
     })
     this.editorGlobalOptions.theme = this.cookieService.get('theme');
     this.titleService.setTitle('coCoder ' + this.sessionID.substr(this.sessionID.length - 6));
 
-    this.initialSessionPromise = this.httpClient.get<GetSessionResponse>(environment.api + this.sessionID).pipe(
-      retry(3)
-    ).toPromise().then(data => {
+    this.initialSessionPromise = this.apiService.GetSession().then(data => {
       this.editorConstructOptions.language = data.Language;
       this.cdRef.detectChanges();
       return data;
@@ -138,37 +119,32 @@ export class SessionViewComponent implements OnInit {
 
 
   pollBackendTextState() {
-    if (this.languageState == 'triggered')
-      this.languageState = 'stable';
-
     this.pollingSubscription.unsubscribe();
     const currText = this.editor!.getValue();
-    const formData = new FormData();
-    formData.append("BaseText", this.lastBaseText);
-    formData.append("NewText", currText);
-    formData.append("CursorPos", this.positionToNumber(this.editor!.getPosition!(), currText).toString());
-    this.httpClient.post<EditResponse>(environment.api + this.sessionID, formData).pipe(
-      retry(3)
-    ).subscribe(
-      data => {
-        this.lastBaseText = data.NewText;
-        if (data.Language && this.languageState == 'stable')
-          this.setLanguage(data.Language);
 
-        if (data.WasMerged) {
-          this.editor!.setValue(data.NewText);
-          this.editor!.setPosition(this.numberToPosition(data.CursorPos, data.NewText));
-        }
-      },
-      err => {
-        console.log("Failed to update session:", err);
-      },
-      () => {
-        this.pollingSubscription = this.intervalObservable.subscribe(
-          _ => { this.pollBackendTextState() }
-        );
-      }
-    );
+    this.apiService.UpdateSession(
+      this.lastBaseText,
+      currText,
+      this.positionToNumber(this.editor!.getPosition!(), currText)).subscribe({
+        next: data => {
+          this.lastBaseText = data.NewText;
+          if (data.Language)
+            this.setLanguageInUI(data.Language);
+
+          if (data.WasMerged) {
+            this.editor!.setValue(data.NewText);
+            this.editor!.setPosition(this.numberToPosition(data.CursorPos, data.NewText));
+          }
+        },
+        error: err => {
+          console.log("Failed to update session:", err);
+        },
+        complete: () => {
+          this.pollingSubscription = this.intervalObservable.subscribe(
+            _ => { this.pollBackendTextState() }
+          );
+        },
+      });
   }
 
   updateEditorOptions() {
@@ -196,12 +172,12 @@ export class SessionViewComponent implements OnInit {
         );
 
         if (this.editorConstructOptions.language !== undefined)
-          this.setLanguage(this.editorConstructOptions.language);
+          this.setLanguageInUI(this.editorConstructOptions.language);
       },
     );
   }
 
-  setLanguage(l: string) {
+  setLanguageInUI(l: string) {
     if (l == this.editorConstructOptions.language) {
       return;
     }
@@ -210,26 +186,12 @@ export class SessionViewComponent implements OnInit {
     const model = monaco.editor.createModel(this.editor!.getValue(), l, monaco.Uri.parse(l));
     this.editor?.getModel()?.dispose();
     this.editor?.setModel(model);
+    this.editor?.onKeyDown
   }
 
   onLanguageChange(ev: MatSelectChange) {
-    this.languageState = 'triggering';
-    this.setLanguage(ev.value);
-    const formData = new FormData();
-    formData.append("Language", ev.value);
-    this.httpClient.post(environment.api + this.sessionID + '/language', formData).pipe(
-      retry(3)
-    ).subscribe(
-      data => {
-        console.log(data);
-      },
-      err => {
-        console.log("Failed to update session language:", err);
-      },
-      () => {
-        this.languageState = 'triggered';
-      }
-    );
+    this.setLanguageInUI(ev.value);
+    this.apiService.SetLanguage(ev.value);
   }
 
   onThemeChange(ev: MatSelectChange) {

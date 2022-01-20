@@ -15,6 +15,7 @@ import * as monaco from 'monaco-editor';
 })
 export class SessionViewComponent implements OnInit {
   selectedLanguage!: string;
+  selectedTheme!: string;
 
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "typescript", "r");
   sessionID = "";
@@ -26,7 +27,6 @@ export class SessionViewComponent implements OnInit {
   sessionInvalid = false;
 
   initialSessionPromise!: Promise<GetSessionResponse | null>;
-  initialTheme!: string;
 
   constructor(
     private route: ActivatedRoute,
@@ -34,7 +34,7 @@ export class SessionViewComponent implements OnInit {
     private titleService: Title,
     private apiService: ApiService,
     private editorService: EditorService) {
-    this.initialTheme = this.editorService.Theme();
+    this.selectedTheme = this.editorService.Theme();
   }
 
   ngOnInit(): void {

@@ -48,7 +48,9 @@ func NewSessionManager(c *redis.Client) *SessionManager {
 
 func (m *SessionManager) NewSession() SessionID {
 	newSessionID := SessionID(uuid.New().String())
-	if err := m.c.Set(string(newSessionID), serializeSession(&Session{}), sessionExpiry).Err(); err != nil {
+	if err := m.c.Set(string(newSessionID), serializeSession(&Session{
+		Language: "plaintext",
+	}), sessionExpiry).Err(); err != nil {
 		log.Printf("Could not create the session: %v", err)
 		return ""
 	}

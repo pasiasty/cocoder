@@ -62,17 +62,24 @@ func TestSerializeDeserialize(t *testing.T) {
 func TestLoadSession(t *testing.T) {
 	sm := prepareSessionManager(t)
 
-	existingSessionID := sm.NewSession()
+	existingSessionID1 := sm.NewSession()
+	existingSessionID2 := sm.NewSession()
 	nonexistingSessionID := "abc123"
 
 	sampleText := "abc"
 	sampleLanguage := "python"
 
-	if _, err := sm.UpdateSessionText(existingSessionID, &UpdateSessionRequest{NewText: sampleText}); err != nil {
+	anotherSampleText := "def"
+	defaultLanguage := "plaintext"
+
+	if _, err := sm.UpdateSessionText(existingSessionID1, &UpdateSessionRequest{NewText: sampleText}); err != nil {
 		t.Fatalf("Failed to update session text: %v", err)
 	}
-	if err := sm.UpdateLanguage(existingSessionID, &UpdateLanguageRequest{Language: sampleLanguage}); err != nil {
+	if err := sm.UpdateLanguage(existingSessionID1, &UpdateLanguageRequest{Language: sampleLanguage}); err != nil {
 		t.Fatalf("Failed to update session language: %v", err)
+	}
+	if _, err := sm.UpdateSessionText(existingSessionID2, &UpdateSessionRequest{NewText: anotherSampleText}); err != nil {
+		t.Fatalf("Failed to update session text: %v", err)
 	}
 
 	for _, tc := range []struct {
@@ -82,10 +89,17 @@ func TestLoadSession(t *testing.T) {
 		wantSession *Session
 	}{{
 		name:      "proper_session",
-		sessionID: existingSessionID,
+		sessionID: existingSessionID1,
 		wantSession: &Session{
 			Text:     sampleText,
 			Language: sampleLanguage,
+		},
+	}, {
+		name:      "proper_session_default_language",
+		sessionID: existingSessionID2,
+		wantSession: &Session{
+			Text:     anotherSampleText,
+			Language: defaultLanguage,
 		},
 	}, {
 		name:      "non_existing_session",
@@ -127,6 +141,7 @@ func editResponseForTesting(es string, wasMerged bool) *UpdateSessionResponse {
 		NewText:   strings.Replace(es, "|", "", 1),
 		CursorPos: i,
 		WasMerged: wasMerged,
+		Language:  "plaintext",
 	}
 }
 

@@ -22,13 +22,15 @@ type GetSessionResponse = {
   Language: string
 }
 
+type LanguageState = 'stable' | 'triggering' | 'triggered';
+
 @Component({
   selector: 'app-session-view',
   templateUrl: './session-view.component.html',
   styleUrls: ['./session-view.component.scss']
 })
 export class SessionViewComponent implements OnInit {
-  editorConstructOptions: monaco.editor.IStandaloneEditorConstructionOptions = { language: 'plaintext' };
+  editorConstructOptions: monaco.editor.IStandaloneEditorConstructionOptions = {};
 
   editorOptions: monaco.editor.IEditorOptions = {
     cursorBlinking: 'smooth',
@@ -49,6 +51,10 @@ export class SessionViewComponent implements OnInit {
   lastBaseText = "";
 
   sessionInvalid = false;
+
+  languageState: LanguageState = 'stable';
+
+  initialSessionPromise!: Promise<GetSessionResponse | null>;
 
   constructor(
     private route: ActivatedRoute,
@@ -71,6 +77,21 @@ export class SessionViewComponent implements OnInit {
     })
     this.editorGlobalOptions.theme = this.cookieService.get('theme');
     this.titleService.setTitle('coCoder ' + this.sessionID.substr(this.sessionID.length - 6));
+
+    this.initialSessionPromise = this.httpClient.get<GetSessionResponse>(environment.api + this.sessionID).pipe(
+      retry(3)
+    ).toPromise().then(data => {
+      this.editorConstructOptions.language = data.Language;
+      this.cdRef.detectChanges();
+      return data;
+    },
+      err => {
+        console.log("Failed to get session:", err);
+        this.sessionInvalid = true;
+        this.cdRef.detectChanges();
+        return null;
+      },
+    );
   }
 
   ngOnDestroy() {
@@ -118,6 +139,7 @@ export class SessionViewComponent implements OnInit {
 
   pollBackendTextState() {
     this.pollingSubscription.unsubscribe();
+    this.languageState = 'stable';
     const currText = this.editor!.getValue();
     const formData = new FormData();
     formData.append("BaseText", this.lastBaseText);
@@ -128,7 +150,7 @@ export class SessionViewComponent implements OnInit {
     ).subscribe(
       data => {
         this.lastBaseText = data.NewText;
-        if (data.Language)
+        if (data.Language && this.languageState == 'stable')
           this.setLanguage(data.Language);
 
         if (data.WasMerged) {
@@ -159,26 +181,22 @@ export class SessionViewComponent implements OnInit {
     this.editor = editor;
     this.updateEditorOptions();
 
-    this.httpClient.get<GetSessionResponse>(environment.api + this.sessionID).pipe(
-      retry(3)
-    ).subscribe((data) => {
-      this.editor?.setValue(data.Text);
-      this.lastBaseText = data.Text;
-      this.editorConstructOptions.language = data.Language;
-      this.cdRef.detectChanges();
-    }, (err) => {
-      console.log("Failed to get session:", err);
-      this.sessionInvalid = true;
-      this.pollingSubscription.unsubscribe();
-      this.cdRef.detectChanges();
-    });
+    this.initialSessionPromise.then(
+      data => {
+        if (data === null) {
+          return;
+        }
+        this.editor?.setValue(data.Text);
+        this.lastBaseText = data.Text;
 
-    this.pollingSubscription = this.intervalObservable.subscribe(
-      _ => { this.pollBackendTextState() }
+        this.pollingSubscription = this.intervalObservable.subscribe(
+          _ => { this.pollBackendTextState() }
+        );
+
+        if (this.editorConstructOptions.language !== undefined)
+          this.setLanguage(this.editorConstructOptions.language);
+      },
     );
-
-    if (this.editorConstructOptions.language !== undefined)
-      this.setLanguage(this.editorConstructOptions.language);
   }
 
   setLanguage(l: string) {
@@ -193,6 +211,7 @@ export class SessionViewComponent implements OnInit {
   }
 
   onLanguageChange(ev: MatSelectChange) {
+    this.languageState = 'triggering';
     this.setLanguage(ev.value);
     const formData = new FormData();
     formData.append("Language", ev.value);
@@ -200,10 +219,13 @@ export class SessionViewComponent implements OnInit {
       retry(3)
     ).subscribe(
       data => {
-        console.log(data)
+        console.log(data);
       },
       err => {
         console.log("Failed to update session language:", err);
+      },
+      () => {
+        this.languageState = 'triggered';
       }
     );
   }

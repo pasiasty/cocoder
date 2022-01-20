@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map, retry } from 'rxjs/operators';
+import { interval, Observable } from 'rxjs';
+import { filter, map, retry } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 import { CookieService } from 'ngx-cookie-service';
@@ -35,6 +35,10 @@ export class ApiService {
   sessionID !: string;
   userID: string;
 
+  pollingObservable: Observable<number>;
+
+  updateSessionPending = false;
+
   constructor(
     private httpClient: HttpClient,
     private cookieService: CookieService,
@@ -44,6 +48,14 @@ export class ApiService {
       this.userID = uuidv4();
       this.cookieService.set('user_id', this.userID, undefined, "/");
     }
+
+    this.pollingObservable = interval(500).pipe(filter(_ => {
+      return !this.updateSessionPending;
+    }));
+  }
+
+  PollingObservable(): Observable<number> {
+    return this.pollingObservable;
   }
 
   SetSessionID(sessionID: string) {
@@ -51,6 +63,7 @@ export class ApiService {
   }
 
   UpdateSession(baseText: string, newText: string, cursorPos: number): Observable<EditResponse> {
+    this.updateSessionPending = true;
     if (this.languageState == 'triggered')
       this.languageState = 'stable';
 
@@ -63,6 +76,7 @@ export class ApiService {
     return this.httpClient.post<EditResponse>(environment.api + this.sessionID, formData).pipe(
       retry(3),
       map(data => {
+        this.updateSessionPending = false;
         if (this.languageState != 'stable')
           data.Language = '';
         return data;

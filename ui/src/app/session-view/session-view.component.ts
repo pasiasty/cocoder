@@ -19,7 +19,6 @@ export class SessionViewComponent implements OnInit {
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "typescript", "r");
   sessionID = "";
 
-  intervalObservable!: Observable<number>;
   pollingSubscription!: Subscription;
 
   lastBaseText = "";
@@ -39,8 +38,6 @@ export class SessionViewComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.intervalObservable = interval(500);
-
     this.route.params.subscribe(params => {
       this.sessionID = params.session_id;
       this.apiService.SetSessionID(this.sessionID);
@@ -70,8 +67,6 @@ export class SessionViewComponent implements OnInit {
   }
 
   pollBackendTextState() {
-    this.pollingSubscription.unsubscribe();
-
     this.apiService.UpdateSession(
       this.lastBaseText,
       this.editorService.Text(),
@@ -89,11 +84,6 @@ export class SessionViewComponent implements OnInit {
         error: err => {
           console.log("Failed to update session:", err);
         },
-        complete: () => {
-          this.pollingSubscription = this.intervalObservable.subscribe(
-            _ => { this.pollBackendTextState() }
-          );
-        },
       });
   }
 
@@ -109,7 +99,7 @@ export class SessionViewComponent implements OnInit {
         this.editorService.SetLanguage(data.Language);
         this.lastBaseText = data.Text;
 
-        this.pollingSubscription = this.intervalObservable.subscribe(
+        this.pollingSubscription = this.apiService.PollingObservable().subscribe(
           _ => { this.pollBackendTextState() }
         );
       },

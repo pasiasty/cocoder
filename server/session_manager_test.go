@@ -9,14 +9,18 @@ import (
 	"github.com/r3labs/diff/v2"
 )
 
-func TestNewSession(t *testing.T) {
+func prepareSessionManager(t *testing.T) *SessionManager {
 	mr, err := miniredis.Run()
 	if err != nil {
 		t.Fatalf("Failed to setup miniredis: %v", err)
 	}
-	sm := NewSessionManager(redis.NewClient(&redis.Options{
+	return NewSessionManager(redis.NewClient(&redis.Options{
 		Addr: mr.Addr(),
 	}))
+}
+
+func TestNewSession(t *testing.T) {
+	sm := prepareSessionManager(t)
 	createdIDs := make(map[SessionID]interface{})
 	for i := 0; i < 100; i++ {
 		newID := sm.NewSession()
@@ -56,31 +60,56 @@ func TestSerializeDeserialize(t *testing.T) {
 }
 
 func TestLoadSession(t *testing.T) {
-	mr, err := miniredis.Run()
-	if err != nil {
-		t.Fatalf("Failed to setup miniredis: %v", err)
-	}
-	sm := NewSessionManager(redis.NewClient(&redis.Options{
-		Addr: mr.Addr(),
-	}))
+	sm := prepareSessionManager(t)
+
+	existingSessionID := sm.NewSession()
+	nonexistingSessionID := "abc123"
 
 	sampleText := "abc"
+	sampleLanguage := "python"
 
-	s := sm.NewSession()
-	sm.UpdateSessionText(s, &UpdateSessionRequest{NewText: sampleText})
-
-	session, err := sm.LoadSession(s)
-	if err != nil {
-		t.Errorf("Session does not exist, but should: %v", err)
+	if _, err := sm.UpdateSessionText(existingSessionID, &UpdateSessionRequest{NewText: sampleText}); err != nil {
+		t.Fatalf("Failed to update session text: %v", err)
 	}
-	if session.Text != sampleText {
-		t.Errorf("Session got wrong text, want: %v, got: %v", sampleText, session.Text)
+	if err := sm.UpdateLanguage(existingSessionID, &UpdateLanguageRequest{Language: sampleLanguage}); err != nil {
+		t.Fatalf("Failed to update session language: %v", err)
 	}
 
-	s = "abc"
+	for _, tc := range []struct {
+		name        string
+		sessionID   SessionID
+		wantError   bool
+		wantSession *Session
+	}{{
+		name:      "proper_session",
+		sessionID: existingSessionID,
+		wantSession: &Session{
+			Text:     sampleText,
+			Language: sampleLanguage,
+		},
+	}, {
+		name:      "non_existing_session",
+		sessionID: SessionID(nonexistingSessionID),
+		wantError: true,
+	}} {
+		t.Run(tc.name, func(t *testing.T) {
+			s, err := sm.LoadSession(tc.sessionID)
+			if err != nil && !tc.wantError {
+				t.Errorf("LoadSession shouldn't have failed but did: %v", err)
+			}
+			if err == nil && tc.wantError {
+				t.Error("LoadSession should've failed, but didn't")
+			}
 
-	if _, err := sm.LoadSession(s); err == nil {
-		t.Errorf("Session '%v' should not exist but does", s)
+			changelog, err := diff.Diff(s, tc.wantSession)
+			if err != nil {
+				t.Fatalf("Diffing failed, but shouldn't: %v", err)
+			}
+
+			if len(changelog) > 0 {
+				t.Errorf("Following changes were detected:\n%v", changelog)
+			}
+		})
 	}
 }
 
@@ -151,14 +180,7 @@ func TestUpdateSessionText(t *testing.T) {
 			if tc.name != "simultaneous_edit" {
 				t.Skip()
 			}
-			mr, err := miniredis.Run()
-			if err != nil {
-				t.Fatalf("Failed to setup miniredis: %v", err)
-			}
-			c := redis.NewClient(&redis.Options{
-				Addr: mr.Addr(),
-			})
-			sm := NewSessionManager(c)
+			sm := prepareSessionManager(t)
 			s := sm.NewSession()
 
 			if _, err := sm.UpdateSessionText(s, &UpdateSessionRequest{NewText: tc.initialState}); err != nil {
@@ -181,8 +203,6 @@ func TestUpdateSessionText(t *testing.T) {
 
 			if len(changelog) > 0 {
 				t.Errorf("Following changes were detected:\n%v", changelog)
-				t.Errorf("Want:\n%v", wantEs)
-				t.Errorf("Got:\n%v", resEs)
 			}
 		})
 	}

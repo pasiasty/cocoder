@@ -33,7 +33,7 @@ type SessionManager struct {
 
 type Session struct {
 	Text     string `diff:"Text"`
-	Language string `diff:"Text"`
+	Language string `diff:"Language"`
 }
 
 func NewSessionManager(c *redis.Client) *SessionManager {
@@ -68,7 +68,8 @@ func (m *SessionManager) LoadSession(session SessionID) (*Session, error) {
 	}
 }
 
-func transform(req *UpdateSessionRequest, s *Session) *UpdateSessionResponse {
+func updateSessionTextProcessor(reqInt interface{}, s *Session) interface{} {
+	req := reqInt.(*UpdateSessionRequest)
 	if req.CursorPos < 0 || req.CursorPos > len(req.NewText) {
 		req.CursorPos = 0
 	}
@@ -111,8 +112,10 @@ func deserializeSession(s string) *Session {
 	return res
 }
 
-func (m *SessionManager) UpdateSessionText(sessionID SessionID, req *UpdateSessionRequest) (*UpdateSessionResponse, error) {
-	resp := &UpdateSessionResponse{}
+type requestProcessor = func(req interface{}, s *Session) interface{}
+
+func (m *SessionManager) modifySession(sessionID SessionID, req interface{}, processor requestProcessor) (interface{}, error) {
+	resp := *new(interface{})
 	if err := m.c.Watch(func(tx *redis.Tx) error {
 		ss, err := tx.Get(string(sessionID)).Result()
 		if err != nil && err != redis.Nil {
@@ -121,35 +124,33 @@ func (m *SessionManager) UpdateSessionText(sessionID SessionID, req *UpdateSessi
 		session := deserializeSession(ss)
 
 		_, err = tx.Pipelined(func(pipe redis.Pipeliner) error {
-			resp = transform(req, session)
+			resp = processor(req, session)
 			pipe.Set(string(sessionID), serializeSession(session), sessionExpiry)
 			return nil
 		})
 		return err
 	}, string(sessionID)); err != nil {
-		return nil, fmt.Errorf("failed to update session '%s': %v", sessionID, err)
+		return nil, fmt.Errorf("failed to modify session '%s': %v", sessionID, err)
 	}
 
 	return resp, nil
 }
 
-func (m *SessionManager) UpdateLanguage(sessionID SessionID, req *UpdateLanguageRequest) error {
-	if err := m.c.Watch(func(tx *redis.Tx) error {
-		ss, err := tx.Get(string(sessionID)).Result()
-		if err != nil && err != redis.Nil {
-			return err
-		}
-		session := deserializeSession(ss)
-
-		_, err = tx.Pipelined(func(pipe redis.Pipeliner) error {
-			session.Language = req.Language
-			pipe.Set(string(sessionID), serializeSession(session), sessionExpiry)
-			return nil
-		})
-		return err
-	}, string(sessionID)); err != nil {
-		return fmt.Errorf("failed to update session '%s': %v", sessionID, err)
+func (m *SessionManager) UpdateSessionText(sessionID SessionID, req *UpdateSessionRequest) (*UpdateSessionResponse, error) {
+	resp, err := m.modifySession(sessionID, req, updateSessionTextProcessor)
+	if err != nil {
+		return nil, err
 	}
+	return resp.(*UpdateSessionResponse), nil
+}
 
+func updateLanguageProcessor(reqInt interface{}, s *Session) interface{} {
+	req := reqInt.(*UpdateLanguageRequest)
+	s.Language = req.Language
 	return nil
+}
+
+func (m *SessionManager) UpdateLanguage(sessionID SessionID, req *UpdateLanguageRequest) error {
+	_, err := m.modifySession(sessionID, req, updateLanguageProcessor)
+	return err
 }

@@ -124,10 +124,11 @@ export class EditorService {
 
   userToDecoration(u: OtherUser): monaco.editor.IModelDeltaDecoration {
     let userPos = this.numberToPosition(u.CursorPos);
+    let colorIdx = u.Index % 5 + 1
     return {
       range: new monaco.Range(userPos.lineNumber, userPos.column, userPos.lineNumber, userPos.column + 1),
       options: {
-        className: `other-user-cursor-${u.Index} % 5`,
+        className: `other-user-cursor-${colorIdx}`,
         stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
       },
     }

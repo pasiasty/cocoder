@@ -11,7 +11,13 @@ import * as monaco from 'monaco-editor';
 @Component({
   selector: 'app-session-view',
   templateUrl: './session-view.component.html',
-  styleUrls: ['./session-view.component.scss']
+  styleUrls: ['./session-view.component.scss'],
+  styles: [`
+  .my-super-cursor {
+    background: black;
+    width: 100px !important;
+  }
+  `]
 })
 export class SessionViewComponent implements OnInit {
   selectedLanguage!: string;
@@ -80,6 +86,8 @@ export class SessionViewComponent implements OnInit {
             this.editorService.SetText(data.NewText);
             this.editorService.SetPosition(data.CursorPos);
           }
+
+          this.editorService.ShowOtherUsers(data.OtherUsers);
         },
         error: err => {
           console.log("Failed to update session:", err);

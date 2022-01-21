@@ -5,6 +5,8 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -17,11 +19,21 @@ var (
 	sessionExpiry = time.Hour * 24 * 7
 
 	nowSource = time.Now
+
+	cursorSpecialGlyph = "!!@@##AA"
 )
 
-const (
-	cursorSpecialSequence = "阳цąß"
-)
+func cursorSpecialSequenceFormat() string {
+	return cursorSpecialGlyph + "%v" + cursorSpecialGlyph
+}
+
+func cursorSpecialSequenceRe() *regexp.Regexp {
+	glyphEscaped := ""
+	for _, c := range cursorSpecialGlyph {
+		glyphEscaped += fmt.Sprintf("[%s]", string(c))
+	}
+	return regexp.MustCompile("(" + glyphEscaped + "[0-9]+" + glyphEscaped + ")")
+}
 
 func init() {
 	gob.Register(&Session{})
@@ -84,7 +96,21 @@ func (m *SessionManager) LoadSession(session SessionID) (*Session, error) {
 	}
 }
 
+func usersSortedByPositions(m map[string]*User) []*User {
+	res := []*User{}
+	for _, u := range m {
+		res = append(res, u)
+	}
+
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Position > res[j].Position
+	})
+	return res
+}
+
 func updateSessionTextProcessor(reqInt interface{}, s *Session) interface{} {
+	now := nowSource()
+
 	req := reqInt.(*UpdateSessionRequest)
 	if req.CursorPos < 0 || req.CursorPos > len(req.NewText) {
 		req.CursorPos = 0
@@ -92,30 +118,47 @@ func updateSessionTextProcessor(reqInt interface{}, s *Session) interface{} {
 
 	wasMerged := req.BaseText != s.Text
 
-	req.NewText = req.NewText[:req.CursorPos] + cursorSpecialSequence + req.NewText[req.CursorPos:]
-
-	dmp := diffmatchpatch.New()
-	userPatches := dmp.PatchMake(dmp.DiffMain(req.BaseText, req.NewText, false))
-	textWithCursor, _ := dmp.PatchApply(userPatches, s.Text)
-
-	newCursorPos := strings.Index(textWithCursor, cursorSpecialSequence)
-	s.Text = strings.ReplaceAll(textWithCursor, cursorSpecialSequence, "")
-
-	now := nowSource()
-
-	s.LastEdit = now
-
 	if user, ok := s.Users[req.UserID]; ok {
-		user.Position = newCursorPos
+		user.Position = req.CursorPos
 		user.LastEdit = now
 	} else {
 		s.Users[req.UserID] = &User{
 			ID:       req.UserID,
 			Index:    len(s.Users),
-			Position: newCursorPos,
+			Position: req.CursorPos,
 			LastEdit: now,
 		}
 	}
+
+	for _, u := range usersSortedByPositions(s.Users) {
+		if u.ID == req.UserID {
+			req.NewText = req.NewText[:u.Position] + fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index) + req.NewText[u.Position:]
+		} else {
+			s.Text = s.Text[:u.Position] + fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index) + s.Text[u.Position:]
+		}
+
+	}
+
+	dmp := diffmatchpatch.New()
+	userPatches := dmp.PatchMake(dmp.DiffMain(req.BaseText, req.NewText, false))
+	textWithCursors, _ := dmp.PatchApply(userPatches, s.Text)
+
+	newCursorPos := -1
+
+	for _, u := range s.Users {
+		rawNewPosition := strings.Index(textWithCursors, fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index))
+		if rawNewPosition < 0 {
+			rawNewPosition = 0
+		}
+		u.Position = len(cursorSpecialSequenceRe().ReplaceAllString(textWithCursors[:rawNewPosition], ""))
+		if u.ID == req.UserID {
+			newCursorPos = u.Position
+		}
+	}
+
+	s.Text = cursorSpecialSequenceRe().ReplaceAllString(textWithCursors, "")
+
+	s.LastEdit = now
 
 	otherUsers := []OtherUser{}
 

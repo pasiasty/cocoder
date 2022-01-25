@@ -7,7 +7,14 @@ import (
 	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
+	"github.com/gorilla/websocket"
 )
+
+var wsupgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
+}
 
 type RouteManager struct {
 	r  *gin.Engine
@@ -33,6 +40,7 @@ func CORSMiddleware() gin.HandlerFunc {
 func NewRouterManager(c *redis.Client) *RouteManager {
 	r := gin.Default()
 	sm := NewSessionManager(c)
+	um := NewUsersManager(sm)
 
 	r.Use(limits.RequestSizeLimiter(1024 * 1024))
 	r.Use(CORSMiddleware())
@@ -51,6 +59,19 @@ func NewRouterManager(c *redis.Client) *RouteManager {
 		} else {
 			c.String(http.StatusNotFound, fmt.Sprintf("error while loading session: %v", err))
 		}
+	})
+
+	g.GET("/:session_id/:user_id/ws", func(c *gin.Context) {
+		sessionID := SessionID(c.Param("session_id"))
+		userID := UserID(c.Param("user_id"))
+
+		conn, err := wsupgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		um.RegisterUser(sessionID, userID, conn)
 	})
 
 	g.POST("/:session_id/language", func(c *gin.Context) {

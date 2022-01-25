@@ -1,10 +1,10 @@
 package server
 
 type UpdateSessionRequest struct {
-	BaseText  string `form:"BaseText" diff:"base_text"`
-	NewText   string `form:"NewText" diff:"new_text"`
-	CursorPos int    `form:"CursorPos" diff:"cursor_pos"`
-	UserID    string `form:"UserID" diff:"user_id"`
+	BaseText  string `form:"BaseText" diff:"BaseText" json:"BaseText"`
+	NewText   string `form:"NewText" diff:"NewText" json:"NewText"`
+	CursorPos int    `form:"CursorPos" diff:"CursorPos" json:"CursorPos"`
+	UserID    string `form:"UserID" diff:"UserID" json:"UserID"`
 }
 
 type OtherUser struct {

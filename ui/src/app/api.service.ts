@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { delay, filter, map, retry, tap } from 'rxjs/operators';
+import { map, retry, tap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 import { CookieService } from 'ngx-cookie-service';
@@ -59,13 +59,21 @@ export class ApiService {
     return this.userID;
   }
 
+  WsUri(): string {
+    if (environment.apiWs.startsWith('ws://')) {
+      return environment.apiWs;
+    }
+    return window.location.origin.replace('http', 'ws') + environment.apiWs;
+  }
+
   SetSessionID(sessionID: string) {
     this.sessionID = sessionID;
-    this.subject = webSocket<EditRequest>(environment.apiWs + sessionID + "/" + this.userID + "/ws");
+    this.subject = webSocket<EditRequest>(this.WsUri() + sessionID + "/" + this.userID + "/ws");
   }
 
   SessionObservable(): Observable<EditResponse> {
     return this.subject.pipe(
+      retry(),
       map(data => data as EditResponse),
     );
   }

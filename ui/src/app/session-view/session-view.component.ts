@@ -7,6 +7,7 @@ import { Title } from '@angular/platform-browser';
 import { ApiService, GetSessionResponse } from '../api.service';
 import { EditorService } from '../editor.service';
 import * as monaco from 'monaco-editor';
+import { DiffMatchPatch } from 'diff-match-patch-typescript'
 
 @Component({
   selector: 'app-session-view',
@@ -23,7 +24,7 @@ export class SessionViewComponent implements OnInit {
   selectedLanguage!: string;
   selectedTheme!: string;
 
-  languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "typescript", "r");
+  languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "r");
   sessionID = "";
 
   sessionSubscription!: Subscription;
@@ -87,13 +88,17 @@ export class SessionViewComponent implements OnInit {
 
         this.sessionSubscription = this.apiService.SessionObservable().subscribe({
           next: data => {
-            this.lastBaseText = data.NewText;
             if (data.Language)
               this.setLanguageInUI(data.Language);
 
             if (data.NewText !== this.editorService.Text()) {
-              this.editorService.SetText(data.NewText);
+              let dmp = new DiffMatchPatch();
+              const patches = dmp.patch_make(this.lastBaseText, data.NewText);
+              const newText = dmp.patch_apply(patches, this.editorService.Text())[0];
+              this.editorService.SetText(newText);
             }
+
+            this.lastBaseText = data.NewText;
 
             this.editorService.UpdateCursors(data.Users);
           },

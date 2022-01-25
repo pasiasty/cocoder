@@ -2,12 +2,11 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatSelectChange } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
 
-import { interval, Observable, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { Title } from '@angular/platform-browser';
 import { ApiService, GetSessionResponse } from '../api.service';
 import { EditorService } from '../editor.service';
 import * as monaco from 'monaco-editor';
-import { DiffMatchPatch } from 'diff-match-patch-typescript'
 
 @Component({
   selector: 'app-session-view',
@@ -92,10 +91,7 @@ export class SessionViewComponent implements OnInit {
               this.setLanguageInUI(data.Language);
 
             if (data.NewText !== this.editorService.Text()) {
-              let dmp = new DiffMatchPatch();
-              const patches = dmp.patch_make(this.lastBaseText, data.NewText);
-              const newText = dmp.patch_apply(patches, this.editorService.Text())[0];
-              this.editorService.SetText(newText);
+              this.editorService.SetText(data.NewText);
             }
 
             this.lastBaseText = data.NewText;

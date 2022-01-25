@@ -12,12 +12,6 @@ import * as monaco from 'monaco-editor';
   selector: 'app-session-view',
   templateUrl: './session-view.component.html',
   styleUrls: ['./session-view.component.scss'],
-  styles: [`
-  .my-super-cursor {
-    background: black;
-    width: 100px !important;
-  }
-  `]
 })
 export class SessionViewComponent implements OnInit {
   selectedLanguage!: string;

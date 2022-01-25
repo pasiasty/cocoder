@@ -1,22 +1,28 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { interval, Observable } from 'rxjs';
-import { filter, map, retry } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { delay, filter, map, retry, tap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 import { CookieService } from 'ngx-cookie-service';
+import { webSocket, WebSocketSubject } from "rxjs/webSocket";
 
-export type OtherUser = {
+export type User = {
   Index: number
-  CursorPos: number
+  ID: string
+  Position: number
 }
+
+type EditRequest = {
+  BaseText: string
+  UserID: string
+} | EditResponse;
 
 export type EditResponse = {
   NewText: string
   CursorPos: number
-  WasMerged: boolean
   Language: string
-  OtherUsers: OtherUser[]
+  Users: User[]
 }
 
 export type GetSessionResponse = {
@@ -24,20 +30,18 @@ export type GetSessionResponse = {
   Language: string
 }
 
-type LanguageState = 'stable' | 'triggering' | 'triggered';
-
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
 
-  languageState: LanguageState = 'stable';
+  subject!: WebSocketSubject<EditRequest>;
+
+  lastLanguageUpdateTimestamp!: number;
+  lastUpdateTimestamp: number;
+  selectedLanguage!: string;
   sessionID !: string;
   userID: string;
-
-  pollingObservable: Observable<number>;
-
-  updateSessionPending = false;
 
   constructor(
     private httpClient: HttpClient,
@@ -48,58 +52,52 @@ export class ApiService {
       this.userID = uuidv4();
       this.cookieService.set('user_id', this.userID, undefined, "/");
     }
-
-    this.pollingObservable = interval(500).pipe(filter(_ => {
-      return !this.updateSessionPending;
-    }));
+    this.lastUpdateTimestamp = 0;
   }
 
-  PollingObservable(): Observable<number> {
-    return this.pollingObservable;
+  GetUserID(): string {
+    return this.userID;
   }
 
   SetSessionID(sessionID: string) {
     this.sessionID = sessionID;
+    this.subject = webSocket<EditRequest>(environment.apiWs + sessionID + "/" + this.userID + "/ws");
   }
 
-  UpdateSession(baseText: string, newText: string, cursorPos: number): Observable<EditResponse> {
-    this.updateSessionPending = true;
-    if (this.languageState == 'triggered')
-      this.languageState = 'stable';
-
-    const formData = new FormData();
-    formData.append("BaseText", baseText);
-    formData.append("NewText", newText);
-    formData.append("CursorPos", cursorPos.toString());
-    formData.append("UserID", this.userID);
-
-    return this.httpClient.post<EditResponse>(environment.api + this.sessionID, formData).pipe(
-      retry(3),
-      map(data => {
-        this.updateSessionPending = false;
-        if (this.languageState != 'stable')
-          data.Language = '';
-        return data;
-      }),
+  SessionObservable(): Observable<EditResponse> {
+    return this.subject.pipe(
+      map(data => data as EditResponse),
     );
+  }
+
+  UpdateSession(baseText: string, newText: string, cursorPos: number) {
+    this.lastUpdateTimestamp = Date.now();
+    let language = '';
+
+    if (Date.now() - this.lastLanguageUpdateTimestamp < 500) {
+      language = this.selectedLanguage;
+    }
+
+    const req: EditRequest = {
+      BaseText: baseText,
+      NewText: newText,
+      CursorPos: cursorPos,
+      UserID: this.userID,
+      Language: language,
+    }
+
+    this.subject.next(req);
   }
 
   GetSession(): Promise<GetSessionResponse> {
     return this.httpClient.get<GetSessionResponse>(environment.api + this.sessionID).pipe(
-      retry(3)
+      retry(3),
+      tap(data => this.selectedLanguage = data.Language),
     ).toPromise();
   }
 
   SetLanguage(language: string) {
-    this.languageState = 'triggering';
-
-    const formData = new FormData();
-    formData.append("Language", language);
-    this.httpClient.post(environment.api + this.sessionID + '/language', formData).pipe(
-      retry(3)
-    ).subscribe({
-      error: (err) => { console.log("Failed to update session language:", err); },
-      complete: () => { this.languageState = 'triggered'; },
-    });
+    this.lastLanguageUpdateTimestamp = Date.now();
+    this.selectedLanguage = language;
   }
 }

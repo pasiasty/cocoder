@@ -96,20 +96,12 @@ func (m *SessionManager) modifySession(sessionID SessionID, req interface{}, pro
 	return resp, nil
 }
 
-func (m *SessionManager) UpdateSessionText(sessionID SessionID, req *UpdateSessionRequest) (*UpdateSessionResponse, error) {
+func (m *SessionManager) UpdateSession(sessionID SessionID, req *UpdateSessionRequest) (*UpdateSessionResponse, error) {
 	resp, err := m.modifySession(sessionID, req, func(req interface{}, s *Session) interface{} {
-		return s.UpdateText(req.(*UpdateSessionRequest))
+		return s.Update(req.(*UpdateSessionRequest))
 	})
 	if err != nil {
 		return nil, err
 	}
 	return resp.(*UpdateSessionResponse), nil
-}
-
-func (m *SessionManager) UpdateLanguage(sessionID SessionID, req *UpdateLanguageRequest) error {
-	_, err := m.modifySession(sessionID, req, func(req interface{}, s *Session) interface{} {
-		s.Language = req.(*UpdateLanguageRequest).Language
-		return nil
-	})
-	return err
 }

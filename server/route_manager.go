@@ -74,24 +74,6 @@ func NewRouterManager(c *redis.Client) *RouteManager {
 		um.RegisterUser(sessionID, userID, conn)
 	})
 
-	g.POST("/:session_id/language", func(c *gin.Context) {
-		sessionID := SessionID(c.Param("session_id"))
-
-		req := &UpdateLanguageRequest{}
-
-		if err := c.ShouldBind(req); err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
-			return
-		}
-
-		if err := sm.UpdateLanguage(sessionID, req); err != nil {
-			c.String(http.StatusBadRequest, fmt.Sprintf("failed to update session language: %v", err))
-			return
-		}
-
-		c.String(http.StatusOK, fmt.Sprintf("\"language set to: %v\"", req.Language))
-	})
-
 	g.POST("/:session_id", func(c *gin.Context) {
 		sessionID := SessionID(c.Param("session_id"))
 
@@ -102,7 +84,7 @@ func NewRouterManager(c *redis.Client) *RouteManager {
 			return
 		}
 
-		resp, err := sm.UpdateSessionText(sessionID, req)
+		resp, err := sm.UpdateSession(sessionID, req)
 		if err != nil {
 			c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to update session text: %v", err))
 			return

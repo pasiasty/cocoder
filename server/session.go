@@ -47,14 +47,12 @@ func cursorSpecialSequenceRe() *regexp.Regexp {
 	return regexp.MustCompile("(" + glyphEscaped + "[0-9]+" + glyphEscaped + ")")
 }
 
-func (s *Session) UpdateText(req *UpdateSessionRequest) *UpdateSessionResponse {
+func (s *Session) Update(req *UpdateSessionRequest) *UpdateSessionResponse {
 	now := nowSource()
 
 	if req.CursorPos < 0 || req.CursorPos > len(req.NewText) {
 		req.CursorPos = 0
 	}
-
-	wasMerged := req.BaseText != s.Text
 
 	if user, ok := s.Users[req.UserID]; ok {
 		user.Position = req.CursorPos
@@ -98,24 +96,24 @@ func (s *Session) UpdateText(req *UpdateSessionRequest) *UpdateSessionResponse {
 
 	s.LastEdit = now
 
-	otherUsers := []OtherUser{}
+	users := []*User{}
 
 	for _, u := range s.Users {
-		if u.ID == req.UserID || now.Sub(u.LastEdit) > time.Minute {
+		if now.Sub(u.LastEdit) > time.Minute {
 			continue
 		}
-		otherUsers = append(otherUsers, OtherUser{
-			Index:     u.Index,
-			CursorPos: u.Position,
-		})
+		users = append(users, u)
+	}
+
+	if req.Language != "" {
+		s.Language = req.Language
 	}
 
 	return &UpdateSessionResponse{
-		NewText:    s.Text,
-		CursorPos:  newCursorPos,
-		WasMerged:  wasMerged,
-		Language:   s.Language,
-		OtherUsers: otherUsers,
+		NewText:   s.Text,
+		CursorPos: newCursorPos,
+		Language:  s.Language,
+		Users:     users,
 	}
 }
 

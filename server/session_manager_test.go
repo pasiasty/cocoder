@@ -81,25 +81,23 @@ func TestLoadSession(t *testing.T) {
 
 	nowSource = func() time.Time { return date1 }
 
-	if _, err := sm.UpdateSessionText(existingSessionID1, &UpdateSessionRequest{
-		NewText: sampleText,
-		UserID:  userID1,
+	if _, err := sm.UpdateSession(existingSessionID1, &UpdateSessionRequest{
+		NewText:  sampleText,
+		UserID:   userID1,
+		Language: sampleLanguage,
 	}); err != nil {
 		t.Fatalf("Failed to update session text: %v", err)
-	}
-	if err := sm.UpdateLanguage(existingSessionID1, &UpdateLanguageRequest{Language: sampleLanguage}); err != nil {
-		t.Fatalf("Failed to update session language: %v", err)
 	}
 
 	nowSource = func() time.Time { return date2 }
 
-	if _, err := sm.UpdateSessionText(existingSessionID2, &UpdateSessionRequest{
+	if _, err := sm.UpdateSession(existingSessionID2, &UpdateSessionRequest{
 		UserID: userID1,
 	}); err != nil {
 		t.Fatalf("Failed to update session text: %v", err)
 	}
 
-	if _, err := sm.UpdateSessionText(existingSessionID2, &UpdateSessionRequest{
+	if _, err := sm.UpdateSession(existingSessionID2, &UpdateSessionRequest{
 		NewText: anotherSampleText,
 		UserID:  userID2,
 	}); err != nil {
@@ -187,12 +185,11 @@ func editRequestForTesting(es string) *UpdateSessionRequest {
 	}
 }
 
-func editResponseForTesting(es string, wasMerged bool) *UpdateSessionResponse {
+func editResponseForTesting(es string) *UpdateSessionResponse {
 	i := strings.Index(es, "|")
 	return &UpdateSessionResponse{
 		NewText:   strings.Replace(es, "|", "", 1),
 		CursorPos: i,
-		WasMerged: wasMerged,
 		Language:  "plaintext",
 	}
 }
@@ -204,7 +201,6 @@ func TestUpdateSessionText(t *testing.T) {
 		clientBase      string
 		clientEditState string
 		wantEditState   string
-		wantWasMerged   bool
 	}{{
 		name:            "append_to_empty",
 		clientEditState: "abc|",
@@ -231,7 +227,6 @@ func TestUpdateSessionText(t *testing.T) {
 		animal of the year is: gorilla|
 		fruit of the year is: banana
 		`,
-		wantWasMerged: true,
 	}, {
 		name: "cursor_at_whitespaces",
 		clientEditState: `abc
@@ -244,24 +239,22 @@ func TestUpdateSessionText(t *testing.T) {
 		|`,
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.name != "simultaneous_edit" {
-				t.Skip()
-			}
 			sm := prepareSessionManager(t)
 			s := sm.NewSession()
 
-			if _, err := sm.UpdateSessionText(s, &UpdateSessionRequest{NewText: tc.initialState}); err != nil {
+			if _, err := sm.UpdateSession(s, &UpdateSessionRequest{NewText: tc.initialState}); err != nil {
 				t.Fatalf("Initial edit should not fail, but did: %v", err)
 			}
 
 			es := editRequestForTesting(tc.clientEditState)
 			es.BaseText = tc.clientBase
 
-			resEs, err := sm.UpdateSessionText(s, es)
+			resEs, err := sm.UpdateSession(s, es)
 			if err != nil {
 				t.Fatalf("Test edit fail, but shouldn't: %v", err)
 			}
-			wantEs := editResponseForTesting(tc.wantEditState, tc.wantWasMerged)
+			resEs.Users = nil
+			wantEs := editResponseForTesting(tc.wantEditState)
 
 			changelog, err := diff.Diff(resEs, wantEs)
 			if err != nil {
@@ -270,6 +263,10 @@ func TestUpdateSessionText(t *testing.T) {
 
 			if len(changelog) > 0 {
 				t.Errorf("Following changes were detected:\n%v", changelog)
+				gotStr, _ := json.MarshalIndent(resEs, "", "  ")
+				wantStr, _ := json.MarshalIndent(wantEs, "", "  ")
+				t.Errorf("Want:\n%s", wantStr)
+				t.Errorf("Got:\n%s", gotStr)
 			}
 		})
 	}

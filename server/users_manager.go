@@ -70,7 +70,10 @@ func (u *ConnectedUser) writeLoop() {
 }
 
 func (u *ConnectedUser) Cancel() {
-	close(u.toUser)
+	if !u.cancelled {
+		close(u.toUser)
+	}
+
 	u.conn.WriteMessage(websocket.CloseMessage, []byte{})
 	u.conn.Close()
 	u.cancelled = true
@@ -127,7 +130,7 @@ func (s *ManagedSession) loop() {
 			if !ok {
 				return
 			}
-			resp, err := s.sm.UpdateSessionText(s.SessionID, req)
+			resp, err := s.sm.UpdateSession(s.SessionID, req)
 			if err != nil {
 				log.Printf("Failed to update session: %v", err)
 			}

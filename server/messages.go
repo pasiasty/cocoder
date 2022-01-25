@@ -5,20 +5,15 @@ type UpdateSessionRequest struct {
 	NewText   string `form:"NewText" diff:"NewText" json:"NewText"`
 	CursorPos int    `form:"CursorPos" diff:"CursorPos" json:"CursorPos"`
 	UserID    string `form:"UserID" diff:"UserID" json:"UserID"`
-}
-
-type OtherUser struct {
-	Index     int `json:"Index" diff:"index"`
-	CursorPos int `json:"CursorPos" diff:"cursor_pos"`
+	Language  string `form:"Language" diff:"Language" json:"Language"`
 }
 
 type UpdateSessionResponse struct {
 	NewText   string `json:"NewText" diff:"new_text"`
 	CursorPos int    `json:"CursorPos" diff:"cursor_pos"`
-	WasMerged bool   `json:"WasMerged" diff:"was_merged"`
 	Language  string `json:"Language" diff:"language"`
 
-	OtherUsers []OtherUser `json:"OtherUsers" diff:"other_users"`
+	Users []*User `json:"Users" diff:"users"`
 }
 
 type UpdateLanguageRequest struct {

@@ -45,10 +45,18 @@ func TestUpdateText(t *testing.T) {
 		wantResp: UpdateSessionResponse{
 			NewText:   "some texta",
 			CursorPos: 10,
-			OtherUsers: []OtherUser{
+			Users: []*User{
 				{
-					CursorPos: 0,
-					Index:     1,
+					ID:       "user_1",
+					Position: 10,
+					Index:    0,
+					LastEdit: specialDate,
+				},
+				{
+					ID:       "user_2",
+					Position: 0,
+					Index:    1,
+					LastEdit: specialDate,
 				},
 			},
 		},
@@ -80,17 +88,25 @@ func TestUpdateText(t *testing.T) {
 		wantResp: UpdateSessionResponse{
 			NewText:   "asome text",
 			CursorPos: 1,
-			OtherUsers: []OtherUser{
+			Users: []*User{
 				{
-					Index:     1,
-					CursorPos: 10,
+					ID:       "user_1",
+					Index:    0,
+					Position: 1,
+					LastEdit: specialDate,
+				},
+				{
+					ID:       "user_2",
+					Index:    1,
+					Position: 10,
+					LastEdit: specialDate,
 				},
 			},
 		},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
 			nowSource = func() time.Time { return specialDate }
-			resp := tc.s.UpdateText(&tc.req)
+			resp := tc.s.Update(&tc.req)
 
 			changelog, err := diff.Diff(*resp, tc.wantResp)
 			if err != nil {

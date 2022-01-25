@@ -26,7 +26,7 @@ export class SessionViewComponent implements OnInit {
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "typescript", "r");
   sessionID = "";
 
-  pollingSubscription!: Subscription;
+  sessionSubscription!: Subscription;
 
   lastBaseText = "";
 
@@ -65,38 +65,16 @@ export class SessionViewComponent implements OnInit {
   }
 
   ngOnDestroy() {
-    this.pollingSubscription.unsubscribe();
+    this.sessionSubscription.unsubscribe();
   }
 
   otherLanguages(): string[] {
     return monaco.languages.getLanguages().map((v, _) => v.id).filter(v => !this.languages.includes(v));
   }
 
-  pollBackendTextState() {
-    this.apiService.UpdateSession(
-      this.lastBaseText,
-      this.editorService.Text(),
-      this.editorService.Position()).subscribe({
-        next: data => {
-          this.lastBaseText = data.NewText;
-          if (data.Language)
-            this.setLanguageInUI(data.Language);
-
-          if (data.WasMerged) {
-            this.editorService.SetText(data.NewText);
-            this.editorService.SetPosition(data.CursorPos);
-          }
-
-          this.editorService.ShowOtherUsers(data.OtherUsers);
-        },
-        error: err => {
-          console.log("Failed to update session:", err);
-        },
-      });
-  }
-
   onInit(editor: monaco.editor.IStandaloneCodeEditor) {
     this.editorService.SetEditor(editor);
+    this.editorService.SetUserID(this.apiService.GetUserID());
 
     this.initialSessionPromise.then(
       data => {
@@ -107,11 +85,34 @@ export class SessionViewComponent implements OnInit {
         this.editorService.SetLanguage(data.Language);
         this.lastBaseText = data.Text;
 
-        this.pollingSubscription = this.apiService.PollingObservable().subscribe(
-          _ => { this.pollBackendTextState() }
-        );
+        this.sessionSubscription = this.apiService.SessionObservable().subscribe({
+          next: data => {
+            this.lastBaseText = data.NewText;
+            if (data.Language)
+              this.setLanguageInUI(data.Language);
+
+            if (data.NewText !== this.editorService.Text()) {
+              this.editorService.SetText(data.NewText);
+            }
+
+            this.editorService.UpdateCursors(data.Users);
+          },
+          error: err => {
+            console.log("Failed to update session:", err);
+          },
+        });
       },
     );
+
+    this.editorService.editsObservable().subscribe({
+      next: () => {
+        this.updateSession();
+      },
+    });
+  }
+
+  updateSession() {
+    this.apiService.UpdateSession(this.lastBaseText, this.editorService.Text(), this.editorService.Position());
   }
 
   setLanguageInUI(l: string) {
@@ -122,6 +123,7 @@ export class SessionViewComponent implements OnInit {
   onLanguageChange(ev: MatSelectChange) {
     this.editorService.SetLanguage(ev.value);
     this.apiService.SetLanguage(ev.value);
+    this.updateSession();
   }
 
   onThemeChange(ev: MatSelectChange) {

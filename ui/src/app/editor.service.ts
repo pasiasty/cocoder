@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { CookieService } from 'ngx-cookie-service';
 import * as monaco from 'monaco-editor';
-import { OtherUser } from './api.service';
+import { User } from './api.service';
+import { Observable, Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 
 
 @Injectable({
@@ -14,11 +16,14 @@ export class EditorService {
   theme!: string;
   oldDecorations: string[];
   currentDescorations: monaco.editor.IModelDeltaDecoration[];
+  editsSubject: Subject<void>;
+  userID!: string;
 
   constructor(private cookieService: CookieService) {
     this.theme = this.cookieService.get('theme');
     this.oldDecorations = [];
     this.currentDescorations = [];
+    this.editsSubject = new Subject<void>();
   }
 
   SetEditor(editor: monaco.editor.IStandaloneCodeEditor) {
@@ -31,7 +36,24 @@ export class EditorService {
 
     this.updateOptions();
 
-    this.editor.onKeyDown(() => { this.updateDecorations() });
+    this.editor.onKeyDown(() => {
+      this.updateDecorations();
+      this.editsSubject.next();
+    });
+
+    this.editor.onMouseDown(() => {
+      this.editsSubject.next();
+    });
+  }
+
+  SetUserID(userID: string) {
+    this.userID = userID;
+  }
+
+  editsObservable(): Observable<void> {
+    return this.editsSubject.pipe(
+      debounceTime(100),
+    )
   }
 
   createOptions(): monaco.editor.IStandaloneEditorConstructionOptions {
@@ -122,8 +144,8 @@ export class EditorService {
     return this.theme;
   }
 
-  userToDecoration(u: OtherUser): monaco.editor.IModelDeltaDecoration {
-    let userPos = this.numberToPosition(u.CursorPos);
+  userToDecoration(u: User): monaco.editor.IModelDeltaDecoration {
+    let userPos = this.numberToPosition(u.Position);
     let colorIdx = u.Index % 5 + 1
     return {
       range: new monaco.Range(userPos.lineNumber, userPos.column, userPos.lineNumber, userPos.column + 1),
@@ -138,8 +160,13 @@ export class EditorService {
     this.oldDecorations = this.editor.deltaDecorations(this.oldDecorations, this.currentDescorations);
   }
 
-  ShowOtherUsers(otherUsers: OtherUser[]) {
-    this.currentDescorations = otherUsers.map(u => this.userToDecoration(u));
+  UpdateCursors(users: User[]) {
+    this.currentDescorations = users.filter(u => this.userID != u.ID).map(u => this.userToDecoration(u));
     this.updateDecorations();
+    for (const u of users) {
+      if (u.ID == this.userID && this.Position() != u.Position) {
+        this.SetPosition(u.Position);
+      }
+    }
   }
 }

@@ -25,6 +25,7 @@ export class SessionViewComponent implements OnInit {
   lastBaseText = "";
 
   sessionInvalid = false;
+  editorServiceInitialized = false;
 
   initialSessionPromise!: Promise<GetSessionResponse | null>;
 
@@ -66,10 +67,7 @@ export class SessionViewComponent implements OnInit {
     return monaco.languages.getLanguages().map((v, _) => v.id).filter(v => !this.languages.includes(v));
   }
 
-  onInit(editor: monaco.editor.IStandaloneCodeEditor) {
-    this.editorService.SetEditor(editor);
-    this.editorService.SetUserID(this.apiService.GetUserID());
-
+  initializeEditorService() {
     this.initialSessionPromise.then(
       data => {
         if (data === null) {
@@ -106,6 +104,16 @@ export class SessionViewComponent implements OnInit {
     });
   }
 
+  onInit(editor: monaco.editor.IStandaloneCodeEditor) {
+    this.editorService.SetEditor(editor);
+    this.editorService.SetUserID(this.apiService.GetUserID());
+
+    if (!this.editorServiceInitialized) {
+      this.editorServiceInitialized = true;
+      this.initializeEditorService();
+    }
+  }
+
   updateSession() {
     const newText = this.editorService.Text();
     this.apiService.UpdateSession(this.lastBaseText, newText, this.editorService.Position());
@@ -115,6 +123,7 @@ export class SessionViewComponent implements OnInit {
   setLanguageInUI(l: string) {
     this.selectedLanguage = l;
     this.cdRef.detectChanges();
+    this.editorService.SetLanguage(l);
   }
 
   onLanguageChange(ev: MatSelectChange) {

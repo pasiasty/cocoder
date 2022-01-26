@@ -52,20 +52,23 @@ func (u *ConnectedUser) readLoop() {
 	defer u.Cancel()
 
 	for {
-		_, msg, err := u.conn.ReadMessage()
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("Unexpected websocket error: %v", err)
+		select {
+		case <-time.After(10 * time.Millisecond):
+			_, msg, err := u.conn.ReadMessage()
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Printf("Unexpected websocket error: %v", err)
+				}
+				return
 			}
-			break
-		}
-		req := &UpdateSessionRequest{}
-		if err := json.Unmarshal(msg, req); err != nil {
-			log.Printf("Failed to unmarshal UpdateSessionRequest: %v", err)
-			break
-		}
+			req := &UpdateSessionRequest{}
+			if err := json.Unmarshal(msg, req); err != nil {
+				log.Printf("Failed to unmarshal UpdateSessionRequest: %v", err)
+				break
+			}
 
-		u.fromUsersHandler(req)
+			u.fromUsersHandler(req)
+		}
 	}
 }
 

@@ -11,28 +11,40 @@ import { sampleTime } from 'rxjs/operators';
 })
 export class EditorService {
 
-  editor!: monaco.editor.IStandaloneCodeEditor;
+  editor?: monaco.editor.IStandaloneCodeEditor;
   language!: string;
   theme!: string;
   oldDecorations: string[];
   currentDescorations: monaco.editor.IModelDeltaDecoration[];
   editsSubject: Subject<void>;
   userID!: string;
+  model: monaco.editor.ITextModel;
 
   constructor(private cookieService: CookieService) {
     this.theme = this.cookieService.get('theme');
     this.oldDecorations = [];
     this.currentDescorations = [];
     this.editsSubject = new Subject<void>();
-  }
 
-  SetEditor(editor: monaco.editor.IStandaloneCodeEditor) {
     if (this.theme == '') {
       this.theme = 'vs';
     }
 
-    this.editor = editor;
     this.language = 'plaintext';
+    this.model = monaco.editor.createModel('', this.language, monaco.Uri.parse(this.language));
+  }
+
+  SetEditor(editor: monaco.editor.IStandaloneCodeEditor) {
+    const text = this.Text();
+    console.log('SetEditor text', text);
+    if (this.editor !== undefined) {
+      this.editor.dispose();
+    }
+
+    this.SetText(text);
+    editor.setModel(this.model);
+
+    this.editor = editor;
 
     this.updateOptions();
 
@@ -63,7 +75,7 @@ export class EditorService {
   }
 
   updateOptions() {
-    this.editor.updateOptions({
+    this.editor!.updateOptions({
       cursorBlinking: 'smooth',
       mouseWheelZoom: true,
       showUnused: true,
@@ -109,29 +121,34 @@ export class EditorService {
   }
 
   Text(): string {
-    return this.editor.getValue();
+    return this.model.getValue(monaco.editor.EndOfLinePreference.CRLF);
   }
 
   SetText(t: string) {
-    this.editor.setValue(t);
+    this.model.setValue(t);
   }
 
   Position(): number {
-    return this.positionToNumber(this.editor.getPosition());
+    return this.positionToNumber(this.editor!.getPosition());
   }
 
   SetPosition(p: number) {
-    this.editor.setPosition(this.numberToPosition(p));
+    this.editor!.setPosition(this.numberToPosition(p));
   }
 
-  SetLanguage(l: string) {
-    if (l == this.language)
+  SetLanguage(l: string, refresh: boolean = false) {
+    if (l === this.language && !refresh) {
       return;
-    this.language = l;
+    }
 
-    const model = monaco.editor.createModel(this.editor!.getValue(), l, monaco.Uri.parse(l));
-    this.editor.getModel()?.dispose();
-    this.editor.setModel(model);
+    const text = this.Text();
+    this.model.dispose();
+
+    this.language = l;
+    this.model = monaco.editor.createModel(text, l, monaco.Uri.parse(l));
+    this.editor!.setModel(this.model);
+
+    this.updateOptions();
   }
 
   SetTheme(t: string) {
@@ -157,7 +174,7 @@ export class EditorService {
   }
 
   updateDecorations() {
-    this.oldDecorations = this.editor.deltaDecorations(this.oldDecorations, this.currentDescorations);
+    this.oldDecorations = this.editor!.deltaDecorations(this.oldDecorations, this.currentDescorations);
   }
 
   UpdateCursors(users: User[]) {

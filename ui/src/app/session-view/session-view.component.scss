@@ -9,15 +9,26 @@
   display: flex;
   flex-direction: row;
   width: 100%;
-  gap: 20px;
+  flex-basis: content;
+  gap: 0px;
 }
 
-.top-bar {
+.dropdown-container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  min-height: 80px;
+  flex-basis: content;
+  gap: 0px;
+}
+
+.home-button {
   font-family: "Courier New", Courier, monospace;
   font-size: 2em;
-  color: black;
-  padding-top: 8px;
-  padding-bottom: 8px;
+}
+
+.top-bar-row {
+  width: 100%;
 }
 
 .content-container {

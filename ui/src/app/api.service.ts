@@ -75,7 +75,7 @@ export class ApiService {
     return this.subject.pipe(
       retry(),
       map(data => data as EditResponse),
-      audit(() => interval(100).pipe(filter(() => (Date.now() - this.lastUpdateTimestamp) > 1000))),
+      audit(() => interval(100).pipe(filter(() => (Date.now() - this.lastUpdateTimestamp) > 2000))),
     );
   }
 

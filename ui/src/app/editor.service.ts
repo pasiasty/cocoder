@@ -49,7 +49,6 @@ export class EditorService {
     this.updateOptions();
 
     this.editor.onKeyDown(() => {
-      this.updateDecorations();
       this.editsSubject.next();
     });
 
@@ -64,7 +63,7 @@ export class EditorService {
 
   editsObservable(): Observable<void> {
     return this.editsSubject.pipe(
-      sampleTime(100),
+      sampleTime(300),
     )
   }
 

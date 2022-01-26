@@ -243,11 +243,13 @@ func (m *UsersManager) triggerResponsesAndSessionCleanup() {
 		if len(ms.Users) == 0 {
 			m.sessionsInactivity[id]++
 		} else {
-			m.sessionsInactivity[id] = 0
 			s, err := m.sm.LoadSession(ms.SessionID)
 			if err != nil {
 				log.Printf("Failed to load session: %v", err)
+				continue
 			}
+
+			m.sessionsInactivity[id] = 0
 
 			users := []*User{}
 			for _, u := range s.Users {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-contrib/pprof"
 	limits "github.com/gin-contrib/size"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -39,6 +40,7 @@ func CORSMiddleware() gin.HandlerFunc {
 
 func NewRouterManager(c *redis.Client) *RouteManager {
 	r := gin.Default()
+	pprof.Register(r)
 	sm := NewSessionManager(c)
 	um := NewUsersManager(sm)
 

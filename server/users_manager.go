@@ -79,7 +79,7 @@ func (u *ConnectedUser) writeLoop() {
 		select {
 		case resp, ok := <-u.toUser:
 			if !ok {
-				break
+				return
 			}
 			if err := u.conn.WriteJSON(resp); err != nil {
 				log.Printf("Failed to send response to user: %v", err)

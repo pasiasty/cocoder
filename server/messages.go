@@ -9,9 +9,8 @@ type UpdateSessionRequest struct {
 }
 
 type UpdateSessionResponse struct {
-	NewText   string `json:"NewText" diff:"new_text"`
-	CursorPos int    `json:"CursorPos" diff:"cursor_pos"`
-	Language  string `json:"Language" diff:"language"`
+	NewText  string `json:"NewText" diff:"new_text"`
+	Language string `json:"Language" diff:"language"`
 
 	Users []*User `json:"Users" diff:"users"`
 }

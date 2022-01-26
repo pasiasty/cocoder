@@ -1,9 +1,14 @@
 package server
 
 import (
+	"bytes"
+	"crypto/md5"
+	"encoding/gob"
 	"encoding/json"
+	"io"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -11,19 +16,30 @@ import (
 type UserID string
 
 type ConnectedUser struct {
-	UserID    UserID
-	conn      *websocket.Conn
-	fromUsers chan *UpdateSessionRequest
-	toUser    chan *UpdateSessionResponse
-	cancelled bool
+	mux sync.Mutex
+
+	UserID           UserID
+	conn             *websocket.Conn
+	fromUsersHandler func(*UpdateSessionRequest)
+	toUser           chan *UpdateSessionResponse
+	cancelled        bool
 }
 
-func NewConnectedUser(userID UserID, conn *websocket.Conn, fromUsers chan *UpdateSessionRequest) *ConnectedUser {
+func (u *ConnectedUser) send(resp *UpdateSessionResponse) {
+	u.mux.Lock()
+	defer u.mux.Unlock()
+
+	if !u.cancelled {
+		u.toUser <- resp
+	}
+}
+
+func NewConnectedUser(userID UserID, conn *websocket.Conn, fromUsersHandler func(*UpdateSessionRequest)) *ConnectedUser {
 	u := &ConnectedUser{
-		UserID:    userID,
-		conn:      conn,
-		fromUsers: fromUsers,
-		toUser:    make(chan *UpdateSessionResponse, 32),
+		UserID:           userID,
+		conn:             conn,
+		fromUsersHandler: fromUsersHandler,
+		toUser:           make(chan *UpdateSessionResponse, 32),
 	}
 
 	go u.readLoop()
@@ -49,7 +65,7 @@ func (u *ConnectedUser) readLoop() {
 			break
 		}
 
-		u.fromUsers <- req
+		u.fromUsersHandler(req)
 	}
 }
 
@@ -70,6 +86,9 @@ func (u *ConnectedUser) writeLoop() {
 }
 
 func (u *ConnectedUser) Cancel() {
+	u.mux.Lock()
+	defer u.mux.Unlock()
+
 	if !u.cancelled {
 		close(u.toUser)
 	}
@@ -80,13 +99,36 @@ func (u *ConnectedUser) Cancel() {
 }
 
 type ManagedSession struct {
-	mux       sync.Mutex
+	mux sync.Mutex
+
+	cancelled bool
+
 	SessionID SessionID
 	Users     map[UserID]*ConnectedUser
 	sm        *SessionManager
 
 	fromUsers chan *UpdateSessionRequest
 	toUsers   chan *UpdateSessionResponse
+
+	lastResponseHash []byte
+}
+
+func (s *ManagedSession) fromUsersHandler(req *UpdateSessionRequest) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	if !s.cancelled {
+		s.fromUsers <- req
+	}
+}
+
+func (s *ManagedSession) toUsersHandler(resp *UpdateSessionResponse) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	if !s.cancelled {
+		s.toUsers <- resp
+	}
 }
 
 func (s *ManagedSession) AddUser(userID UserID, conn *websocket.Conn) {
@@ -96,10 +138,14 @@ func (s *ManagedSession) AddUser(userID UserID, conn *websocket.Conn) {
 	if u, ok := s.Users[userID]; ok {
 		u.Cancel()
 	}
-	s.Users[userID] = NewConnectedUser(userID, conn, s.fromUsers)
+	s.Users[userID] = NewConnectedUser(userID, conn, s.fromUsersHandler)
 }
 
 func (s *ManagedSession) Cancel() {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	s.cancelled = true
 	close(s.fromUsers)
 	close(s.toUsers)
 }
@@ -108,12 +154,22 @@ func (s *ManagedSession) sendResponseToUsers(resp *UpdateSessionResponse) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
+	b := new(bytes.Buffer)
+	e := gob.NewEncoder(b)
+	if err := e.Encode(resp); err != nil {
+		log.Printf("Failed to encodeUpdateSessionResponse: %v", err)
+	}
+
+	h := md5.New()
+	io.WriteString(h, b.String())
+	newHash := h.Sum(nil)
 	usersToCleanup := make(map[UserID]interface{})
 
 	for id, u := range s.Users {
-		if !u.cancelled {
-			u.toUser <- resp
-		} else {
+		if bytes.Compare(newHash, s.lastResponseHash) != 0 {
+			u.send(resp)
+		}
+		if u.cancelled {
 			usersToCleanup[id] = new(interface{})
 		}
 	}
@@ -121,6 +177,8 @@ func (s *ManagedSession) sendResponseToUsers(resp *UpdateSessionResponse) {
 	for id := range usersToCleanup {
 		delete(s.Users, id)
 	}
+
+	s.lastResponseHash = newHash
 }
 
 func (s *ManagedSession) loop() {
@@ -134,7 +192,7 @@ func (s *ManagedSession) loop() {
 			if err != nil {
 				log.Printf("Failed to update session: %v", err)
 			}
-			s.toUsers <- resp
+			s.toUsersHandler(resp)
 		case resp, ok := <-s.toUsers:
 			if !ok {
 				return
@@ -159,15 +217,69 @@ func NewManagedSession(sessionID SessionID, sm *SessionManager) *ManagedSession 
 }
 
 type UsersManager struct {
-	mux             sync.Mutex
-	managedSessions map[SessionID]*ManagedSession
-	sm              *SessionManager
+	mux                sync.Mutex
+	managedSessions    map[SessionID]*ManagedSession
+	sessionsInactivity map[SessionID]int32
+	sm                 *SessionManager
 }
 
 func NewUsersManager(sm *SessionManager) *UsersManager {
-	return &UsersManager{
-		sm:              sm,
-		managedSessions: make(map[SessionID]*ManagedSession),
+	um := &UsersManager{
+		sm:                 sm,
+		managedSessions:    make(map[SessionID]*ManagedSession),
+		sessionsInactivity: make(map[SessionID]int32),
+	}
+
+	go um.loop()
+
+	return um
+}
+
+func (m *UsersManager) triggerResponsesAndSessionCleanup() {
+	m.mux.Lock()
+	defer m.mux.Unlock()
+
+	for id, ms := range m.managedSessions {
+		if len(ms.Users) == 0 {
+			m.sessionsInactivity[id]++
+		} else {
+			m.sessionsInactivity[id] = 0
+			s, err := m.sm.LoadSession(ms.SessionID)
+			if err != nil {
+				log.Printf("Failed to load session: %v", err)
+			}
+
+			users := []*User{}
+			for _, u := range s.Users {
+				users = append(users, u)
+			}
+
+			ms.toUsersHandler(&UpdateSessionResponse{
+				NewText:  s.Text,
+				Language: s.Language,
+				Users:    users,
+			})
+		}
+	}
+
+	for sID, val := range m.sessionsInactivity {
+		if val > 120 {
+			s, ok := m.managedSessions[sID]
+			if ok {
+				s.Cancel()
+				delete(m.managedSessions, sID)
+				delete(m.sessionsInactivity, sID)
+			}
+		}
+	}
+}
+
+func (m *UsersManager) loop() {
+	for {
+		select {
+		case <-time.After(time.Second):
+			m.triggerResponsesAndSessionCleanup()
+		}
 	}
 }
 

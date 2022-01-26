@@ -186,11 +186,9 @@ func editRequestForTesting(es string) *UpdateSessionRequest {
 }
 
 func editResponseForTesting(es string) *UpdateSessionResponse {
-	i := strings.Index(es, "|")
 	return &UpdateSessionResponse{
-		NewText:   strings.Replace(es, "|", "", 1),
-		CursorPos: i,
-		Language:  "plaintext",
+		NewText:  strings.Replace(es, "|", "", 1),
+		Language: "plaintext",
 	}
 }
 

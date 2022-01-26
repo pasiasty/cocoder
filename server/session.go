@@ -79,17 +79,12 @@ func (s *Session) Update(req *UpdateSessionRequest) *UpdateSessionResponse {
 	userPatches := dmp.PatchMake(dmp.DiffMain(req.BaseText, req.NewText, false))
 	textWithCursors, _ := dmp.PatchApply(userPatches, s.Text)
 
-	newCursorPos := -1
-
 	for _, u := range s.Users {
 		rawNewPosition := strings.Index(textWithCursors, fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index))
 		if rawNewPosition < 0 {
 			rawNewPosition = 0
 		}
 		u.Position = len(cursorSpecialSequenceRe().ReplaceAllString(textWithCursors[:rawNewPosition], ""))
-		if u.ID == req.UserID {
-			newCursorPos = u.Position
-		}
 	}
 
 	s.Text = cursorSpecialSequenceRe().ReplaceAllString(textWithCursors, "")
@@ -110,10 +105,9 @@ func (s *Session) Update(req *UpdateSessionRequest) *UpdateSessionResponse {
 	}
 
 	return &UpdateSessionResponse{
-		NewText:   s.Text,
-		CursorPos: newCursorPos,
-		Language:  s.Language,
-		Users:     users,
+		NewText:  s.Text,
+		Language: s.Language,
+		Users:    users,
 	}
 }
 

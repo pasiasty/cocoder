@@ -15,12 +15,12 @@ export type User = {
 
 type EditRequest = {
   BaseText: string
+  CursorPos: number
   UserID: string
 } | EditResponse;
 
 export type EditResponse = {
   NewText: string
-  CursorPos: number
   Language: string
   Users: User[]
 }

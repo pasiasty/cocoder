@@ -43,8 +43,7 @@ func TestUpdateText(t *testing.T) {
 			CursorPos: 10,
 		},
 		wantResp: UpdateSessionResponse{
-			NewText:   "some texta",
-			CursorPos: 10,
+			NewText: "some texta",
 			Users: []*User{
 				{
 					ID:       "user_1",
@@ -86,8 +85,7 @@ func TestUpdateText(t *testing.T) {
 			CursorPos: 1,
 		},
 		wantResp: UpdateSessionResponse{
-			NewText:   "asome text",
-			CursorPos: 1,
+			NewText: "asome text",
 			Users: []*User{
 				{
 					ID:       "user_1",

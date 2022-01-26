@@ -107,7 +107,9 @@ export class SessionViewComponent implements OnInit {
   }
 
   updateSession() {
-    this.apiService.UpdateSession(this.lastBaseText, this.editorService.Text(), this.editorService.Position());
+    const newText = this.editorService.Text();
+    this.apiService.UpdateSession(this.lastBaseText, newText, this.editorService.Position());
+    this.lastBaseText = newText;
   }
 
   setLanguageInUI(l: string) {

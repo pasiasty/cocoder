@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map, retry, tap } from 'rxjs/operators';
+import { interval, Observable, pipe } from 'rxjs';
+import { audit, filter, map, retry, tap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 import { CookieService } from 'ngx-cookie-service';
@@ -75,6 +75,7 @@ export class ApiService {
     return this.subject.pipe(
       retry(),
       map(data => data as EditResponse),
+      audit(() => interval(100).pipe(filter(() => (Date.now() - this.lastUpdateTimestamp) > 1000))),
     );
   }
 

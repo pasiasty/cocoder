@@ -3,7 +3,7 @@ import { CookieService } from 'ngx-cookie-service';
 import * as monaco from 'monaco-editor';
 import { User } from './api.service';
 import { Observable, Subject } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
+import { sampleTime } from 'rxjs/operators';
 
 
 @Injectable({
@@ -52,7 +52,7 @@ export class EditorService {
 
   editsObservable(): Observable<void> {
     return this.editsSubject.pipe(
-      debounceTime(100),
+      sampleTime(100),
     )
   }
 

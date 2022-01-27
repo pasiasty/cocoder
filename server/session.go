@@ -71,15 +71,11 @@ func (s *Session) updateRequestingUser(req *UpdateSessionRequest) {
 }
 
 func (s *Session) prepareResponse(req *UpdateSessionRequest) *UpdateSessionResponse {
-	now := nowSource()
-	s.LastEdit = now
+	s.LastEdit = nowSource()
 
 	users := []*User{}
 
 	for _, u := range s.Users {
-		if now.Sub(u.LastEdit) > time.Minute {
-			continue
-		}
 		users = append(users, u)
 	}
 

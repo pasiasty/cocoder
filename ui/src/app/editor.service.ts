@@ -89,6 +89,9 @@ export class EditorService {
       mouseWheelZoom: true,
       showUnused: true,
       theme: this.theme,
+      scrollbar: {
+        verticalScrollbarSize: 0,
+      },
     });
   }
 

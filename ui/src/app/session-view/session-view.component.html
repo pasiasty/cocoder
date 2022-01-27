@@ -2,36 +2,35 @@
 <ng-template #normalContent>
     <div class="content-container">
         <div class="top-bar-row">
-            <button mat-button class="btn btn-light btn-lg home-button" [routerLink]="['/']">coCoder</button>
+            <button class="logo home-button btn btn-outline-secondary" [routerLink]="['/']">coCoder</button>
         </div>
         <div class="dropdowns-container">
             <div class="dropdown-container">
                 <div ngbDropdown class="d-inline-block">
-                    <button class="btn btn-outline-primary" id="languageDropdown" ngbDropdownToggle>{{selectedLanguage}}</button>
+                    <button class="btn btn-outline-primary" id="languageDropdown"
+                        ngbDropdownToggle>{{selectedLanguage}}</button>
                     <div ngbDropdownMenu aria-labelledby="languageDropdown" class="dropdown-menu">
-                        <button *ngFor="let language of languages" ngbDropdownItem (click)="onLanguageChange(language)">{{language}}</button>
+                        <button *ngFor="let language of languages" ngbDropdownItem
+                            (click)="onLanguageChange(language)">{{language}}</button>
                         <hr class="solid">
-                        <button *ngFor="let language of otherLanguages()" ngbDropdownItem (click)="onLanguageChange(language)">{{language}}</button>
+                        <button *ngFor="let language of otherLanguages()" ngbDropdownItem
+                            (click)="onLanguageChange(language)">{{language}}</button>
                     </div>
-                  </div>
+                </div>
             </div>
             <div class="dropdown-container">
                 <div ngbDropdown class="d-inline-block">
-                    <button class="btn btn-outline-primary" id="themesDropdown" ngbDropdownToggle>{{selectedTheme}}</button>
+                    <button class="btn btn-outline-primary" id="themesDropdown"
+                        ngbDropdownToggle>{{selectedTheme}}</button>
                     <div ngbDropdownMenu aria-labelledby="themesDropdown" class="dropdown-menu">
-                        <button *ngFor="let theme of themes" ngbDropdownItem (click)="onThemeChange(theme)">{{theme.DisplayName}}</button>
+                        <button *ngFor="let theme of themes" ngbDropdownItem
+                            (click)="onThemeChange(theme)">{{theme.DisplayName}}</button>
                     </div>
-                  </div>
-                <!-- <mat-form-field appearance="standard" style="margin-bottom: -1.25em">
-                    <mat-label>Theme</mat-label>
-                    <mat-select (selectionChange)="onThemeChange($event)" [(value)]="selectedTheme">
-                        <mat-option value="vs">Light</mat-option>
-                        <mat-option value="vs-dark">Dark</mat-option>
-                    </mat-select>
-                </mat-form-field> -->
+                </div>
             </div>
         </div>
-        <ngx-monaco-editor [options]="{theme: selectedTheme}" (onInit)="onInit($event)" class="editor-field">
+        <ngx-monaco-editor [options]="{theme: selectedTheme}" (onInit)="onInit($event)"
+            class="editor-field border border-right-0 border-left-0">
         </ngx-monaco-editor>
     </div>
 </ng-template>

@@ -3,6 +3,7 @@ import * as monaco from 'monaco-editor';
 import { User } from './api.service';
 import { Observable, Subject } from 'rxjs';
 import { sampleTime } from 'rxjs/operators';
+import { ThemeService } from './theme.service';
 
 type DecorationDescription = {
   UserID: string
@@ -25,21 +26,16 @@ export class EditorService {
   userID!: string;
   model: monaco.editor.ITextModel;
 
-  constructor() {
-    const theme = localStorage.getItem('theme');
-    if (theme !== null) {
-      this.theme = theme;
+  constructor(private themeService: ThemeService) {
+    if (themeService.isDarkThemeEnabled()) {
+      this.theme = 'vs-dark';
     } else {
-      this.theme = '';
+      this.theme = 'vs';
     }
 
     this.oldDecorations = [];
     this.currentDecorations = [];
     this.editsSubject = new Subject<void>();
-
-    if (this.theme == '') {
-      this.theme = 'vs';
-    }
 
     this.language = 'plaintext';
     this.model = monaco.editor.createModel('', this.language, monaco.Uri.parse(this.language));
@@ -184,13 +180,8 @@ export class EditorService {
   }
 
   SetTheme(t: string) {
-    localStorage.setItem('theme', t);
     this.theme = t;
     this.updateOptions();
-  }
-
-  Theme(): string {
-    return this.theme;
   }
 
   userToDecoration(u: User): DecorationDescription {

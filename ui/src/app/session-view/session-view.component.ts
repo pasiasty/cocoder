@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { Subscription } from 'rxjs';
@@ -6,11 +6,7 @@ import { Title } from '@angular/platform-browser';
 import { ApiService, GetSessionResponse } from '../api.service';
 import { EditorService } from '../editor.service';
 import * as monaco from 'monaco-editor';
-
-type Theme = {
-  DisplayName: string
-  Value: string
-}
+import { ThemeService } from '../theme.service';
 
 @Component({
   selector: 'app-session-view',
@@ -19,10 +15,8 @@ type Theme = {
 })
 export class SessionViewComponent implements OnInit {
   selectedLanguage!: string;
-  selectedTheme!: string;
+  darkModeEnabled!: boolean;
 
-  themesMap = new Map([["vs", "Light"], ["vs-dark", "Dark"]]);
-  themes = new Array<Theme>({ DisplayName: "Light", Value: "vs" }, { DisplayName: "Dark", Value: "vs-dark" })
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "r");
   sessionID = "";
 
@@ -40,13 +34,9 @@ export class SessionViewComponent implements OnInit {
     private cdRef: ChangeDetectorRef,
     private titleService: Title,
     private apiService: ApiService,
-    private editorService: EditorService) {
-    const theme = this.themesMap.get(this.editorService.Theme());
-    if (theme !== undefined) {
-      this.selectedTheme = theme;
-    } else {
-      this.selectedTheme = '';
-    }
+    private editorService: EditorService,
+    private themeService: ThemeService) {
+    this.darkModeEnabled = this.themeService.isDarkThemeEnabled();
   }
 
   ngOnInit(): void {
@@ -72,6 +62,13 @@ export class SessionViewComponent implements OnInit {
 
   ngOnDestroy() {
     this.sessionSubscription.unsubscribe();
+  }
+
+  selectedTheme(): string {
+    if (this.darkModeEnabled) {
+      return 'vs-dark';
+    }
+    return 'vs';
   }
 
   otherLanguages(): string[] {
@@ -144,9 +141,12 @@ export class SessionViewComponent implements OnInit {
     this.updateSession();
   }
 
-  onThemeChange(theme: Theme) {
-    this.selectedTheme = theme.DisplayName;
-    this.editorService.SetTheme(theme.Value);
+  onThemeChange() {
+    this.themeService.setDarkThemeEnabled(this.darkModeEnabled);
+
+    if (this.editorServiceInitialized) {
+      this.editorService.SetTheme(this.selectedTheme());
+    }
   }
 
   editorCreateOptions() {

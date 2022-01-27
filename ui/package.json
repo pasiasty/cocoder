@@ -22,6 +22,7 @@
     "@angular/router": "~12.2.16",
     "@forevolve/bootstrap-dark": "^2.1.0",
     "@ng-bootstrap/ng-bootstrap": "^10.0.0",
+    "@nth-cloud/ng-toggle": "^8.0.2",
     "bootstrap": "^4.5.0",
     "diff-match-patch-typescript": "^1.0.8",
     "monaco-editor": "^0.24.0",

@@ -18,18 +18,16 @@
                     </div>
                 </div>
             </div>
-            <div class="dropdown-container">
-                <div ngbDropdown class="d-inline-block">
-                    <button class="btn btn-outline-primary" id="themesDropdown"
-                        ngbDropdownToggle>{{selectedTheme}}</button>
-                    <div ngbDropdownMenu aria-labelledby="themesDropdown" class="dropdown-menu">
-                        <button *ngFor="let theme of themes" ngbDropdownItem
-                            (click)="onThemeChange(theme)">{{theme.DisplayName}}</button>
-                    </div>
-                </div>
-            </div>
+            <ng-toggle #themeToggle
+        onText="Dark"
+        offText="Light"
+        [(value)]="darkModeEnabled"
+        (valueChange)="onThemeChange()"
+        class="border border-secondary"
+    >
+    </ng-toggle>
         </div>
-        <ngx-monaco-editor [options]="{theme: selectedTheme}" (onInit)="onInit($event)"
+        <ngx-monaco-editor [options]="{theme: selectedTheme()}" (onInit)="onInit($event)"
             class="editor-field border border-right-0 border-left-0">
         </ngx-monaco-editor>
     </div>

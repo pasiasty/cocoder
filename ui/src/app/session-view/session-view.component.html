@@ -6,7 +6,7 @@
         </div>
         <div class="dropdowns-container">
             <div class="dropdown-container">
-                <mat-form-field appearance="fill">
+                <mat-form-field appearance="standard" style="margin-bottom: -1.25em">
                     <mat-label #languageSelect>Language</mat-label>
                     <mat-select (selectionChange)="onLanguageChange($event)" [(value)]="selectedLanguage">
                         <mat-option *ngFor="let language of languages" [value]="language">
@@ -20,7 +20,7 @@
                 </mat-form-field>
             </div>
             <div class="dropdown-container">
-                <mat-form-field appearance="fill">
+                <mat-form-field appearance="standard" style="margin-bottom: -1.25em">
                     <mat-label>Theme</mat-label>
                     <mat-select (selectionChange)="onThemeChange($event)" [(value)]="selectedTheme">
                         <mat-option value="vs">Light</mat-option>

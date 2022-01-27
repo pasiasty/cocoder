@@ -10,14 +10,15 @@
   flex-direction: row;
   width: 100%;
   flex-basis: content;
-  gap: 0px;
+  gap: 10px;
+  margin: 10px;
 }
 
 .dropdown-container {
   display: flex;
   flex-direction: row;
   width: 100%;
-  min-height: 80px;
+  min-height: 60px;
   flex-basis: content;
   gap: 0px;
 }

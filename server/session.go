@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
@@ -21,6 +22,8 @@ type User struct {
 }
 
 type Session struct {
+	mux sync.Mutex
+
 	Text     string    `json:"Text" diff:"Text"`
 	Language string    `json:"Language" diff:"Language"`
 	LastEdit time.Time `json:"LastEdit" diff:"LastEdit"`
@@ -47,48 +50,28 @@ func cursorSpecialSequenceRe() *regexp.Regexp {
 	return regexp.MustCompile("(" + glyphEscaped + "[0-9]+" + glyphEscaped + ")")
 }
 
-func (s *Session) Update(req *UpdateSessionRequest) *UpdateSessionResponse {
-	now := nowSource()
-
+func validateRequest(req *UpdateSessionRequest) {
 	if req.CursorPos < 0 || req.CursorPos > len(req.NewText) {
 		req.CursorPos = 0
 	}
+}
 
+func (s *Session) updateRequestingUser(req *UpdateSessionRequest) {
 	if user, ok := s.Users[req.UserID]; ok {
 		user.Position = req.CursorPos
-		user.LastEdit = now
+		user.LastEdit = nowSource()
 	} else {
 		s.Users[req.UserID] = &User{
 			ID:       req.UserID,
 			Index:    len(s.Users),
 			Position: req.CursorPos,
-			LastEdit: now,
+			LastEdit: nowSource(),
 		}
 	}
+}
 
-	for _, u := range usersSortedByPositions(s.Users) {
-		if u.ID == req.UserID {
-			req.NewText = req.NewText[:u.Position] + fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index) + req.NewText[u.Position:]
-		} else {
-			s.Text = s.Text[:u.Position] + fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index) + s.Text[u.Position:]
-		}
-
-	}
-
-	dmp := diffmatchpatch.New()
-	userPatches := dmp.PatchMake(dmp.DiffMain(req.BaseText, req.NewText, false))
-	textWithCursors, _ := dmp.PatchApply(userPatches, s.Text)
-
-	for _, u := range s.Users {
-		rawNewPosition := strings.Index(textWithCursors, fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index))
-		if rawNewPosition < 0 {
-			rawNewPosition = 0
-		}
-		u.Position = len(cursorSpecialSequenceRe().ReplaceAllString(textWithCursors[:rawNewPosition], ""))
-	}
-
-	s.Text = cursorSpecialSequenceRe().ReplaceAllString(textWithCursors, "")
-
+func (s *Session) prepareResponse(req *UpdateSessionRequest) *UpdateSessionResponse {
+	now := nowSource()
 	s.LastEdit = now
 
 	users := []*User{}
@@ -109,6 +92,49 @@ func (s *Session) Update(req *UpdateSessionRequest) *UpdateSessionResponse {
 		Language: s.Language,
 		Users:    users,
 	}
+}
+
+func (s *Session) Update(req *UpdateSessionRequest) *UpdateSessionResponse {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	validateRequest(req)
+	s.updateRequestingUser(req)
+
+	if (s.Text == req.BaseText) && (req.BaseText == req.NewText) {
+		return s.prepareResponse(req)
+	}
+
+	keepUserPositionFromRequest := s.Text == req.BaseText
+
+	for _, u := range usersSortedByPositions(s.Users) {
+		if u.ID == req.UserID {
+			req.NewText = req.NewText[:u.Position] + fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index) + req.NewText[u.Position:]
+		} else {
+			s.Text = s.Text[:u.Position] + fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index) + s.Text[u.Position:]
+		}
+
+	}
+
+	dmp := diffmatchpatch.New()
+	userPatches := dmp.PatchMake(dmp.DiffMain(req.BaseText, req.NewText, false))
+	textWithCursors, _ := dmp.PatchApply(userPatches, s.Text)
+
+	for _, u := range s.Users {
+		rawNewPosition := strings.Index(textWithCursors, fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index))
+		if rawNewPosition < 0 {
+			rawNewPosition = 0
+		}
+		u.Position = len(cursorSpecialSequenceRe().ReplaceAllString(textWithCursors[:rawNewPosition], ""))
+
+		if keepUserPositionFromRequest && u.ID == req.UserID {
+			u.Position = req.CursorPos
+		}
+	}
+
+	s.Text = cursorSpecialSequenceRe().ReplaceAllString(textWithCursors, "")
+
+	return s.prepareResponse(req)
 }
 
 func serializeSession(s *Session) string {

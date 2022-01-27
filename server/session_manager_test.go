@@ -36,20 +36,20 @@ func TestNewSession(t *testing.T) {
 func TestSerializeDeserialize(t *testing.T) {
 	for _, tc := range []struct {
 		name string
-		s    Session
+		s    *Session
 	}{{
 		name: "empty",
-		s:    Session{},
+		s:    &Session{},
 	}, {
 		name: "something",
-		s: Session{
+		s: &Session{
 			Text: "abc",
 		},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
-			s := deserializeSession(serializeSession(&tc.s))
+			s := deserializeSession(serializeSession(tc.s))
 
-			changelog, err := diff.Diff(*s, tc.s)
+			changelog, err := diff.Diff(s, tc.s)
 			if err != nil {
 				t.Fatalf("Diffing failed, but shouldn't: %v", err)
 			}

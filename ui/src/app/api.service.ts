@@ -1,10 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { interval, Observable, pipe } from 'rxjs';
+import { interval, Observable } from 'rxjs';
 import { audit, filter, map, retry, tap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
-import { CookieService } from 'ngx-cookie-service';
 import { webSocket, WebSocketSubject } from "rxjs/webSocket";
 
 export type User = {
@@ -45,12 +44,13 @@ export class ApiService {
 
   constructor(
     private httpClient: HttpClient,
-    private cookieService: CookieService,
   ) {
-    this.userID = this.cookieService.get('user_id');
-    if (this.userID == '') {
+    const userID = localStorage.getItem('user_id');
+    if (userID !== null) {
+      this.userID = userID;
+    } else {
       this.userID = uuidv4();
-      this.cookieService.set('user_id', this.userID, undefined, "/");
+      localStorage.setItem('user_id', this.userID);
     }
     this.lastUpdateTimestamp = 0;
   }

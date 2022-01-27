@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { CookieService } from 'ngx-cookie-service';
 import * as monaco from 'monaco-editor';
 import { User } from './api.service';
 import { Observable, Subject } from 'rxjs';
@@ -13,15 +12,21 @@ export class EditorService {
 
   editor?: monaco.editor.IStandaloneCodeEditor;
   language!: string;
-  theme!: string;
+  theme: string;
   oldDecorations: string[];
   currentDescorations: monaco.editor.IModelDeltaDecoration[];
   editsSubject: Subject<void>;
   userID!: string;
   model: monaco.editor.ITextModel;
 
-  constructor(private cookieService: CookieService) {
-    this.theme = this.cookieService.get('theme');
+  constructor() {
+    const theme = localStorage.getItem('theme');
+    if (theme !== null) {
+      this.theme = theme;
+    } else {
+      this.theme = '';
+    }
+
     this.oldDecorations = [];
     this.currentDescorations = [];
     this.editsSubject = new Subject<void>();
@@ -36,7 +41,6 @@ export class EditorService {
 
   SetEditor(editor: monaco.editor.IStandaloneCodeEditor) {
     const text = this.Text();
-    console.log('SetEditor text', text);
     if (this.editor !== undefined) {
       this.editor.dispose();
     }
@@ -151,7 +155,7 @@ export class EditorService {
   }
 
   SetTheme(t: string) {
-    this.cookieService.set('theme', t, undefined, "/");
+    localStorage.setItem('theme', t);
     this.theme = t;
     this.updateOptions();
   }

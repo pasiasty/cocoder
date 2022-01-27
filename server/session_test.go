@@ -14,12 +14,12 @@ func TestUpdateText(t *testing.T) {
 
 	for _, tc := range []struct {
 		name     string
-		s        Session
+		s        *Session
 		req      UpdateSessionRequest
 		wantResp UpdateSessionResponse
 	}{{
 		name: "two_users_not_colliding",
-		s: Session{
+		s: &Session{
 			Text: "some text",
 			Users: map[string]*User{
 				"user_1": {
@@ -61,7 +61,7 @@ func TestUpdateText(t *testing.T) {
 		},
 	}, {
 		name: "two_users_colliding",
-		s: Session{
+		s: &Session{
 			Text: "some text",
 			Users: map[string]*User{
 				"user_1": {

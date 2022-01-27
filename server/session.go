@@ -105,6 +105,14 @@ func (s *Session) Update(req *UpdateSessionRequest) *UpdateSessionResponse {
 		return s.prepareResponse(req)
 	}
 
+	if s.Text == req.BaseText {
+		for _, u := range req.Users {
+			s.Users[u.ID] = u
+		}
+		s.Text = req.NewText
+		return s.prepareResponse(req)
+	}
+
 	keepUserPositionFromRequest := s.Text == req.BaseText
 
 	for _, u := range usersSortedByPositions(s.Users) {

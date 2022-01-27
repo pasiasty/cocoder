@@ -79,7 +79,7 @@ export class ApiService {
     );
   }
 
-  UpdateSession(baseText: string, newText: string, cursorPos: number) {
+  UpdateSession(baseText: string, newText: string, cursorPos: number, otherUsers: User[]) {
     this.lastUpdateTimestamp = Date.now();
     let language = '';
 
@@ -93,6 +93,7 @@ export class ApiService {
       CursorPos: cursorPos,
       UserID: this.userID,
       Language: language,
+      Users: otherUsers,
     }
 
     this.subject.next(req);

@@ -116,7 +116,7 @@ export class SessionViewComponent implements OnInit {
 
   updateSession() {
     const newText = this.editorService.Text();
-    this.apiService.UpdateSession(this.lastBaseText, newText, this.editorService.Position());
+    this.apiService.UpdateSession(this.lastBaseText, newText, this.editorService.Position(), this.editorService.OtherUsers());
     this.lastBaseText = newText;
   }
 

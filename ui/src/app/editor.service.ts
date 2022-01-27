@@ -4,6 +4,12 @@ import { User } from './api.service';
 import { Observable, Subject } from 'rxjs';
 import { sampleTime } from 'rxjs/operators';
 
+type DecorationDescription = {
+  UserID: string
+  Index: number
+  Decoration: monaco.editor.IModelDeltaDecoration
+};
+
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +20,7 @@ export class EditorService {
   language!: string;
   theme: string;
   oldDecorations: string[];
-  currentDescorations: monaco.editor.IModelDeltaDecoration[];
+  currentDecorations: DecorationDescription[];
   editsSubject: Subject<void>;
   userID!: string;
   model: monaco.editor.ITextModel;
@@ -28,7 +34,7 @@ export class EditorService {
     }
 
     this.oldDecorations = [];
-    this.currentDescorations = [];
+    this.currentDecorations = [];
     this.editsSubject = new Subject<void>();
 
     if (this.theme == '') {
@@ -135,6 +141,26 @@ export class EditorService {
     return this.positionToNumber(this.editor!.getPosition());
   }
 
+  OtherUsers(): User[] {
+    const positions = this.oldDecorations.map(d => this.model.getDecorationRange(d)).map(r => {
+      if (r === null) {
+        return null;
+      }
+      return this.positionToNumber(new monaco.Position(r.startLineNumber, r.startColumn));
+    })
+    return this.currentDecorations.map((d, idx): User | null => {
+      const p = positions[idx]
+      if (p === null) {
+        return null;
+      }
+      return {
+        ID: d.UserID,
+        Index: d.Index,
+        Position: p,
+      }
+    }).filter(u => u !== null).map(u => u!);
+  }
+
   SetPosition(p: number) {
     this.editor!.setPosition(this.numberToPosition(p));
   }
@@ -164,24 +190,28 @@ export class EditorService {
     return this.theme;
   }
 
-  userToDecoration(u: User): monaco.editor.IModelDeltaDecoration {
+  userToDecoration(u: User): DecorationDescription {
     let userPos = this.numberToPosition(u.Position);
     let colorIdx = u.Index % 5 + 1
     return {
-      range: new monaco.Range(userPos.lineNumber, userPos.column, userPos.lineNumber, userPos.column + 1),
-      options: {
-        className: `other-user-cursor-${colorIdx}`,
-        stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
-      },
+      UserID: u.ID,
+      Index: u.Index,
+      Decoration: {
+        range: new monaco.Range(userPos.lineNumber, userPos.column, userPos.lineNumber, userPos.column + 1),
+        options: {
+          className: `other-user-cursor-${colorIdx}`,
+          stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+        },
+      }
     }
   }
 
   updateDecorations() {
-    this.oldDecorations = this.editor!.deltaDecorations(this.oldDecorations, this.currentDescorations);
+    this.oldDecorations = this.editor!.deltaDecorations(this.oldDecorations, this.currentDecorations.map(d => d.Decoration));
   }
 
   UpdateCursors(users: User[]) {
-    this.currentDescorations = users.filter(u => this.userID != u.ID).map(u => this.userToDecoration(u));
+    this.currentDecorations = users.filter(u => this.userID != u.ID).map(u => this.userToDecoration(u));
     this.updateDecorations();
     for (const u of users) {
       if (u.ID == this.userID && this.Position() != u.Position) {

@@ -1,0 +1,21 @@
+{
+    "appName": "cocoder",
+    "roleName": "pinpointLambdaRole7f7d80bb",
+    "cloudformationPolicyName": "cloudformationPolicy7f7d80bb",
+    "cloudWatchPolicyName": "cloudWatchPolicy7f7d80bb",
+    "pinpointPolicyName": "pinpointPolicy7f7d80bb",
+    "authPolicyName": "pinpoint_amplify_7f7d80bb",
+    "unauthPolicyName": "pinpoint_amplify_7f7d80bb",
+    "authRoleName": {
+        "Ref": "AuthRoleName"
+    },
+    "unauthRoleName": {
+        "Ref": "UnauthRoleName"
+    },
+    "authRoleArn": {
+        "Fn::GetAtt": [
+            "AuthRole",
+            "Arn"
+        ]
+    }
+}

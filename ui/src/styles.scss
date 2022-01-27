@@ -11,14 +11,14 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
-$colors: blue, red, yellow, green, magenta;
+$decoration-colors: blue, red, yellow, green, magenta;
 
-@for $i from 1 through list.length($colors) {
+@for $i from 1 through list.length($decoration-colors) {
   .other-user-cursor-#{$i} {
-    background: list.nth($colors, $i);
+    background: list.nth($decoration-colors, $i);
     width: 2px !important;
   }
 }
 
 /* Importing Bootstrap SCSS file. */
-@import '~bootstrap/scss/bootstrap';
+@import "~bootstrap/scss/bootstrap";

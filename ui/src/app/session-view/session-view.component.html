@@ -6,27 +6,29 @@
         </div>
         <div class="dropdowns-container">
             <div class="dropdown-container">
-                <mat-form-field appearance="standard" style="margin-bottom: -1.25em">
-                    <mat-label #languageSelect>Language</mat-label>
-                    <mat-select (selectionChange)="onLanguageChange($event)" [(value)]="selectedLanguage">
-                        <mat-option *ngFor="let language of languages" [value]="language">
-                            {{language}}
-                        </mat-option>
-                        <mat-divider></mat-divider>
-                        <mat-option *ngFor="let language of otherLanguages()" [value]="language">
-                            {{language}}
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field>
+                <div ngbDropdown class="d-inline-block">
+                    <button class="btn btn-outline-primary" id="languageDropdown" ngbDropdownToggle>{{selectedLanguage}}</button>
+                    <div ngbDropdownMenu aria-labelledby="languageDropdown" class="dropdown-menu">
+                        <button *ngFor="let language of languages" ngbDropdownItem (click)="onLanguageChange(language)">{{language}}</button>
+                        <hr class="solid">
+                        <button *ngFor="let language of otherLanguages()" ngbDropdownItem (click)="onLanguageChange(language)">{{language}}</button>
+                    </div>
+                  </div>
             </div>
             <div class="dropdown-container">
-                <mat-form-field appearance="standard" style="margin-bottom: -1.25em">
+                <div ngbDropdown class="d-inline-block">
+                    <button class="btn btn-outline-primary" id="themesDropdown" ngbDropdownToggle>{{selectedTheme}}</button>
+                    <div ngbDropdownMenu aria-labelledby="themesDropdown" class="dropdown-menu">
+                        <button *ngFor="let theme of themes" ngbDropdownItem (click)="onThemeChange(theme)">{{theme.DisplayName}}</button>
+                    </div>
+                  </div>
+                <!-- <mat-form-field appearance="standard" style="margin-bottom: -1.25em">
                     <mat-label>Theme</mat-label>
                     <mat-select (selectionChange)="onThemeChange($event)" [(value)]="selectedTheme">
                         <mat-option value="vs">Light</mat-option>
                         <mat-option value="vs-dark">Dark</mat-option>
                     </mat-select>
-                </mat-form-field>
+                </mat-form-field> -->
             </div>
         </div>
         <ngx-monaco-editor [options]="{theme: selectedTheme}" (onInit)="onInit($event)" class="editor-field">

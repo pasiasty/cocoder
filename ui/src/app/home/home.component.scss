@@ -1,15 +1,8 @@
-@import "~@angular/material/theming";
 @import "../common.scss";
-
-@include mat-core();
 
 .textarea-container {
   flex-grow: 5;
   padding-bottom: 0%;
-}
-
-::ng-deep .mat-form-field-wrapper {
-  margin-bottom: -1.25em;
 }
 
 .session-input {

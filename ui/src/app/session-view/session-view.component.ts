@@ -1,5 +1,4 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { MatSelectChange } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
 
 import { Subscription } from 'rxjs';
@@ -7,6 +6,11 @@ import { Title } from '@angular/platform-browser';
 import { ApiService, GetSessionResponse } from '../api.service';
 import { EditorService } from '../editor.service';
 import * as monaco from 'monaco-editor';
+
+type Theme = {
+  DisplayName: string
+  Value: string
+}
 
 @Component({
   selector: 'app-session-view',
@@ -17,6 +21,8 @@ export class SessionViewComponent implements OnInit {
   selectedLanguage!: string;
   selectedTheme!: string;
 
+  themesMap = new Map([["vs", "Light"], ["vs-dark", "Dark"]]);
+  themes = new Array<Theme>({ DisplayName: "Light", Value: "vs" }, { DisplayName: "Dark", Value: "vs-dark" })
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "r");
   sessionID = "";
 
@@ -35,7 +41,12 @@ export class SessionViewComponent implements OnInit {
     private titleService: Title,
     private apiService: ApiService,
     private editorService: EditorService) {
-    this.selectedTheme = this.editorService.Theme();
+    const theme = this.themesMap.get(this.editorService.Theme());
+    if (theme !== undefined) {
+      this.selectedTheme = theme;
+    } else {
+      this.selectedTheme = '';
+    }
   }
 
   ngOnInit(): void {
@@ -126,14 +137,16 @@ export class SessionViewComponent implements OnInit {
     this.editorService.SetLanguage(l);
   }
 
-  onLanguageChange(ev: MatSelectChange) {
-    this.editorService.SetLanguage(ev.value);
-    this.apiService.SetLanguage(ev.value);
+  onLanguageChange(value: string) {
+    this.selectedLanguage = value;
+    this.editorService.SetLanguage(value);
+    this.apiService.SetLanguage(value);
     this.updateSession();
   }
 
-  onThemeChange(ev: MatSelectChange) {
-    this.editorService.SetTheme(ev.value);
+  onThemeChange(theme: Theme) {
+    this.selectedTheme = theme.DisplayName;
+    this.editorService.SetTheme(theme.Value);
   }
 
   editorCreateOptions() {

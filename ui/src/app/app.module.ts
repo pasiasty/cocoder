@@ -17,6 +17,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { PageNotFoundComponent } from './page-not-found/page-not-found.component';
 import { MonacoEditorModule } from 'ngx-monaco-editor';
 import { CookieService } from 'ngx-cookie-service';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -45,6 +46,7 @@ const routes: Routes = [
     MonacoEditorModule.forRoot(),
     MatSelectModule,
     MatDividerModule,
+    NgbModule,
   ],
   exports: [RouterModule],
   providers: [CookieService],

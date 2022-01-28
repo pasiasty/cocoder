@@ -1,7 +1,7 @@
 <app-page-not-found *ngIf="sessionInvalid; else normalContent"></app-page-not-found>
 <ng-template #normalContent>
     <div class="content-container">
-        <app-top-bar>
+        <app-top-bar editorMode>
         </app-top-bar>
         <ngx-monaco-editor [options]="{theme: selectedTheme()}" (onInit)="onInit($event)"
             class="editor-field border border-right-0 border-left-0">

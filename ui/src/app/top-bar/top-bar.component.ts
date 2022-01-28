@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { EditorControllerService } from '../editor-controller.service';
 import { ThemeService } from '../theme.service';
 import * as monaco from 'monaco-editor';
@@ -10,6 +10,7 @@ import * as monaco from 'monaco-editor';
 })
 export class TopBarComponent implements OnInit {
   selectedLanguage!: string;
+  _editorMode = false;
 
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "r");
 
@@ -23,6 +24,11 @@ export class TopBarComponent implements OnInit {
       this.selectedLanguage = val;
       this.cdRef.detectChanges();
     });
+  }
+
+  @Input()
+  set editorMode(param: string) {
+    this._editorMode = true;
   }
 
   isDarkThemeEnabled(): boolean {

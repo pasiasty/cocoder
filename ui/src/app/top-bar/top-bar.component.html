@@ -1,6 +1,6 @@
 <div class="top-bar-row">
     <button class="logo home-button btn btn-outline-secondary" [routerLink]="['/']">coCoder</button>
-    <div *ngIf="_editorMode">
+    <div *ngIf="_editorMode" class="editor-controls-container">
 
         <div ngbDropdown class="d-inline-block language-dropdown">
             <button class="btn btn-outline-primary" ngbDropdownToggle>{{selectedLanguage}}</button>
@@ -13,7 +13,7 @@
             </div>
         </div>
         <div type="button" class="btn btn-default" (click)="downloadButtonClicked()">
-            <i class="bi bi-file-earmark-arrow-down"></i>
+            <i mdbRipple class="bi bi-file-earmark-arrow-down"></i>
         </div>
         <div type="button" class="btn btn-default" (click)="shareButtonClicked()">
             <i class="bi bi-share"></i>

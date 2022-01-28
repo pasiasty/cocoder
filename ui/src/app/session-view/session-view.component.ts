@@ -66,10 +66,6 @@ export class SessionViewComponent implements OnInit {
     });
   }
 
-  ngOnDestroy() {
-    this.sessionSubscription.unsubscribe();
-  }
-
   selectedTheme(): string {
     return this.themeService.editorThemeName();
   }

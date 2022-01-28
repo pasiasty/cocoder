@@ -7,6 +7,7 @@ import { ApiService, GetSessionResponse } from '../api.service';
 import { EditorService } from '../editor.service';
 import * as monaco from 'monaco-editor';
 import { ThemeService } from '../theme.service';
+import { EditorControllerService } from '../editor-controller.service';
 
 @Component({
   selector: 'app-session-view',
@@ -14,10 +15,8 @@ import { ThemeService } from '../theme.service';
   styleUrls: ['./session-view.component.scss'],
 })
 export class SessionViewComponent implements OnInit {
-  selectedLanguage!: string;
   darkModeEnabled!: boolean;
 
-  languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "r");
   sessionID = "";
 
   sessionSubscription!: Subscription;
@@ -35,7 +34,8 @@ export class SessionViewComponent implements OnInit {
     private titleService: Title,
     private apiService: ApiService,
     private editorService: EditorService,
-    private themeService: ThemeService) {
+    private themeService: ThemeService,
+    private editorControllerService: EditorControllerService) {
     this.darkModeEnabled = this.themeService.isDarkThemeEnabled();
   }
 
@@ -47,7 +47,7 @@ export class SessionViewComponent implements OnInit {
     this.titleService.setTitle('coCoder ' + this.sessionID.substr(this.sessionID.length - 6));
 
     this.initialSessionPromise = this.apiService.GetSession().then(data => {
-      this.selectedLanguage = data.Language;
+      this.editorControllerService.setLanguage(data.Language);
       this.cdRef.detectChanges();
       return data;
     },
@@ -58,6 +58,12 @@ export class SessionViewComponent implements OnInit {
         return null;
       },
     );
+
+    this.editorControllerService.languageChanges().subscribe(_ => {
+      if (this.editorServiceInitialized) {
+        this.updateSession();
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -65,14 +71,7 @@ export class SessionViewComponent implements OnInit {
   }
 
   selectedTheme(): string {
-    if (this.darkModeEnabled) {
-      return 'vs-dark';
-    }
-    return 'vs';
-  }
-
-  otherLanguages(): string[] {
-    return monaco.languages.getLanguages().map((v, _) => v.id).filter(v => !this.languages.includes(v));
+    return this.themeService.editorThemeName();
   }
 
   initializeEditorService() {
@@ -88,7 +87,7 @@ export class SessionViewComponent implements OnInit {
         this.sessionSubscription = this.apiService.SessionObservable().subscribe({
           next: data => {
             if (data.Language)
-              this.setLanguageInUI(data.Language);
+              this.editorControllerService.setLanguage(data.Language);
 
             if (data.NewText !== this.editorService.Text()) {
               this.editorService.SetText(data.NewText);
@@ -126,27 +125,6 @@ export class SessionViewComponent implements OnInit {
     const newText = this.editorService.Text();
     this.apiService.UpdateSession(this.lastBaseText, newText, this.editorService.Position(), this.editorService.OtherUsers());
     this.lastBaseText = newText;
-  }
-
-  setLanguageInUI(l: string) {
-    this.selectedLanguage = l;
-    this.cdRef.detectChanges();
-    this.editorService.SetLanguage(l);
-  }
-
-  onLanguageChange(value: string) {
-    this.selectedLanguage = value;
-    this.editorService.SetLanguage(value);
-    this.apiService.SetLanguage(value);
-    this.updateSession();
-  }
-
-  onThemeChange() {
-    this.themeService.setDarkThemeEnabled(this.darkModeEnabled);
-
-    if (this.editorServiceInitialized) {
-      this.editorService.SetTheme(this.selectedTheme());
-    }
   }
 
   editorCreateOptions() {

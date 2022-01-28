@@ -13,6 +13,7 @@ import { MonacoEditorModule } from 'ngx-monaco-editor';
 import { CookieService } from 'ngx-cookie-service';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { NgToggleModule } from '@nth-cloud/ng-toggle';
+import { TopBarComponent } from './top-bar/top-bar.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -26,7 +27,8 @@ const routes: Routes = [
     AppComponent,
     SessionViewComponent,
     HomeComponent,
-    PageNotFoundComponent
+    PageNotFoundComponent,
+    TopBarComponent
   ],
   imports: [
     BrowserModule,

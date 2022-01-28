@@ -42,4 +42,11 @@ export class ThemeService {
   themeChanges(): Observable<boolean> {
     return this.themeSelection.asObservable();
   }
+
+  editorThemeName(): string {
+    if (this.darkThemeEnabled) {
+      return 'vs-dark';
+    }
+    return 'vs';
+  }
 }

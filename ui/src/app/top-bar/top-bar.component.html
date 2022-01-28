@@ -1,0 +1,43 @@
+
+
+<div class="top-bar-row">
+    <button class="logo home-button btn btn-outline-secondary" [routerLink]="['/']">coCoder</button>
+    <div ngbDropdown class="d-inline-block language-dropdown">
+        <button class="btn btn-outline-primary"
+            ngbDropdownToggle>{{selectedLanguage}}</button>
+        <div ngbDropdownMenu class="dropdown-menu">
+            <button *ngFor="let language of languages" ngbDropdownItem
+                (click)="onLanguageChange(language)">{{language}}</button>
+            <hr class="solid">
+            <button *ngFor="let language of otherLanguages()" ngbDropdownItem
+                (click)="onLanguageChange(language)">{{language}}</button>
+        </div>
+    </div>
+    <div type="button" class="btn btn-default" (click)="downloadButtonClicked()">
+        <i class="bi bi-file-earmark-arrow-down"></i>
+    </div>
+    <div type="button" class="btn btn-default" (click)="shareButtonClicked()">
+        <i class="bi bi-share"></i>
+    </div>
+    <div type="button" class="btn btn-default" (click)="zoomInButtonClicked()">
+        <i class="bi bi-zoom-in"></i>
+    </div>
+    <div type="button" class="btn btn-default" (click)="zoomOutButtonClicked()">
+        <i class="bi bi-zoom-out"></i>
+    </div>
+
+    <div class="empty-space">
+    </div>
+    <div type="button" class="btn btn-default" (click)="themeButtonClicked()">
+        <i *ngIf="isDarkThemeEnabled() else themeButtonDarkThemeVariant" class="bi bi-moon-stars"></i>
+        <ng-template #themeButtonDarkThemeVariant>
+            <i class="bi bi-brightness-high"></i>
+        </ng-template>
+    </div>
+    <div type="button" class="btn btn-default" (click)="bugButtonClicked()">
+        <i class="bi bi-bug"></i>
+    </div>
+    <div type="button" class="btn btn-default" (click)="donateButtonClicked()">
+        <i class="bi bi-cash-coin"></i>
+    </div>
+</div>

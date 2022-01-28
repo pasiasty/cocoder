@@ -7,43 +7,10 @@
   flex-grow: 1;
 }
 
-.dropdowns-container {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  flex-basis: content;
-  gap: 10px;
-  margin: 10px;
-}
-
-.dropdown-container {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  flex-basis: content;
-  gap: 0px;
-}
-
-.home-button {
-  text-shadow: 0px 0px #999999;
-}
-
-.top-bar-row {
-  width: 100%;
-  margin: 10px;
-  display: flex;
-  flex-direction: row;
-}
-
 .content-container {
   overflow: hidden;
   display: flex;
   position: relative;
   flex-direction: column;
   height: 100%;
-}
-
-.dropdown-menu {
-  overflow-y: auto;
-  max-height: 300px;
 }

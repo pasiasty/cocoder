@@ -5,6 +5,7 @@ import { audit, filter, map, retry, tap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 import { webSocket, WebSocketSubject } from "rxjs/webSocket";
+import { EditorControllerService } from './editor-controller.service';
 
 export type User = {
   Index: number
@@ -44,6 +45,7 @@ export class ApiService {
 
   constructor(
     private httpClient: HttpClient,
+    private editorControllerService: EditorControllerService,
   ) {
     const userID = localStorage.getItem('user_id');
     if (userID !== null) {
@@ -53,6 +55,11 @@ export class ApiService {
       localStorage.setItem('user_id', this.userID);
     }
     this.lastUpdateTimestamp = 0;
+
+    this.editorControllerService.languageChanges().subscribe(val => {
+      this.lastLanguageUpdateTimestamp = Date.now();
+      this.selectedLanguage = val;
+    });
   }
 
   GetUserID(): string {
@@ -104,10 +111,5 @@ export class ApiService {
       retry(3),
       tap(data => this.selectedLanguage = data.Language),
     ).toPromise();
-  }
-
-  SetLanguage(language: string) {
-    this.lastLanguageUpdateTimestamp = Date.now();
-    this.selectedLanguage = language;
   }
 }

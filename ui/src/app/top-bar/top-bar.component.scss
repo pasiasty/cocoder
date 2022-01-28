@@ -1,0 +1,28 @@
+@import "../common.scss";
+
+.logo {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 1.5em;
+  text-align: center;
+}
+
+.language-dropdown {
+  min-width: 160px;
+  text-align: right;
+}
+
+.dropdown-menu {
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.top-bar-row {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  align-items: baseline;
+}
+
+.empty-space {
+  flex-grow: 1;
+}

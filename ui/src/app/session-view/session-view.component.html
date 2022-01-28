@@ -1,32 +1,8 @@
 <app-page-not-found *ngIf="sessionInvalid; else normalContent"></app-page-not-found>
 <ng-template #normalContent>
     <div class="content-container">
-        <div class="top-bar-row">
-            <button class="logo home-button btn btn-outline-secondary" [routerLink]="['/']">coCoder</button>
-        </div>
-        <div class="dropdowns-container">
-            <div class="dropdown-container">
-                <div ngbDropdown class="d-inline-block">
-                    <button class="btn btn-outline-primary" id="languageDropdown"
-                        ngbDropdownToggle>{{selectedLanguage}}</button>
-                    <div ngbDropdownMenu aria-labelledby="languageDropdown" class="dropdown-menu">
-                        <button *ngFor="let language of languages" ngbDropdownItem
-                            (click)="onLanguageChange(language)">{{language}}</button>
-                        <hr class="solid">
-                        <button *ngFor="let language of otherLanguages()" ngbDropdownItem
-                            (click)="onLanguageChange(language)">{{language}}</button>
-                    </div>
-                </div>
-            </div>
-            <ng-toggle #themeToggle
-        onText="Dark"
-        offText="Light"
-        [(value)]="darkModeEnabled"
-        (valueChange)="onThemeChange()"
-        class="border border-secondary"
-    >
-    </ng-toggle>
-        </div>
+        <app-top-bar>
+        </app-top-bar>
         <ngx-monaco-editor [options]="{theme: selectedTheme()}" (onInit)="onInit($event)"
             class="editor-field border border-right-0 border-left-0">
         </ngx-monaco-editor>

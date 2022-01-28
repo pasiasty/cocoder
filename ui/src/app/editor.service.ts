@@ -4,6 +4,7 @@ import { User } from './api.service';
 import { Observable, Subject } from 'rxjs';
 import { sampleTime } from 'rxjs/operators';
 import { ThemeService } from './theme.service';
+import { EditorControllerService } from './editor-controller.service';
 
 type DecorationDescription = {
   UserID: string
@@ -26,7 +27,7 @@ export class EditorService {
   userID!: string;
   model: monaco.editor.ITextModel;
 
-  constructor(private themeService: ThemeService) {
+  constructor(private themeService: ThemeService, private editorControllerService: EditorControllerService) {
     if (themeService.isDarkThemeEnabled()) {
       this.theme = 'vs-dark';
     } else {
@@ -60,6 +61,14 @@ export class EditorService {
 
     this.editor.onMouseDown(() => {
       this.editsSubject.next();
+    });
+
+    this.themeService.themeChanges().subscribe(() => {
+      this.SetTheme(this.themeService.editorThemeName());
+    });
+
+    this.editorControllerService.languageChanges().subscribe(val => {
+      this.SetLanguage(val);
     });
   }
 

@@ -2,7 +2,7 @@
     <button class="logo home-button btn btn-outline-secondary" [routerLink]="['/']">coCoder</button>
     <div *ngIf="_editorMode" class="editor-controls-container">
 
-        <div ngbDropdown class="d-inline-block language-dropdown">
+        <div ngbDropdown class="d-inline-block language-dropdown" title="Select language">
             <button class="btn btn-outline-primary" ngbDropdownToggle>{{selectedLanguage}}</button>
             <div ngbDropdownMenu class="dropdown-menu">
                 <button *ngFor="let language of languages" ngbDropdownItem
@@ -12,32 +12,32 @@
                     (click)="onLanguageChange(language)">{{language}}</button>
             </div>
         </div>
-        <div type="button" class="btn btn-default" (click)="downloadButtonClicked()">
+        <div type="button" class="btn btn-default" (click)="downloadButtonClicked()" title="Download your code">
             <i mdbRipple class="bi bi-file-earmark-arrow-down"></i>
         </div>
-        <div type="button" class="btn btn-default" (click)="shareButtonClicked()">
+        <div type="button" class="btn btn-default" (click)="shareButtonClicked()" title="Share session with friends">
             <i class="bi bi-share"></i>
         </div>
-        <div type="button" class="btn btn-default" (click)="zoomInButtonClicked()">
+        <div type="button" class="btn btn-default" (click)="zoomInButtonClicked()" title="Zoom in">
             <i class="bi bi-zoom-in"></i>
         </div>
-        <div type="button" class="btn btn-default" (click)="zoomOutButtonClicked()">
+        <div type="button" class="btn btn-default" (click)="zoomOutButtonClicked()" title="Zoom out">
             <i class="bi bi-zoom-out"></i>
         </div>
     </div>
 
     <div class="empty-space">
     </div>
-    <div type="button" class="btn btn-default" (click)="themeButtonClicked()">
+    <div type="button" class="btn btn-default" (click)="themeButtonClicked()" title="Toggle theme">
         <i *ngIf="isDarkThemeEnabled() else themeButtonDarkThemeVariant" class="bi bi-moon-stars"></i>
         <ng-template #themeButtonDarkThemeVariant>
             <i class="bi bi-brightness-high"></i>
         </ng-template>
     </div>
-    <div type="button" class="btn btn-default" (click)="bugButtonClicked()">
+    <div type="button" class="btn btn-default" (click)="bugButtonClicked()" title="Report a bug">
         <i class="bi bi-bug"></i>
     </div>
-    <div type="button" class="btn btn-default" (click)="donateButtonClicked()">
+    <div type="button" class="btn btn-default" (click)="donateButtonClicked()" title="Donate">
         <i class="bi bi-cash-coin"></i>
     </div>
 </div>

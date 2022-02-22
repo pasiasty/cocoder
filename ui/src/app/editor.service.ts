@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import * as monaco from 'monaco-editor';
 import { User } from './api.service';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
 import { sampleTime } from 'rxjs/operators';
 import { ThemeService } from './theme.service';
 import { EditorControllerService } from './editor-controller.service';
@@ -12,11 +12,10 @@ type DecorationDescription = {
   Decoration: monaco.editor.IModelDeltaDecoration
 };
 
-
 @Injectable({
   providedIn: 'root'
 })
-export class EditorService {
+export class EditorService implements OnDestroy {
 
   editor?: monaco.editor.IStandaloneCodeEditor;
   language!: string;
@@ -27,12 +26,15 @@ export class EditorService {
   userID!: string;
   model: monaco.editor.ITextModel;
 
+  themeChangesSubscription?: Subscription;
+  languageChangesSubscription?: Subscription;
+
+  contentChangeDisposable?: monaco.IDisposable;
+  cursorPositionChangeDisposable?: monaco.IDisposable;
+  cursorSelectionChangeDisposable?: monaco.IDisposable;
+
   constructor(private themeService: ThemeService, private editorControllerService: EditorControllerService) {
-    if (themeService.isDarkThemeEnabled()) {
-      this.theme = 'vs-dark';
-    } else {
-      this.theme = 'vs';
-    }
+    this.theme = themeService.editorThemeName();
 
     this.oldDecorations = [];
     this.currentDecorations = [];
@@ -42,34 +44,48 @@ export class EditorService {
     this.model = monaco.editor.createModel('', this.language, monaco.Uri.parse(this.language));
   }
 
-  SetEditor(editor: monaco.editor.IStandaloneCodeEditor) {
-    const text = this.Text();
-    if (this.editor !== undefined) {
-      this.editor.dispose();
-    }
+  DisposeEditorSubscriptions() {
+    this.contentChangeDisposable?.dispose();
+    this.cursorPositionChangeDisposable?.dispose();
+    this.cursorSelectionChangeDisposable?.dispose();
+  }
 
-    this.SetText(text);
+  SetEditor(editor: monaco.editor.IStandaloneCodeEditor) {
+    this.editor?.dispose();
+    this.DisposeEditorSubscriptions();
+    this.SetText("");
     editor.setModel(this.model);
 
     this.editor = editor;
 
     this.updateOptions();
 
-    this.editor.onKeyDown(() => {
+    this.contentChangeDisposable = this.editor.onDidChangeModelContent(() => {
       this.editsSubject.next();
     });
 
-    this.editor.onMouseDown(() => {
+    this.cursorPositionChangeDisposable = this.editor.onDidChangeCursorPosition(() => {
       this.editsSubject.next();
     });
 
-    this.themeService.themeChanges().subscribe(() => {
+    this.cursorSelectionChangeDisposable = this.editor.onDidChangeCursorSelection(() => {
+      this.editsSubject.next();
+    });
+
+    this.themeChangesSubscription = this.themeService.themeChanges().subscribe(() => {
       this.SetTheme(this.themeService.editorThemeName());
     });
 
-    this.editorControllerService.languageChanges().subscribe(val => {
+    this.languageChangesSubscription = this.editorControllerService.languageChanges().subscribe(val => {
       this.SetLanguage(val);
     });
+  }
+
+  ngOnDestroy() {
+    this.themeChangesSubscription?.unsubscribe();
+    this.languageChangesSubscription?.unsubscribe();
+    this.DisposeEditorSubscriptions();
+    this.editor?.dispose();
   }
 
   SetUserID(userID: string) {
@@ -173,19 +189,8 @@ export class EditorService {
     this.editor!.setPosition(this.numberToPosition(p));
   }
 
-  SetLanguage(l: string, refresh: boolean = false) {
-    if (l === this.language && !refresh) {
-      return;
-    }
-
-    const text = this.Text();
-    this.model.dispose();
-
-    this.language = l;
-    this.model = monaco.editor.createModel(text, l, monaco.Uri.parse(l));
-    this.editor!.setModel(this.model);
-
-    this.updateOptions();
+  SetLanguage(l: string) {
+    monaco.editor.setModelLanguage(this.model, l);
   }
 
   SetTheme(t: string) {

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { interval, Observable } from 'rxjs';
+import { Injectable, OnDestroy } from '@angular/core';
+import { from, interval, Observable, Subscription } from 'rxjs';
 import { audit, filter, map, retry, tap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
@@ -33,14 +33,16 @@ export type GetSessionResponse = {
 @Injectable({
   providedIn: 'root'
 })
-export class ApiService {
+export class ApiService implements OnDestroy {
 
   subject!: WebSocketSubject<EditRequest>;
+
+  languageChangesSubscription?: Subscription;
 
   lastLanguageUpdateTimestamp!: number;
   lastUpdateTimestamp: number;
   selectedLanguage!: string;
-  sessionID !: string;
+  sessionID!: string;
   userID: string;
 
   constructor(
@@ -56,10 +58,20 @@ export class ApiService {
     }
     this.lastUpdateTimestamp = 0;
 
-    this.editorControllerService.languageChanges().subscribe(val => {
+    this.languageChangesSubscription = this.editorControllerService.languageChanges().subscribe(val => {
       this.lastLanguageUpdateTimestamp = Date.now();
       this.selectedLanguage = val;
     });
+  }
+
+  ngOnDestroy() {
+    this.subject.unsubscribe();
+    this.languageChangesSubscription?.unsubscribe();
+  }
+
+  SetSessionID(sessionID: string) {
+    this.sessionID = sessionID;
+    this.subject = webSocket<EditRequest>(this.WsUri() + sessionID + "/" + this.userID + "/ws");
   }
 
   GetUserID(): string {
@@ -71,11 +83,6 @@ export class ApiService {
       return environment.apiWs;
     }
     return window.location.origin.replace('http', 'ws') + environment.apiWs;
-  }
-
-  SetSessionID(sessionID: string) {
-    this.sessionID = sessionID;
-    this.subject = webSocket<EditRequest>(this.WsUri() + sessionID + "/" + this.userID + "/ws");
   }
 
   SessionObservable(): Observable<EditResponse> {

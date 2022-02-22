@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { Subscription } from 'rxjs';
@@ -14,14 +14,15 @@ import { EditorControllerService } from '../editor-controller.service';
   templateUrl: './session-view.component.html',
   styleUrls: ['./session-view.component.scss'],
 })
-export class SessionViewComponent implements OnInit {
+export class SessionViewComponent implements OnInit, OnDestroy {
   darkModeEnabled!: boolean;
 
-  sessionID = "";
-
-  sessionSubscription!: Subscription;
+  languageChangesSubscription?: Subscription;
+  sessionSubscription?: Subscription;
+  editsSubscription?: Subscription;
 
   lastBaseText = "";
+  sessionID = "";
 
   sessionInvalid = false;
   editorServiceInitialized = false;
@@ -59,11 +60,17 @@ export class SessionViewComponent implements OnInit {
       },
     );
 
-    this.editorControllerService.languageChanges().subscribe(_ => {
+    this.languageChangesSubscription = this.editorControllerService.languageChanges().subscribe(_ => {
       if (this.editorServiceInitialized) {
         this.updateSession();
       }
     });
+  }
+
+  ngOnDestroy() {
+    this.sessionSubscription?.unsubscribe();
+    this.editsSubscription?.unsubscribe();
+    this.languageChangesSubscription?.unsubscribe();
   }
 
   selectedTheme(): string {
@@ -100,7 +107,7 @@ export class SessionViewComponent implements OnInit {
       },
     );
 
-    this.editorService.editsObservable().subscribe({
+    this.editsSubscription = this.editorService.editsObservable().subscribe({
       next: () => {
         this.updateSession();
       },

@@ -1,15 +1,15 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ScrollingService {
 
-  scrollSelection: BehaviorSubject<string>;
+  scrollSelection: Subject<string>;
 
   constructor() {
-    this.scrollSelection = new BehaviorSubject<string>("");
+    this.scrollSelection = new Subject<string>();
   }
 
   scrollChanges(): Observable<string> {

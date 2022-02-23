@@ -2,7 +2,6 @@ import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { EditorControllerService } from '../editor-controller.service';
 import { ThemeService } from '../theme.service';
 import * as monaco from 'monaco-editor';
-import { NgbNavChangeEvent } from '@ng-bootstrap/ng-bootstrap';
 import { ScrollingService } from '../scrolling.service';
 
 @Component({
@@ -64,19 +63,19 @@ export class TopBarComponent implements OnInit {
   }
 
   bugButtonClicked(): void {
-
+    window.open("https://github.com/pasiasty/cocoder/issues", "_blank");
   }
 
   donateButtonClicked(): void {
-
+    window.open("https://paypal.me/coCoderDonate", "_blank");
   }
 
   downloadButtonClicked(): void {
-
+    this.editorControllerService.saveContent();
   }
 
   shareButtonClicked(): void {
-
+    console.log(window.location.href);
   }
 
   zoomInButtonClicked(): void {

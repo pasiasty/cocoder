@@ -5,6 +5,7 @@ import { Observable, Subject, Subscription } from 'rxjs';
 import { sampleTime } from 'rxjs/operators';
 import { ThemeService } from './theme.service';
 import { EditorControllerService } from './editor-controller.service';
+import { FileSaverService } from 'ngx-filesaver';
 
 type DecorationDescription = {
   UserID: string
@@ -33,7 +34,10 @@ export class EditorService implements OnDestroy {
   cursorPositionChangeDisposable?: monaco.IDisposable;
   cursorSelectionChangeDisposable?: monaco.IDisposable;
 
-  constructor(private themeService: ThemeService, private editorControllerService: EditorControllerService) {
+  constructor(
+    private themeService: ThemeService,
+    private editorControllerService: EditorControllerService,
+    private fileSaverService: FileSaverService) {
     this.theme = themeService.editorThemeName();
 
     this.oldDecorations = [];
@@ -42,6 +46,40 @@ export class EditorService implements OnDestroy {
 
     this.language = 'plaintext';
     this.model = monaco.editor.createModel('', this.language, monaco.Uri.parse(this.language));
+
+    this.editorControllerService.saveTriggersObservable().subscribe({
+      next: _ => {
+        this.fileSaverService.saveText(this.Text(), `code.${this.GetLanguageExtension()}`);
+      }
+    })
+  }
+
+  GetLanguageExtension(): string {
+    console.log(this.language);
+    switch (this.language) {
+      case "python":
+        return "py";
+      case "java":
+        return "java";
+      case "go":
+        return "go";
+      case "cpp":
+        return "cpp";
+      case "c":
+        return "c";
+      case "r":
+        return "r";
+      case "json":
+        return "json";
+      case "shell":
+        return "sh";
+      case "yaml":
+        return "yaml";
+      case "sql":
+        return "sql";
+      default:
+        return "txt";
+    }
   }
 
   DisposeEditorSubscriptions() {
@@ -190,6 +228,7 @@ export class EditorService implements OnDestroy {
   }
 
   SetLanguage(l: string) {
+    this.language = l;
     monaco.editor.setModelLanguage(this.model, l);
   }
 

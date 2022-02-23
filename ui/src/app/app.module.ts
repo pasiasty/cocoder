@@ -15,6 +15,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { NgToggleModule } from '@nth-cloud/ng-toggle';
 import { TopBarComponent } from './top-bar/top-bar.component';
 import { FileSaverModule } from 'ngx-filesaver';
+import { ClipboardModule } from 'ngx-clipboard';
+import { ToastsContainerComponent } from './toasts-container/toasts-container.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -29,7 +31,8 @@ const routes: Routes = [
     SessionViewComponent,
     HomeComponent,
     PageNotFoundComponent,
-    TopBarComponent
+    TopBarComponent,
+    ToastsContainerComponent
   ],
   imports: [
     BrowserModule,
@@ -41,6 +44,7 @@ const routes: Routes = [
     NgbModule,
     NgToggleModule,
     FileSaverModule,
+    ClipboardModule,
   ],
   exports: [RouterModule],
   providers: [CookieService],

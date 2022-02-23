@@ -3,6 +3,8 @@ import { EditorControllerService } from '../editor-controller.service';
 import { ThemeService } from '../theme.service';
 import * as monaco from 'monaco-editor';
 import { ScrollingService } from '../scrolling.service';
+import { ClipboardService } from 'ngx-clipboard'
+import { ToastService } from '../toast.service';
 
 @Component({
   selector: 'app-top-bar',
@@ -13,6 +15,7 @@ export class TopBarComponent implements OnInit {
   selectedLanguage!: string;
   _editorMode = false;
   _homeMode = false;
+  showToast = false;
 
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "r");
 
@@ -26,7 +29,9 @@ export class TopBarComponent implements OnInit {
     private themeService: ThemeService,
     private cdRef: ChangeDetectorRef,
     private editorControllerService: EditorControllerService,
-    private scrollingService: ScrollingService) { }
+    private scrollingService: ScrollingService,
+    private clipboardService: ClipboardService,
+    private toastService: ToastService) { }
 
   ngOnInit(): void {
     this.editorControllerService.languageChanges().subscribe(val => {
@@ -75,7 +80,8 @@ export class TopBarComponent implements OnInit {
   }
 
   shareButtonClicked(): void {
-    console.log(window.location.href);
+    this.clipboardService.copy(window.location.href);
+    this.toastService.show("", "Copied session URL to clipboard");
   }
 
   zoomInButtonClicked(): void {

@@ -1,14 +1,21 @@
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+
 @import "../common.scss";
 
+.dark-namespace {
+  @import "~@forevolve/bootstrap-dark/scss/dark-variables";
+}
+
 :host-context(.bootstrap-dark) {
-  @import "~@forevolve/bootstrap-dark/scss/toggle-bootstrap-dark.scss";
-  .top-bar-container {
-    background-color: $body-bg;
+  .dark-namespace {
+    .top-bar-container {
+      background-color: $body-bg;
+    }
   }
 }
 
 :host-context(.bootstrap) {
-  @import "~bootstrap/scss/bootstrap";
   .top-bar-container {
     background-color: $body-bg;
   }

@@ -9,11 +9,13 @@ export class EditorControllerService {
   selectedLanguage: string;
   languageSelection: BehaviorSubject<string>;
   saveTriggers: Subject<null>;
+  fontUpdate: Subject<number>;
 
   constructor() {
     this.selectedLanguage = 'plaintext';
     this.languageSelection = new BehaviorSubject<string>(this.selectedLanguage);
     this.saveTriggers = new Subject<null>();
+    this.fontUpdate = new Subject<number>();
   }
 
   languageChanges(): Observable<string> {
@@ -31,5 +33,13 @@ export class EditorControllerService {
 
   saveTriggersObservable(): Observable<null> {
     return this.saveTriggers.asObservable();
+  }
+
+  updateFontSize(n: number) {
+    this.fontUpdate.next(n);
+  }
+
+  fontUpdates(): Observable<number> {
+    return this.fontUpdate.asObservable();
   }
 }

@@ -85,11 +85,11 @@ export class TopBarComponent implements OnInit {
   }
 
   zoomInButtonClicked(): void {
-
+    this.editorControllerService.updateFontSize(1);
   }
 
   zoomOutButtonClicked(): void {
-
+    this.editorControllerService.updateFontSize(-1);
   }
 
   navClicked(val: string): void {

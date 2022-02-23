@@ -20,6 +20,7 @@ export class EditorService implements OnDestroy {
 
   editor?: monaco.editor.IStandaloneCodeEditor;
   language!: string;
+  fontSize: number;
   theme: string;
   oldDecorations: string[];
   currentDecorations: DecorationDescription[];
@@ -45,6 +46,13 @@ export class EditorService implements OnDestroy {
     this.editsSubject = new Subject<void>();
 
     this.language = 'plaintext';
+
+    const fontSize = localStorage.getItem('font_size');
+    if (fontSize !== null) {
+      this.fontSize = parseInt(fontSize);
+    } else {
+      this.fontSize = 15;
+    }
     this.model = monaco.editor.createModel('', this.language, monaco.Uri.parse(this.language));
 
     this.editorControllerService.saveTriggersObservable().subscribe({
@@ -117,6 +125,12 @@ export class EditorService implements OnDestroy {
     this.languageChangesSubscription = this.editorControllerService.languageChanges().subscribe(val => {
       this.SetLanguage(val);
     });
+
+    this.editorControllerService.fontUpdates().subscribe(val => {
+      this.fontSize += val;
+      localStorage.setItem("font_size", this.fontSize.toString());
+      this.updateOptions();
+    });
   }
 
   ngOnDestroy() {
@@ -145,7 +159,7 @@ export class EditorService implements OnDestroy {
   updateOptions() {
     this.editor!.updateOptions({
       cursorBlinking: 'smooth',
-      mouseWheelZoom: true,
+      fontSize: this.fontSize,
       showUnused: true,
       theme: this.theme,
       scrollbar: {

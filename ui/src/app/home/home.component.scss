@@ -3,15 +3,10 @@
 
 @import "../common.scss";
 
-.dark-namespace {
-  @import "~@forevolve/bootstrap-dark/scss/dark-variables";
-}
-
 :host-context(.bootstrap-dark) {
-  .dark-namespace {
-    .top-bar-container {
-      background-color: $body-bg;
-    }
+  @import "~@forevolve/bootstrap-dark/scss/dark-variables";
+  .top-bar-container {
+    background-color: $body-bg;
   }
 }
 
@@ -61,9 +56,9 @@
 }
 
 .carousel-image {
-  height: 100vh;
-  max-width: 80vw;
-  object-fit: contain;
+  max-height: 80vh;
+  width: 80vw;
+  object-fit: cover;
 }
 
 .header-separator {
@@ -112,7 +107,7 @@
   justify-content: center;
 }
 
-.about-carousel {
+.about-carousel-layer {
   max-width: 80vw;
   align-self: center;
 }

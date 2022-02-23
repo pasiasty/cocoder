@@ -35,6 +35,10 @@
   .btn:active {
     background-color: rgb(40, 40, 40);
   }
+
+  .activable-item.active {
+    background-color: rgb(60, 60, 60);
+  }
 }
 
 :host-context(.bootstrap) {
@@ -45,6 +49,10 @@
   .btn:active {
     background-color: rgb(160, 160, 160);
   }
+
+  .activable-item.active {
+    background-color: rgb(200, 200, 200);
+  }
 }
 
 .editor-controls-container {
@@ -52,4 +60,12 @@
   flex-direction: row;
   gap: 3px;
   align-items: baseline;
+}
+
+.home-navigation {
+  gap: 10px;
+}
+
+.activable-item.active {
+  border-radius: 100px;
 }

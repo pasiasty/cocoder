@@ -1,6 +1,20 @@
 <div class="top-bar-row">
-    <button class="logo home-button btn btn-outline-secondary" [routerLink]="['/']">coCoder</button>
-    <div *ngIf="_editorMode" class="editor-controls-container">
+    <button class="logo home-button btn btn-outline-secondary" [routerLink]="['/']"
+        (click)="navClicked('home')">coCoder</button>
+    <div *ngIf="_homeMode">
+        <nav class="navbar">
+            <ul ngbNav class="flex-row home-navigation">
+                <li ngbNavItem="home">
+                    <a ngbNavLink routerLink="." [fragment]="" (click)="navClicked('home')">Home</a>
+                </li>
+                <li [ngbNavItem]="link.fragment" *ngFor="let link of links">
+                    <a ngbNavLink class="activable-item" routerLink="." [fragment]="link.fragment"
+                        (click)="navClicked(link.fragment)">{{ link.title }}</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <div *ngIf=" _editorMode" class="editor-controls-container">
 
         <div ngbDropdown class="d-inline-block language-dropdown" title="Select language">
             <button class="btn btn-outline-primary" ngbDropdownToggle>{{selectedLanguage}}</button>

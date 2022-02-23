@@ -2,6 +2,8 @@ import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { EditorControllerService } from '../editor-controller.service';
 import { ThemeService } from '../theme.service';
 import * as monaco from 'monaco-editor';
+import { NgbNavChangeEvent } from '@ng-bootstrap/ng-bootstrap';
+import { ScrollingService } from '../scrolling.service';
 
 @Component({
   selector: 'app-top-bar',
@@ -11,13 +13,21 @@ import * as monaco from 'monaco-editor';
 export class TopBarComponent implements OnInit {
   selectedLanguage!: string;
   _editorMode = false;
+  _homeMode = false;
 
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "r");
+
+  links = [
+    { title: 'About', fragment: 'about' },
+    { title: 'FAQ', fragment: 'faq' },
+    { title: 'Contact', fragment: 'contact' },
+  ];
 
   constructor(
     private themeService: ThemeService,
     private cdRef: ChangeDetectorRef,
-    private editorControllerService: EditorControllerService) { }
+    private editorControllerService: EditorControllerService,
+    private scrollingService: ScrollingService) { }
 
   ngOnInit(): void {
     this.editorControllerService.languageChanges().subscribe(val => {
@@ -29,6 +39,11 @@ export class TopBarComponent implements OnInit {
   @Input()
   set editorMode(param: string) {
     this._editorMode = true;
+  }
+
+  @Input()
+  set homeMode(param: string) {
+    this._homeMode = true;
   }
 
   isDarkThemeEnabled(): boolean {
@@ -70,5 +85,9 @@ export class TopBarComponent implements OnInit {
 
   zoomOutButtonClicked(): void {
 
+  }
+
+  navClicked(val: string): void {
+    this.scrollingService.scrollTo(val);
   }
 }

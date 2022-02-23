@@ -1,9 +1,9 @@
 <div class="top-bar-container">
-  <app-top-bar></app-top-bar>
+  <app-top-bar homeMode></app-top-bar>
   <hr class="header-separator">
 </div>
 <div class="content-container">
-  <div class="content-page first-page">
+  <div #home class="content-page first-page">
     <h1>
       Welcome to the collaborative coding tool!
     </h1>
@@ -12,7 +12,8 @@
       new
       session</button>
   </div>
-  <div class="content-page">
+  <a name="about" id="about"></a>
+  <div #about class="content-page">
     <div class="carousel-container">
       <div class="about-grid">
         <div class="about-title-layer">
@@ -20,7 +21,7 @@
             What can you use it for?
           </h2>
         </div>
-        <ngb-carousel class="about-carousel about-carousel-layer">
+        <ngb-carousel class="about-carousel-layer">
           <ng-template ngbSlide>
             <div class="picsum-img-wrapper">
               <img src="/assets/code.jpg" class="carousel-image">
@@ -56,10 +57,10 @@
       </div>
     </div>
   </div>
-  <div class="content-page">
+  <div #faq class="content-page">
     <h1>FAQ</h1>
   </div>
-  <div class="content-page">
+  <div #contact class="content-page">
     <h1>Contact</h1>
   </div>
 </div>

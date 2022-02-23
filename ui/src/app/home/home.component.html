@@ -1,44 +1,65 @@
-<div class="root-container">
+<div class="top-bar-container">
   <app-top-bar></app-top-bar>
   <hr class="header-separator">
-  <div class="content-container">
-    <div class="content-column text-column">
-      <button class="btn btn-lg btn-outline-primary new-session-button" color="primary" (click)="newSession()">Start new
-        session</button>
+</div>
+<div class="content-container">
+  <div class="content-page first-page">
+    <h1>
+      Welcome to the collaborative coding tool!
+    </h1>
+
+    <button class="btn btn-lg btn-outline-primary new-session-button" color="primary" (click)="newSession()">Start
+      new
+      session</button>
+  </div>
+  <div class="content-page">
+    <div class="carousel-container">
+      <div class="about-grid">
+        <div class="about-title-layer">
+          <h2 class="about-title d-none d-lg-inline-block">
+            What can you use it for?
+          </h2>
+        </div>
+        <ngb-carousel class="about-carousel about-carousel-layer">
+          <ng-template ngbSlide>
+            <div class="picsum-img-wrapper">
+              <img src="/assets/code.jpg" class="carousel-image">
+            </div>
+            <div class="carousel-caption d-none d-md-block">
+              <h3>Instant code experimentation</h3>
+              <p>This tool will allow you to prototype a simple program within seconds. It's just one click away.</p>
+            </div>
+          </ng-template>
+          <ng-template ngbSlide>
+            <div class="picsum-img-wrapper">
+              <img src="/assets/collaboration.jpg" class="carousel-image">
+            </div>
+            <div class="carousel-caption d-none d-md-block">
+              <h3>Collaboration</h3>
+              <p>You can use this website as a perfect solution for pair programming. No more resolution issues caused
+                by
+                screen sharing!</p>
+            </div>
+          </ng-template>
+          <ng-template ngbSlide>
+            <div class="picsum-img-wrapper">
+              <img src="/assets/job-interview.jpg" class="carousel-image">
+            </div>
+            <div class="carousel-caption d-none d-md-block">
+              <h3>Technical interview preparation</h3>
+              <p>coCoder will help you prepare for technical job interviews. You can just create a session with your
+                friend
+                and you're good to go.</p>
+            </div>
+          </ng-template>
+        </ngb-carousel>
+      </div>
     </div>
-    <div class="content-column carousel-column ">
-      <ngb-carousel>
-        <ng-template ngbSlide>
-          <div class="picsum-img-wrapper">
-            <img src="/assets/code.jpg" class="carousel-image">
-          </div>
-          <div class="carousel-caption">
-            <h3>Instant code experimentation</h3>
-            <p>This tool will allow you to prototype a simple program within seconds. It's just one click away.</p>
-          </div>
-        </ng-template>
-        <ng-template ngbSlide>
-          <div class="picsum-img-wrapper">
-            <img src="/assets/collaboration.jpg" class="carousel-image">
-          </div>
-          <div class="carousel-caption">
-            <h3>Collaboration</h3>
-            <p>You can use this website as a perfect solution for pair programming. No more resolution issues caused by
-              screen sharing!</p>
-          </div>
-        </ng-template>
-        <ng-template ngbSlide>
-          <div class="picsum-img-wrapper">
-            <img src="/assets/job-interview.jpg" class="carousel-image">
-          </div>
-          <div class="carousel-caption">
-            <h3>Technical interview preparation</h3>
-            <p>coCoder will help you prepare for technical job interviews. You can just create a session with your
-              friend
-              and you're good to go.</p>
-          </div>
-        </ng-template>
-      </ngb-carousel>
-    </div>
+  </div>
+  <div class="content-page">
+    <h1>FAQ</h1>
+  </div>
+  <div class="content-page">
+    <h1>Contact</h1>
   </div>
 </div>

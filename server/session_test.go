@@ -96,7 +96,7 @@ func TestUpdateText(t *testing.T) {
 				{
 					ID:       "user_2",
 					Index:    1,
-					Position: 10,
+					Position: 9,
 					LastEdit: specialDate,
 				},
 			},

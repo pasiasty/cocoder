@@ -137,7 +137,7 @@ func TestLoadSession(t *testing.T) {
 					ID:       userID1,
 					Index:    0,
 					LastEdit: date2,
-					Position: 3,
+					Position: 0,
 				},
 				userID2: {
 					ID:       userID2,

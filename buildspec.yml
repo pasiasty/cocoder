@@ -4,13 +4,13 @@ phases:
   pre_build:
     commands:
       # Run all tests included with our application
-      - go test
+      - go test ./... -v
 
   build:
     commands:
       # Build our application
-      - go build -o app
+      - go build -o application
 
 artifacts:
   files:
-    - app
+    - application

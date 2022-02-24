@@ -12,7 +12,6 @@ import { PageNotFoundComponent } from './page-not-found/page-not-found.component
 import { MonacoEditorModule } from 'ngx-monaco-editor';
 import { CookieService } from 'ngx-cookie-service';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { NgToggleModule } from '@nth-cloud/ng-toggle';
 import { TopBarComponent } from './top-bar/top-bar.component';
 import { FileSaverModule } from 'ngx-filesaver';
 import { ClipboardModule } from 'ngx-clipboard';
@@ -42,7 +41,6 @@ const routes: Routes = [
     HttpClientModule,
     MonacoEditorModule.forRoot(),
     NgbModule,
-    NgToggleModule,
     FileSaverModule,
     ClipboardModule,
   ],

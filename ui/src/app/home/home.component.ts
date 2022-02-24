@@ -2,10 +2,16 @@ import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } fr
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { map, retry } from 'rxjs/operators';
+import { retry } from 'rxjs/operators';
 import { Title } from '@angular/platform-browser';
 import { ScrollingService } from '../scrolling.service';
 import { Subscription } from 'rxjs';
+
+type ExampleUsage = {
+  header: string
+  text: string
+  img: string
+}
 
 @Component({
   selector: 'app-home',
@@ -13,6 +19,24 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
+
+  exampleUsages: ExampleUsage[] = [
+    {
+      header: "Instant code experimentation",
+      text: "This tool will allow you to prototype a simple program within seconds. It's just one click away.",
+      img: "/assets/code.jpg",
+    },
+    {
+      header: "Collaboration",
+      text: "You can use this website as a perfect solution for pair programming. No more resolution issues caused by screen sharing!",
+      img: "/assets/collaboration.jpg",
+    },
+    {
+      header: "Technical interview preparation",
+      text: "coCoder will help you prepare for technical job interviews. You can just create a session with your friend and you're good to go.",
+      img: "/assets/job-interview.jpg",
+    },
+  ];
 
   @ViewChild('home')
   homeElement?: ElementRef;

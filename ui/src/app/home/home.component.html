@@ -14,53 +14,85 @@
   </div>
   <a name="about" id="about"></a>
   <div #about class="content-page">
-    <div class="carousel-container">
-      <div class="about-grid">
-        <div class="about-title-layer">
-          <h2 class="about-title d-none d-lg-inline-block">
-            What can you use it for?
-          </h2>
+    <div class="small-screen-about d-flex d-md-none">
+      <div class="about-title-container">
+        <h1>About</h1>
+      </div>
+      <div class="about-content-container">
+        <div *ngFor="let exampleUsage of exampleUsages">
+          <h3>{{exampleUsage.header}}</h3>
+          <p>{{exampleUsage.text}}</p>
         </div>
-        <ngb-carousel class="about-carousel-layer">
-          <ng-template ngbSlide>
-            <div class="picsum-img-wrapper">
-              <img src="/assets/code.jpg" class="carousel-image">
-            </div>
-            <div class="carousel-caption d-none d-md-block">
-              <h3>Instant code experimentation</h3>
-              <p>This tool will allow you to prototype a simple program within seconds. It's just one click away.</p>
-            </div>
-          </ng-template>
-          <ng-template ngbSlide>
-            <div class="picsum-img-wrapper">
-              <img src="/assets/collaboration.jpg" class="carousel-image">
-            </div>
-            <div class="carousel-caption d-none d-md-block">
-              <h3>Collaboration</h3>
-              <p>You can use this website as a perfect solution for pair programming. No more resolution issues caused
-                by
-                screen sharing!</p>
-            </div>
-          </ng-template>
-          <ng-template ngbSlide>
-            <div class="picsum-img-wrapper">
-              <img src="/assets/job-interview.jpg" class="carousel-image">
-            </div>
-            <div class="carousel-caption d-none d-md-block">
-              <h3>Technical interview preparation</h3>
-              <p>coCoder will help you prepare for technical job interviews. You can just create a session with your
-                friend
-                and you're good to go.</p>
-            </div>
-          </ng-template>
-        </ngb-carousel>
+      </div>
+    </div>
+    <div class="normal-screen-about d-none d-md-flex">
+      <h1>About</h1>
+      <div class="carousel-container">
+        <div class="about-grid">
+          <div class="about-title-layer">
+            <h2 class="about-title d-none d-lg-inline-block">
+              What can you use it for?
+            </h2>
+          </div>
+          <ngb-carousel class="about-carousel-layer">
+            <ng-template *ngFor="let exampleUsage of exampleUsages" ngbSlide>
+              <div class="picsum-img-wrapper">
+                <img src={{exampleUsage.img}} class="carousel-image">
+              </div>
+              <div class="carousel-caption">
+                <h3>{{exampleUsage.header}}</h3>
+                <p>{{exampleUsage.text}}</p>
+              </div>
+            </ng-template>
+          </ngb-carousel>
+        </div>
       </div>
     </div>
   </div>
   <div #faq class="content-page">
     <h1>FAQ</h1>
+    <div class="faq-questions-container">
+      <div>
+        <h5>Is coCoder Free?</h5>
+        <p>Yes! This project is both open source and free! You can use it as much as you want, but we'll be also happy
+          to
+          accept <a href="https://paypal.me/coCoderDonate" target="_blank">donations</a> - in case you want to give us
+          one.
+          Such contributions will make it much simpler for us to develop this amazing tool even further.</p>
+      </div>
+      <div>
+        <h5>How long can I spend in a single session?</h5>
+        <p>As long as you want! The session will be alive as long as any user is active inside of it.</p>
+      </div>
+      <div>
+        <h5>Are old sessions garbage collected?</h5>
+        <p>Yes! Every session that was inactive for 7 days (i.e. no user had it open in their browser) will be garbage
+          collected.</p>
+      </div>
+      <div>
+        <h5>Is there any limit for a number of users within single session?</h5>
+        <p>There's no such limit at the moment. Feel free to use coCoder for one to many sessions as well!</p>
+      </div>
+      <div>
+        <h5>How big can be the code chunk stored within a single session?</h5>
+        <p>At this time we set the limit to 5MB. In case that's not enough for you, please feel free to <a
+            href="https://github.com/pasiasty/cocoder/issues" target="_blank">open an issue</a> for that.</p>
+      </div>
+    </div>
   </div>
   <div #contact class="content-page">
     <h1>Contact</h1>
+    <div class="contact-info-container">
+      <ul>
+        <li>
+          <p><a href="https://github.com/pasiasty/cocoder/issues" target="_blank">File</a> an issue on GitHub.</p>
+        </li>
+        <li>
+          <p>Reach out on <a href="https://www.linkedin.com/in/mariusz-pasek-1365aa122/" target="_blank">LinkedIn</a>.
+          </p>
+        </li>
+      </ul>
+
+    </div>
   </div>
 </div>

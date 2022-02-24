@@ -22,6 +22,7 @@
     "@angular/router": "~13.2.4",
     "@forevolve/bootstrap-dark": "^2.1.0",
     "@ng-bootstrap/ng-bootstrap": "^12.0.0",
+    "@popperjs/core": "^2.11.2",
     "@types/popper.js": "^1.11.0",
     "aws-amplify": "^4.3.14",
     "bootstrap": "^4.5.0",

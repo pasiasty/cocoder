@@ -1,11 +1,11 @@
 {
   "version": "1",
   "cognitoConfig": {
-    "identityPoolName": "cocoder_identitypool_17b753d7",
+    "identityPoolName": "cocoder_identitypool_cf101a13",
     "allowUnauthenticatedIdentities": true,
     "authSelections": "identityPoolOnly",
     "resourceName": "cocoder",
-    "sharedId": "17b753d7",
+    "sharedId": "cf101a13",
     "serviceName": "Cognito",
     "useDefault": "manual"
   }

@@ -6,6 +6,7 @@ import { retry } from 'rxjs/operators';
 import { Title } from '@angular/platform-browser';
 import { ScrollingService } from '../scrolling.service';
 import { Subscription } from 'rxjs';
+import { Analytics } from 'aws-amplify';
 
 type ExampleUsage = {
   header: string
@@ -103,6 +104,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   newSession(): void {
+    Analytics.record({ name: 'newSession' });
 
     this.httpClient.get<string>(environment.api + 'new_session').pipe(
       retry(3)

@@ -22,7 +22,6 @@ export class SessionViewComponent implements OnInit, OnDestroy {
   editsSubscription?: Subscription;
 
   lastBaseText = "";
-  sessionID = "";
 
   sessionInvalid = false;
   editorServiceInitialized = false;
@@ -42,10 +41,9 @@ export class SessionViewComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
-      this.sessionID = params.session_id;
-      this.apiService.SetSessionID(this.sessionID);
+      this.apiService.SetSessionID(params.session_id);
+      this.titleService.setTitle('coCoder ' + params.session_id.substring(params.session_id.length - 6));
     })
-    this.titleService.setTitle('coCoder ' + this.sessionID.substr(this.sessionID.length - 6));
 
     this.initialSessionPromise = this.apiService.GetSession().then(data => {
       this.editorControllerService.setLanguage(data.Language);

@@ -137,6 +137,7 @@ export class EditorService implements OnDestroy {
     this.themeChangesSubscription?.unsubscribe();
     this.languageChangesSubscription?.unsubscribe();
     this.DisposeEditorSubscriptions();
+    this.model?.dispose();
     this.editor?.dispose();
   }
 

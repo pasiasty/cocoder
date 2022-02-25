@@ -2,7 +2,7 @@
     <button class="logo btn btn-outline-secondary" [routerLink]="['/']" (click)="navClicked('home')">coCoder</button>
     <div *ngIf="_homeMode">
         <nav class="navbar">
-            <ul ngbNav class="flex-row home-navigation">
+            <ul ngbNav activeId="" class="flex-row home-navigation">
                 <li [ngbNavItem]="link.fragment" *ngFor="let link of links">
                     <a ngbNavLink class="activable-item" routerLink="." [fragment]="link.fragment"
                         (click)="navClicked(link.fragment)">{{ link.title }}</a>

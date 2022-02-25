@@ -1,10 +1,10 @@
+@import "../common.scss";
 @import "~bootstrap/scss/functions";
 @import "~bootstrap/scss/variables";
 
-@import "../common.scss";
-
 :host-context(.bootstrap-dark) {
   @import "~@forevolve/bootstrap-dark/scss/dark-variables";
+  @import "../../custom-colors-dark.scss";
   .top-bar-container {
     background-color: $body-bg;
   }
@@ -15,6 +15,7 @@
 }
 
 :host-context(.bootstrap) {
+  @import "../../custom-colors-light.scss";
   .top-bar-container {
     background-color: $body-bg;
   }

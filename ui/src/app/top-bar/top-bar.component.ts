@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
 import { EditorControllerService } from '../editor-controller.service';
 import { ThemeService } from '../theme.service';
 import * as monaco from 'monaco-editor';

@@ -20,6 +20,7 @@
 .top-bar-row {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   width: 100%;
   height: 56px;
   align-items: center;

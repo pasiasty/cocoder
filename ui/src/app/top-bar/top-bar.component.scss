@@ -7,7 +7,8 @@
 }
 
 .language-dropdown {
-  min-width: 160px;
+  margin-left: 15px;
+  min-width: 100px;
   text-align: right;
 }
 
@@ -20,7 +21,10 @@
   display: flex;
   flex-direction: row;
   width: 100%;
-  align-items: baseline;
+  height: 56px;
+  align-items: center;
+  padding-left: 7px;
+  padding-right: 7px;
 }
 
 .empty-space {
@@ -63,9 +67,9 @@
 }
 
 .home-navigation {
-  gap: 10px;
+  gap: 3px;
 }
 
 .activable-item.active {
-  border-radius: 100px;
+  border-radius: 10px;
 }

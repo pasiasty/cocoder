@@ -42,19 +42,14 @@
 
 .content-page {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   width: 100%;
   justify-content: center;
   flex-direction: column;
   align-items: stretch;
 }
 
-.normal-screen-about {
-  height: 100%;
-  flex-direction: column;
-}
-
-.small-screen-about {
+.screen-about {
   height: 100%;
   flex-direction: column;
 }
@@ -147,6 +142,7 @@ h1 {
 }
 
 h1,
+h4,
 h5,
 p {
   margin-left: 10px;
@@ -158,4 +154,8 @@ p {
   flex-direction: column;
   justify-content: center;
   gap: 50px;
+}
+
+.contact-list-item:not(:last-child) {
+  margin-bottom: 50px;
 }

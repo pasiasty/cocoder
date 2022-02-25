@@ -1,12 +1,8 @@
 <div class="top-bar-row">
-    <button class="logo home-button btn btn-outline-secondary" [routerLink]="['/']"
-        (click)="navClicked('home')">coCoder</button>
+    <button class="logo btn btn-outline-secondary" [routerLink]="['/']" (click)="navClicked('home')">coCoder</button>
     <div *ngIf="_homeMode">
         <nav class="navbar">
             <ul ngbNav class="flex-row home-navigation">
-                <li ngbNavItem="home">
-                    <a ngbNavLink routerLink="." [fragment]="" (click)="navClicked('home')">Home</a>
-                </li>
                 <li [ngbNavItem]="link.fragment" *ngFor="let link of links">
                     <a ngbNavLink class="activable-item" routerLink="." [fragment]="link.fragment"
                         (click)="navClicked(link.fragment)">{{ link.title }}</a>
@@ -27,31 +23,31 @@
             </div>
         </div>
         <div type="button" class="btn btn-default" (click)="downloadButtonClicked()" title="Download your code">
-            <i mdbRipple class="bi bi-file-earmark-arrow-down"></i>
+            <i mdbRipple class="bi bi-file-earmark-arrow-down h5"></i>
         </div>
         <div type="button" class="btn btn-default" (click)="shareButtonClicked()" title="Share session with friends">
-            <i class="bi bi-share"></i>
+            <i class="bi bi-share h5"></i>
         </div>
         <div type="button" class="btn btn-default" (click)="zoomInButtonClicked()" title="Zoom in">
-            <i class="bi bi-zoom-in"></i>
+            <i class="bi bi-zoom-in h5"></i>
         </div>
         <div type="button" class="btn btn-default" (click)="zoomOutButtonClicked()" title="Zoom out">
-            <i class="bi bi-zoom-out"></i>
+            <i class="bi bi-zoom-out h5"></i>
         </div>
     </div>
 
     <div class="empty-space">
     </div>
     <div type="button" class="btn btn-default" (click)="themeButtonClicked()" title="Toggle theme">
-        <i *ngIf="isDarkThemeEnabled() else themeButtonDarkThemeVariant" class="bi bi-moon-stars"></i>
+        <i *ngIf="isDarkThemeEnabled() else themeButtonDarkThemeVariant" class="bi bi-moon-stars h5"></i>
         <ng-template #themeButtonDarkThemeVariant>
-            <i class="bi bi-brightness-high"></i>
+            <i class="bi bi-brightness-high h5"></i>
         </ng-template>
     </div>
     <div type="button" class="btn btn-default" (click)="bugButtonClicked()" title="Report a bug">
-        <i class="bi bi-bug"></i>
+        <i class="bi bi-bug h5"></i>
     </div>
     <div type="button" class="btn btn-default" (click)="donateButtonClicked()" title="Donate">
-        <i class="bi bi-cash-coin"></i>
+        <i class="bi bi-cash-coin h5"></i>
     </div>
 </div>

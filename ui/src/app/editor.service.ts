@@ -164,7 +164,7 @@ export class EditorService implements OnDestroy {
       showUnused: true,
       theme: this.theme,
       scrollbar: {
-        verticalScrollbarSize: 0,
+        verticalScrollbarSize: 10,
       },
     });
   }

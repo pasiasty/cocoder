@@ -1,10 +1,11 @@
-import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { EditorControllerService } from '../editor-controller.service';
 import { ThemeService } from '../theme.service';
 import * as monaco from 'monaco-editor';
 import { ScrollingService } from '../scrolling.service';
 import { ClipboardService } from 'ngx-clipboard'
 import { ToastService } from '../toast.service';
+import { NgbNav } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-top-bar',
@@ -18,6 +19,9 @@ export class TopBarComponent implements OnInit {
   showToast = false;
 
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "r");
+
+  @ViewChild(NgbNav)
+  navigation?: NgbNav
 
   links = [
     { title: 'About', fragment: 'about' },
@@ -94,5 +98,9 @@ export class TopBarComponent implements OnInit {
 
   navClicked(val: string): void {
     this.scrollingService.scrollTo(val);
+
+    if (val === 'home') {
+      this.navigation?.select(null);
+    }
   }
 }

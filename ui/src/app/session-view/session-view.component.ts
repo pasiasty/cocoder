@@ -117,6 +117,7 @@ export class SessionViewComponent implements OnInit, OnDestroy {
     this.editorService.SetUserID(this.apiService.GetUserID());
 
     if (!this.editorServiceInitialized) {
+      this.editorService.SetText('');
       this.editorServiceInitialized = true;
       this.initializeEditorService();
     }

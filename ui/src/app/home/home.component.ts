@@ -89,16 +89,16 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   scrollToEl(el: string) {
     switch (el) {
       case "home":
-        this.homeElement?.nativeElement.scrollIntoView();
+        this.homeElement?.nativeElement.scrollIntoView({behavior: "smooth"});
         break;
       case "about":
-        this.aboutElement?.nativeElement.scrollIntoView();
+        this.aboutElement?.nativeElement.scrollIntoView({behavior: "smooth"});
         break;
       case "faq":
-        this.faqElement?.nativeElement.scrollIntoView();
+        this.faqElement?.nativeElement.scrollIntoView({behavior: "smooth"});
         break;
       case "contact":
-        this.contactElement?.nativeElement.scrollIntoView();
+        this.contactElement?.nativeElement.scrollIntoView({behavior: "smooth"});
         break;
     }
   }

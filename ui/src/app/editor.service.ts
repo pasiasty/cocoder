@@ -99,7 +99,6 @@ export class EditorService implements OnDestroy {
   SetEditor(editor: monaco.editor.IStandaloneCodeEditor) {
     this.editor?.dispose();
     this.DisposeEditorSubscriptions();
-    this.SetText("");
     editor.setModel(this.model);
 
     this.editor = editor;
@@ -164,7 +163,7 @@ export class EditorService implements OnDestroy {
       showUnused: true,
       theme: this.theme,
       scrollbar: {
-        verticalScrollbarSize: 10,
+        verticalScrollbarSize: 20,
       },
     });
   }

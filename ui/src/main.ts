@@ -5,9 +5,13 @@ import { AppModule } from './app/app.module';
 import { environment } from './environments/environment';
 
 import Amplify from 'aws-amplify';
-import awsconfig from './aws-exports';
 
-Amplify.configure(awsconfig);
+try {
+  var m = require('./aws-exports');
+  Amplify.configure(m.awsconfig);
+} catch(ex) {
+  console.log("Failed to load ./aws-exports");
+}
 
 if (environment.production) {
   enableProdMode();

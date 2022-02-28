@@ -163,8 +163,14 @@ export class EditorService implements OnDestroy {
       showUnused: true,
       theme: this.theme,
       scrollbar: {
-        verticalScrollbarSize: 20,
+        verticalScrollbarSize: 0,
       },
+      inlineHints: {
+        enabled: true,
+      },
+      parameterHints: {
+        enabled: true,
+      }
     });
   }
 

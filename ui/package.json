@@ -25,6 +25,7 @@
     "@types/popper.js": "^1.11.0",
     "aws-amplify": "^4.3.14",
     "bootstrap": "^4.6.0",
+    "bootstrap-icons": "^1.8.1",
     "diff-match-patch-typescript": "^1.0.8",
     "file-saver": "^2.0.5",
     "monaco-editor": "^0.24.0",

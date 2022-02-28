@@ -11,12 +11,18 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
-$decoration-colors: blue, red, yellow, green, magenta;
+$decoration-colors: magenta, green, yellow, red, blue;
 
 @for $i from 1 through list.length($decoration-colors) {
   .other-user-cursor-#{$i} {
     background: list.nth($decoration-colors, $i);
     width: 2px !important;
+  }
+
+  .other-user-selection-#{$i} {
+    background: list.nth($decoration-colors, $i);
+    opacity: 0.3;
+    min-width: 6px !important;
   }
 }
 

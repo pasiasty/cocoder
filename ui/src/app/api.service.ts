@@ -12,6 +12,9 @@ export type User = {
   Index: number
   ID: string
   Position: number
+  HasSelection: boolean
+	SelectionStart: number
+	SelectionEnd:number
 }
 
 type EditRequest = {

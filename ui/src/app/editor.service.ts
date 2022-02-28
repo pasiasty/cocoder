@@ -226,7 +226,7 @@ export class EditorService implements OnDestroy {
 
   Selection(): Selection | undefined {
     const editorSelection = this.editor!.getSelection()
-    if (editorSelection === null) {
+    if (editorSelection === null || editorSelection.getStartPosition().equals(editorSelection.getEndPosition())) {
       return;
     }
     const start = this.positionToNumber(editorSelection.getStartPosition());
@@ -246,14 +246,20 @@ export class EditorService implements OnDestroy {
       return this.positionToNumber(new monaco.Position(r.startLineNumber, r.startColumn));
     })
     return this.currentDecorations.map((d, idx): User | null => {
-      const p = positions[idx]
-      if (p === null) {
+      const dr = this.model.getDecorationRange(this.oldDecorations[idx]);
+      if (dr === null) {
         return null;
       }
+      const p = this.positionToNumber(dr.getStartPosition());
+      const selStart = p;
+      const selEnd = this.positionToNumber(dr.getEndPosition());
       return {
         ID: d.UserID,
         Index: d.Index,
         Position: p,
+        HasSelection: selEnd - selStart > 1,
+        SelectionStart: selStart,
+        SelectionEnd: selEnd,
       }
     }).filter(u => u !== null).map(u => u!);
   }
@@ -273,18 +279,32 @@ export class EditorService implements OnDestroy {
   }
 
   userToDecoration(u: User): DecorationDescription {
-    let userPos = this.numberToPosition(u.Position);
-    let colorIdx = u.Index % 5 + 1
-    return {
-      UserID: u.ID,
-      Index: u.Index,
-      Decoration: {
+    const colorIdx = u.Index % 5 + 1
+    let decoration: monaco.editor.IModelDeltaDecoration
+    if (u.HasSelection) {
+      const selStart = this.numberToPosition(u.SelectionStart);
+      const selEnd = this.numberToPosition(u.SelectionEnd);
+      decoration = {
+        range: new monaco.Range(selStart.lineNumber, selStart.column, selEnd.lineNumber, selEnd.column),
+        options: {
+          className: `other-user-selection-${colorIdx}`,
+          stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+        },
+      }
+    } else {
+      let userPos = this.numberToPosition(u.Position);
+      decoration = {
         range: new monaco.Range(userPos.lineNumber, userPos.column, userPos.lineNumber, userPos.column + 1),
         options: {
           className: `other-user-cursor-${colorIdx}`,
           stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
         },
       }
+    }
+    return {
+      UserID: u.ID,
+      Index: u.Index,
+      Decoration: decoration,
     }
   }
 

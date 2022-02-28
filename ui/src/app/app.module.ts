@@ -31,7 +31,7 @@ const routes: Routes = [
     HomeComponent,
     PageNotFoundComponent,
     TopBarComponent,
-    ToastsContainerComponent
+    ToastsContainerComponent,
   ],
   imports: [
     BrowserModule,

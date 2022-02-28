@@ -1,6 +1,11 @@
 @import "../common.scss";
 @import "~bootstrap/scss/functions";
 @import "~bootstrap/scss/variables";
+@import '~ngx-progressive-image-loader/ngx-progressive-image-loader';
+
+$scale: 1; // the scale of loading image in place holder 
+$transition: opacity 1s linear; // the transition of loading image in place holder, you could try: opacity .3s ease 
+@include progressive-image-loader($scale, $transition);
 
 :host-context(.bootstrap-dark) {
   @import "~@forevolve/bootstrap-dark/scss/dark-variables";
@@ -71,12 +76,6 @@
   gap: 10px;
   width: 100%;
   flex-grow: 1;
-}
-
-.carousel-image {
-  max-height: 80vh;
-  width: 80vw;
-  object-fit: cover;
 }
 
 .header-separator {

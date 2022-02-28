@@ -12,6 +12,7 @@ type ExampleUsage = {
   header: string
   text: string
   img: string
+  imgMin: string
 }
 
 @Component({
@@ -26,16 +27,19 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       header: "Instant code experimentation",
       text: "This tool will allow you to prototype a simple program within seconds. It's just one click away.",
       img: "/assets/code.jpg",
+      imgMin: "/assets/code-min.jpg",
     },
     {
       header: "Collaboration",
       text: "You can use this website as a perfect solution for pair programming. No more resolution issues caused by screen sharing!",
       img: "/assets/collaboration.jpg",
+      imgMin: "/assets/collaboration-min.jpg",
     },
     {
       header: "Technical interview preparation",
       text: "coCoder will help you prepare for technical job interviews. You can just create a session with your friend and you're good to go.",
       img: "/assets/job-interview.jpg",
+      imgMin: "/assets/job-interview-min.jpg",
     },
   ];
 

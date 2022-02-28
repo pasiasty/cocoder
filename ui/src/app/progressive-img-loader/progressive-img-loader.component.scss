@@ -1,0 +1,21 @@
+@keyframes fadeout-animation {
+    from {opacity: 1;}
+    to {opacity: 0;}
+}
+
+.fadeout {
+  animation-name:  fadeout-animation;
+  animation-duration: 4s;
+}
+
+.carousel-image {
+    max-height: 80vh;
+    width: 80vw;
+    object-fit: cover;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .img-grid {
+    display: grid;
+  }

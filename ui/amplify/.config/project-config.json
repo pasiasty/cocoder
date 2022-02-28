@@ -1,4 +1,7 @@
 {
+  "providers": [
+    "awscloudformation"
+  ],
   "projectName": "coCoder",
   "version": "3.1",
   "frontend": "javascript",
@@ -6,12 +9,9 @@
     "framework": "angular",
     "config": {
       "SourceDir": "src",
-      "DistributionDir": "dist/amplify-app",
-      "BuildCommand": "npm run-script build",
+      "DistributionDir": "dist",
+      "BuildCommand": "npm.cmd run-script build",
       "StartCommand": "ng serve"
     }
-  },
-  "providers": [
-    "awscloudformation"
-  ]
+  }
 }

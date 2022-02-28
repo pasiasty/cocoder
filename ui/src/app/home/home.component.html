@@ -38,7 +38,7 @@
             <ngb-carousel>
               <ng-template *ngFor="let exampleUsage of exampleUsages" ngbSlide>
                 <div class="picsum-img-wrapper">
-                  <img src={{exampleUsage.img}} class="carousel-image">
+                  <app-progressive-img-loader initialImg={{exampleUsage.imgMin}} finalImg={{exampleUsage.img}}></app-progressive-img-loader>
                 </div>
                 <div class="carousel-caption">
                   <h3>{{exampleUsage.header}}</h3>

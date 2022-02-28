@@ -16,6 +16,7 @@ import { TopBarComponent } from './top-bar/top-bar.component';
 import { FileSaverModule } from 'ngx-filesaver';
 import { ClipboardModule } from 'ngx-clipboard';
 import { ToastsContainerComponent } from './toasts-container/toasts-container.component';
+import { ProgressiveImgLoaderComponent } from './progressive-img-loader/progressive-img-loader.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -32,6 +33,7 @@ const routes: Routes = [
     PageNotFoundComponent,
     TopBarComponent,
     ToastsContainerComponent,
+    ProgressiveImgLoaderComponent
   ],
   imports: [
     BrowserModule,

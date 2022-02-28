@@ -6,6 +6,7 @@ import { sampleTime } from 'rxjs/operators';
 import { ThemeService } from './theme.service';
 import { EditorControllerService } from './editor-controller.service';
 import { FileSaverService } from 'ngx-filesaver';
+import {Selection } from './common';
 
 type DecorationDescription = {
   UserID: string
@@ -221,6 +222,20 @@ export class EditorService implements OnDestroy {
 
   Position(): number {
     return this.positionToNumber(this.editor!.getPosition());
+  }
+
+  Selection(): Selection | undefined {
+    const editorSelection = this.editor!.getSelection()
+    if (editorSelection === null) {
+      return;
+    }
+    const start = this.positionToNumber(editorSelection.getStartPosition());
+    const end = this.positionToNumber(editorSelection.getEndPosition());
+
+    return {
+      start: start,
+      end: end,
+    }
   }
 
   OtherUsers(): User[] {

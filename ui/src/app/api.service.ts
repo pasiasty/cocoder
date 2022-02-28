@@ -6,6 +6,7 @@ import { environment } from '../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 import { webSocket, WebSocketSubject } from "rxjs/webSocket";
 import { EditorControllerService } from './editor-controller.service';
+import {Selection } from './common';
 
 export type User = {
   Index: number
@@ -16,6 +17,9 @@ export type User = {
 type EditRequest = {
   BaseText: string
   CursorPos: number
+  HasSelection: boolean
+	SelectionStart: number
+	SelectionEnd:number
   UserID: string
 } | EditResponse;
 
@@ -93,7 +97,7 @@ export class ApiService implements OnDestroy {
     );
   }
 
-  UpdateSession(baseText: string, newText: string, cursorPos: number, otherUsers: User[]) {
+  UpdateSession(baseText: string, newText: string, cursorPos: number, otherUsers: User[], selection?: Selection) {
     this.lastUpdateTimestamp = Date.now();
     let language = '';
 
@@ -105,6 +109,9 @@ export class ApiService implements OnDestroy {
       BaseText: baseText,
       NewText: newText,
       CursorPos: cursorPos,
+      HasSelection: selection !== undefined,
+      SelectionStart: selection !== undefined ? selection.start : 0,
+      SelectionEnd: selection !== undefined ? selection.end : 0,
       UserID: this.userID,
       Language: language,
       Users: otherUsers,

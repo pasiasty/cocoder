@@ -60,14 +60,14 @@ func (m *SessionManager) LoadSession(session SessionID) (*Session, error) {
 	}
 }
 
-func usersSortedByPositions(m map[string]*User) []*User {
-	res := []*User{}
+func sequencesToInsertByPosition(m map[string]*User) []SpecialSequence {
+	res := []SpecialSequence{}
 	for _, u := range m {
-		res = append(res, u)
+		res = append(res, u.sequencesToInsert()...)
 	}
 
 	sort.Slice(res, func(i, j int) bool {
-		return res[i].Position > res[j].Position
+		return res[i].position > res[j].position
 	})
 	return res
 }

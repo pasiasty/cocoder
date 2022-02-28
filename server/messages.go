@@ -1,12 +1,15 @@
 package server
 
 type UpdateSessionRequest struct {
-	BaseText  string  `form:"BaseText" diff:"BaseText" json:"BaseText"`
-	NewText   string  `form:"NewText" diff:"NewText" json:"NewText"`
-	CursorPos int     `form:"CursorPos" diff:"CursorPos" json:"CursorPos"`
-	UserID    string  `form:"UserID" diff:"UserID" json:"UserID"`
-	Language  string  `form:"Language" diff:"Language" json:"Language"`
-	Users     []*User `json:"Users" diff:"users"`
+	BaseText       string  `form:"BaseText" diff:"BaseText" json:"BaseText"`
+	NewText        string  `form:"NewText" diff:"NewText" json:"NewText"`
+	CursorPos      int     `form:"CursorPos" diff:"CursorPos" json:"CursorPos"`
+	HasSelection   bool    `form:"HasSelection" diff:"HasSelection" json:"HasSelection"`
+	SelectionStart int     `form:"SelectionStart" diff:"SelectionStart" json:"SelectionStart"`
+	SelectionEnd   int     `form:"SelectionEnd" diff:"SelectionEnd" json:"SelectionEnd"`
+	UserID         string  `form:"UserID" diff:"UserID" json:"UserID"`
+	Language       string  `form:"Language" diff:"Language" json:"Language"`
+	Users          []*User `json:"Users" diff:"users"`
 }
 
 type UpdateSessionResponse struct {

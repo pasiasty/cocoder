@@ -15,10 +15,41 @@ import (
 type SessionID string
 
 type User struct {
-	ID       string    `json:"ID" diff:"ID"`
-	Index    int       `json:"Index" diff:"Index"`
-	Position int       `json:"Position" diff:"Position"`
-	LastEdit time.Time `json:"LastEdit" diff:"LastEdit"`
+	ID             string    `json:"ID" diff:"ID"`
+	Index          int       `json:"Index" diff:"Index"`
+	Position       int       `json:"Position" diff:"Position"`
+	HasSelection   bool      `diff:"HasSelection" json:"HasSelection"`
+	SelectionStart int       `diff:"SelectionStart" json:"SelectionStart"`
+	SelectionEnd   int       `diff:"SelectionEnd" json:"SelectionEnd"`
+	LastEdit       time.Time `json:"LastEdit" diff:"LastEdit"`
+}
+
+type SpecialSequence struct {
+	userID   string
+	text     string
+	position int
+}
+
+func (u *User) sequencesToInsert() []SpecialSequence {
+	res := []SpecialSequence{
+		{
+			userID:   u.ID,
+			position: u.Position,
+			text:     fmt.Sprintf(specialSequenceFormat(), u.Index),
+		},
+	}
+
+	if u.HasSelection {
+		res = append(res, SpecialSequence{
+			position: u.SelectionStart,
+			text:     fmt.Sprintf(specialSequenceFormat(), fmt.Sprintf("start%v", u.Index)),
+		}, SpecialSequence{
+			position: u.SelectionEnd,
+			text:     fmt.Sprintf(specialSequenceFormat(), fmt.Sprintf("end%v", u.Index)),
+		})
+	}
+
+	return res
 }
 
 type Session struct {
@@ -38,7 +69,7 @@ func DefaultSession() *Session {
 	}
 }
 
-func cursorSpecialSequenceFormat() string {
+func specialSequenceFormat() string {
 	return cursorSpecialGlyph + "%v" + cursorSpecialGlyph
 }
 
@@ -47,7 +78,7 @@ func cursorSpecialSequenceRe() *regexp.Regexp {
 	for _, c := range cursorSpecialGlyph {
 		glyphEscaped += fmt.Sprintf("[%s]", string(c))
 	}
-	return regexp.MustCompile("(" + glyphEscaped + "[0-9]+" + glyphEscaped + ")")
+	return regexp.MustCompile("(" + glyphEscaped + "(?:start|end)?[0-9]+" + glyphEscaped + ")")
 }
 
 func validateRequest(req *UpdateSessionRequest) {
@@ -59,13 +90,19 @@ func validateRequest(req *UpdateSessionRequest) {
 func (s *Session) updateRequestingUser(req *UpdateSessionRequest) {
 	if user, ok := s.Users[req.UserID]; ok {
 		user.Position = req.CursorPos
+		user.HasSelection = req.HasSelection
+		user.SelectionStart = req.SelectionStart
+		user.SelectionEnd = req.SelectionEnd
 		user.LastEdit = nowSource()
 	} else {
 		s.Users[req.UserID] = &User{
-			ID:       req.UserID,
-			Index:    len(s.Users),
-			Position: req.CursorPos,
-			LastEdit: nowSource(),
+			ID:             req.UserID,
+			Index:          len(s.Users),
+			Position:       req.CursorPos,
+			HasSelection:   req.HasSelection,
+			SelectionStart: req.SelectionStart,
+			SelectionEnd:   req.SelectionEnd,
+			LastEdit:       nowSource(),
 		}
 	}
 }
@@ -90,6 +127,14 @@ func (s *Session) prepareResponse(req *UpdateSessionRequest) *UpdateSessionRespo
 	}
 }
 
+func findTokenPosition(token string, textWithCursors string) int {
+	rawNewPosition := strings.Index(textWithCursors, fmt.Sprintf(specialSequenceFormat(), token))
+	if rawNewPosition < 0 {
+		rawNewPosition = 0
+	}
+	return len(cursorSpecialSequenceRe().ReplaceAllString(textWithCursors[:rawNewPosition], ""))
+}
+
 func (s *Session) Update(req *UpdateSessionRequest) *UpdateSessionResponse {
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -111,11 +156,11 @@ func (s *Session) Update(req *UpdateSessionRequest) *UpdateSessionResponse {
 
 	keepUserPositionFromRequest := s.Text == req.BaseText
 
-	for _, u := range usersSortedByPositions(s.Users) {
-		if u.ID == req.UserID {
-			req.NewText = req.NewText[:u.Position] + fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index) + req.NewText[u.Position:]
+	for _, seq := range sequencesToInsertByPosition(s.Users) {
+		if seq.userID == req.UserID {
+			req.NewText = req.NewText[:seq.position] + seq.text + req.NewText[seq.position:]
 		} else {
-			s.Text = s.Text[:u.Position] + fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index) + s.Text[u.Position:]
+			s.Text = s.Text[:seq.position] + seq.text + s.Text[seq.position:]
 		}
 
 	}
@@ -125,14 +170,19 @@ func (s *Session) Update(req *UpdateSessionRequest) *UpdateSessionResponse {
 	textWithCursors, _ := dmp.PatchApply(userPatches, s.Text)
 
 	for _, u := range s.Users {
-		rawNewPosition := strings.Index(textWithCursors, fmt.Sprintf(cursorSpecialSequenceFormat(), u.Index))
-		if rawNewPosition < 0 {
-			rawNewPosition = 0
+		u.Position = findTokenPosition(fmt.Sprintf("%d", u.Index), textWithCursors)
+
+		if u.HasSelection {
+			u.SelectionStart = findTokenPosition(fmt.Sprintf("start%d", u.Index), textWithCursors)
+			u.SelectionEnd = findTokenPosition(fmt.Sprintf("end%d", u.Index), textWithCursors)
 		}
-		u.Position = len(cursorSpecialSequenceRe().ReplaceAllString(textWithCursors[:rawNewPosition], ""))
 
 		if keepUserPositionFromRequest && u.ID == req.UserID {
 			u.Position = req.CursorPos
+			if u.HasSelection {
+				u.SelectionStart = req.SelectionStart
+				u.SelectionEnd = req.SelectionEnd
+			}
 		}
 	}
 

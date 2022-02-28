@@ -76,7 +76,7 @@ export class TopBarComponent implements OnInit {
   }
 
   donateButtonClicked(): void {
-    window.open("https://paypal.me/coCoderDonate", "_blank");
+    window.open("https://paypal.me/coCoderFund", "_blank");
   }
 
   downloadButtonClicked(): void {

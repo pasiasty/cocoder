@@ -5,3 +5,4 @@
 !.elasticbeanstalk/*.global.yml
 
 myapp.zip
+node_modules

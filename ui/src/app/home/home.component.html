@@ -34,17 +34,19 @@
               What can you use it for?
             </h2>
           </div>
-          <ngb-carousel class="about-carousel-layer">
-            <ng-template *ngFor="let exampleUsage of exampleUsages" ngbSlide>
-              <div class="picsum-img-wrapper">
-                <img src={{exampleUsage.img}} class="carousel-image">
-              </div>
-              <div class="carousel-caption">
-                <h3>{{exampleUsage.header}}</h3>
-                <p>{{exampleUsage.text}}</p>
-              </div>
-            </ng-template>
-          </ngb-carousel>
+          <div class="card about-carousel-layer">
+            <ngb-carousel>
+              <ng-template *ngFor="let exampleUsage of exampleUsages" ngbSlide>
+                <div class="picsum-img-wrapper">
+                  <img src={{exampleUsage.img}} class="carousel-image">
+                </div>
+                <div class="carousel-caption">
+                  <h3>{{exampleUsage.header}}</h3>
+                  <p>{{exampleUsage.text}}</p>
+                </div>
+              </ng-template>
+            </ngb-carousel>
+          </div>
         </div>
       </div>
     </div>

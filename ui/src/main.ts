@@ -5,13 +5,9 @@ import { AppModule } from './app/app.module';
 import { environment } from './environments/environment';
 
 import Amplify from 'aws-amplify';
+import awsmobile from './aws-exports';
 
-try {
-  var m = require('./aws-exports');
-  Amplify.configure(m.awsconfig);
-} catch(ex) {
-  console.log("Failed to load ./aws-exports");
-}
+Amplify.configure(awsmobile);
 
 if (environment.production) {
   enableProdMode();

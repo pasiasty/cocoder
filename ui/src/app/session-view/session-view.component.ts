@@ -91,12 +91,12 @@ export class SessionViewComponent implements OnInit, OnDestroy {
               this.editorControllerService.setLanguage(data.Language);
 
             if (data.NewText !== this.editorService.Text()) {
-              this.editorService.SetText(data.NewText);
+              this.editorService.SetText(data.NewText!);
             }
 
-            this.lastBaseText = data.NewText;
+            this.lastBaseText = data.NewText!;
 
-            this.editorService.UpdateCursors(data.Users);
+            this.editorService.UpdateCursors(data.Users!);
           },
           error: err => {
             console.log("Failed to update session:", err);

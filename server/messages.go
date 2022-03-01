@@ -1,6 +1,7 @@
 package server
 
 type UpdateSessionRequest struct {
+	Ping           bool
 	BaseText       string  `form:"BaseText" diff:"BaseText" json:"BaseText"`
 	NewText        string  `form:"NewText" diff:"NewText" json:"NewText"`
 	CursorPos      int     `form:"CursorPos" diff:"CursorPos" json:"CursorPos"`
@@ -13,6 +14,7 @@ type UpdateSessionRequest struct {
 }
 
 type UpdateSessionResponse struct {
+	Ping     bool
 	NewText  string `json:"NewText" diff:"new_text"`
 	Language string `json:"Language" diff:"language"`
 

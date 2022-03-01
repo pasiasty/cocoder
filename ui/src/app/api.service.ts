@@ -1,35 +1,42 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, OnDestroy } from '@angular/core';
-import { from, interval, Observable, Subscription } from 'rxjs';
-import { audit, filter, map, retry, tap } from 'rxjs/operators';
+import { from, interval, Observable, of, Subject, Subscription } from 'rxjs';
+import { audit, catchError, filter, map, retry, sample, tap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 import { webSocket, WebSocketSubject } from "rxjs/webSocket";
 import { EditorControllerService } from './editor-controller.service';
-import {Selection } from './common';
+import { Selection } from './common';
+
+const SILENCE_AFTER_EDITING = 2000
+const PING_FREQUENCY = 1000
+const PONG_THRESHOLD = 3000
+const WEBSOCKET_RECONNECT_FREQUENCY = 6000
+const LANGUAGE_SETTING_TIME_HORIZON = 500
 
 export type User = {
   Index: number
   ID: string
   Position: number
   HasSelection: boolean
-	SelectionStart: number
-	SelectionEnd:number
+  SelectionStart: number
+  SelectionEnd: number
 }
 
 type EditRequest = {
-  BaseText: string
-  CursorPos: number
-  HasSelection: boolean
-	SelectionStart: number
-	SelectionEnd:number
-  UserID: string
+  BaseText?: string
+  CursorPos?: number
+  HasSelection?: boolean
+  SelectionStart?: number
+  SelectionEnd?: number
+  UserID?: string
 } | EditResponse;
 
 export type EditResponse = {
-  NewText: string
-  Language: string
-  Users: User[]
+  Ping: boolean
+  NewText?: string
+  Language?: string
+  Users?: User[]
 }
 
 export type GetSessionResponse = {
@@ -42,7 +49,8 @@ export type GetSessionResponse = {
 })
 export class ApiService implements OnDestroy {
 
-  subject!: WebSocketSubject<EditRequest>;
+  wsSubject?: WebSocketSubject<EditRequest>;
+  incomingSubject: Subject<EditResponse>;
 
   languageChangesSubscription?: Subscription;
 
@@ -51,6 +59,10 @@ export class ApiService implements OnDestroy {
   selectedLanguage!: string;
   sessionID!: string;
   userID: string;
+
+  pingSubscription?: Subscription;
+  lastPongTimestamp: number;
+  lastReconnectTimestamp: number;
 
   constructor(
     private httpClient: HttpClient,
@@ -69,16 +81,62 @@ export class ApiService implements OnDestroy {
       this.lastLanguageUpdateTimestamp = Date.now();
       this.selectedLanguage = val;
     });
+
+    this.incomingSubject = new Subject<EditResponse>();
+    this.lastPongTimestamp = Date.now();
+    this.lastReconnectTimestamp = Date.now();
   }
 
   ngOnDestroy() {
-    this.subject.unsubscribe();
+    this.wsSubject?.unsubscribe();
     this.languageChangesSubscription?.unsubscribe();
+  }
+
+  connectWebsocket() {
+    if (this.wsSubject !== undefined) {
+      this.wsSubject.unsubscribe();
+      this.wsSubject.complete();
+    }
+
+    this.wsSubject = webSocket<EditRequest>({
+      url: this.WsUri() + this.sessionID + "/" + this.userID + "/ws",
+    });
+
+    this.wsSubject.pipe(
+      map(data => data as EditResponse),
+      tap(data => {
+        if (data.Ping) {
+          this.lastPongTimestamp = Date.now();
+        }
+      }),
+      filter(data => !data.Ping),
+      sample(interval(100).pipe(filter(() => (Date.now() - this.lastUpdateTimestamp) > SILENCE_AFTER_EDITING))),
+    ).subscribe(data => {
+      this.incomingSubject.next(data);
+    });
   }
 
   SetSessionID(sessionID: string) {
     this.sessionID = sessionID;
-    this.subject = webSocket<EditRequest>(this.WsUri() + sessionID + "/" + this.userID + "/ws");
+    this.connectWebsocket();
+
+    this.pingSubscription = interval(PING_FREQUENCY).subscribe(_ => {
+      this.wsSubject?.next({
+        Ping: true,
+      });
+      const now = Date.now();
+      if (now - this.lastPongTimestamp > PONG_THRESHOLD &&
+        now - this.lastReconnectTimestamp > WEBSOCKET_RECONNECT_FREQUENCY) {
+        console.log('Reconnecting the websocket');
+        try {
+          this.connectWebsocket();
+        } catch (err: any) {
+          console.log('Failed to connect:', err);
+        }
+
+        this.lastReconnectTimestamp = now;
+      }
+    });
   }
 
   GetUserID(): string {
@@ -93,22 +151,19 @@ export class ApiService implements OnDestroy {
   }
 
   SessionObservable(): Observable<EditResponse> {
-    return this.subject.pipe(
-      retry(),
-      map(data => data as EditResponse),
-      audit(() => interval(100).pipe(filter(() => (Date.now() - this.lastUpdateTimestamp) > 2000))),
-    );
+    return this.incomingSubject;
   }
 
   UpdateSession(baseText: string, newText: string, cursorPos: number, otherUsers: User[], selection?: Selection) {
     this.lastUpdateTimestamp = Date.now();
     let language = '';
 
-    if (Date.now() - this.lastLanguageUpdateTimestamp < 500) {
+    if (Date.now() - this.lastLanguageUpdateTimestamp < LANGUAGE_SETTING_TIME_HORIZON) {
       language = this.selectedLanguage;
     }
 
     const req: EditRequest = {
+      Ping: false,
       BaseText: baseText,
       NewText: newText,
       CursorPos: cursorPos,
@@ -120,7 +175,7 @@ export class ApiService implements OnDestroy {
       Users: otherUsers,
     }
 
-    this.subject.next(req);
+    this.wsSubject?.next(req);
   }
 
   GetSession(): Promise<GetSessionResponse> {

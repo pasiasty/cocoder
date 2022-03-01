@@ -22,7 +22,8 @@ $decoration-colors: magenta, green, yellow, red, blue;
   .other-user-selection-#{$i} {
     background: list.nth($decoration-colors, $i);
     opacity: 0.3;
-    min-width: 6px !important;
+    min-width: 0.5em !important;
+    border-radius: 3px;
   }
 }
 

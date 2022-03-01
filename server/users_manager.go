@@ -35,6 +35,7 @@ func (u *ConnectedUser) send(resp *UpdateSessionResponse) {
 }
 
 func NewConnectedUser(userID UserID, conn *websocket.Conn, fromUsersHandler func(*UpdateSessionRequest)) *ConnectedUser {
+	log.Printf("connected user: %v", userID)
 	u := &ConnectedUser{
 		UserID:           userID,
 		conn:             conn,
@@ -52,23 +53,25 @@ func (u *ConnectedUser) readLoop() {
 	defer u.Cancel()
 
 	for {
-		select {
-		case <-time.After(10 * time.Millisecond):
-			_, msg, err := u.conn.ReadMessage()
-			if err != nil {
-				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					log.Printf("Unexpected websocket error: %v", err)
-				}
-				return
+		<-time.After(10 * time.Millisecond)
+		_, msg, err := u.conn.ReadMessage()
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("Unexpected websocket error: %v, user: %v", err, u.UserID)
 			}
-			req := &UpdateSessionRequest{}
-			if err := json.Unmarshal(msg, req); err != nil {
-				log.Printf("Failed to unmarshal UpdateSessionRequest: %v", err)
-				break
-			}
-
-			u.fromUsersHandler(req)
+			return
 		}
+		req := &UpdateSessionRequest{}
+		if err := json.Unmarshal(msg, req); err != nil {
+			log.Printf("Failed to unmarshal UpdateSessionRequest: %v", err)
+			continue
+		}
+		if req.Ping {
+			u.send(&UpdateSessionResponse{Ping: true})
+			continue
+		}
+
+		u.fromUsersHandler(req)
 	}
 }
 
@@ -76,14 +79,12 @@ func (u *ConnectedUser) writeLoop() {
 	defer u.Cancel()
 
 	for {
-		select {
-		case resp, ok := <-u.toUser:
-			if !ok {
-				return
-			}
-			if err := u.conn.WriteJSON(resp); err != nil {
-				log.Printf("Failed to send response to user: %v", err)
-			}
+		resp, ok := <-u.toUser
+		if !ok {
+			return
+		}
+		if err := u.conn.WriteJSON(resp); err != nil {
+			log.Printf("Failed to send response to user: %v", err)
 		}
 	}
 }
@@ -166,19 +167,11 @@ func (s *ManagedSession) sendResponseToUsers(resp *UpdateSessionResponse) {
 	h := md5.New()
 	io.WriteString(h, b.String())
 	newHash := h.Sum(nil)
-	usersToCleanup := make(map[UserID]interface{})
 
-	for id, u := range s.Users {
-		if bytes.Compare(newHash, s.lastResponseHash) != 0 {
+	for _, u := range s.Users {
+		if !bytes.Equal(newHash, s.lastResponseHash) {
 			u.send(resp)
 		}
-		if u.cancelled {
-			usersToCleanup[id] = new(interface{})
-		}
-	}
-
-	for id := range usersToCleanup {
-		delete(s.Users, id)
 	}
 
 	s.lastResponseHash = newHash
@@ -201,7 +194,26 @@ func (s *ManagedSession) loop() {
 				return
 			}
 			s.sendResponseToUsers(resp)
+		case <-time.After(1 * time.Second):
+			s.cleanupInactiveUsers()
 		}
+	}
+}
+
+func (s *ManagedSession) cleanupInactiveUsers() {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	usersToCleanup := make(map[UserID]interface{})
+
+	for _, u := range s.Users {
+		if u.cancelled {
+			usersToCleanup[u.UserID] = new(interface{})
+		}
+	}
+
+	for id := range usersToCleanup {
+		delete(s.Users, id)
 	}
 }
 
@@ -283,10 +295,8 @@ func (m *UsersManager) triggerResponsesAndSessionCleanup() {
 
 func (m *UsersManager) loop() {
 	for {
-		select {
-		case <-time.After(time.Second):
-			m.triggerResponsesAndSessionCleanup()
-		}
+		<-time.After(time.Second)
+		m.triggerResponsesAndSessionCleanup()
 	}
 }
 

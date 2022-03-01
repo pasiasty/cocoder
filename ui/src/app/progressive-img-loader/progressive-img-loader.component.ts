@@ -9,6 +9,7 @@ export class ProgressiveImgLoaderComponent implements OnInit {
 
   _initialImg!: string
   _finalImg!: string
+  finalImgOpacity = 0
 
   constructor() { }
 
@@ -25,4 +26,7 @@ export class ProgressiveImgLoaderComponent implements OnInit {
     this._finalImg = param;
   }
 
+  finalImgLoaded() {
+    this.finalImgOpacity = 1;
+  }
 }

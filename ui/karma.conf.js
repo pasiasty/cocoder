@@ -16,6 +16,7 @@ module.exports = function (config) {
     ],
     files: [
       { pattern: './node_modules/bootstrap-icons/font/bootstrap-icons.css', included: true, served: true },
+      { pattern: './node_modules/bootstrap-icons/fonts/*', included: true, served: true },
       { pattern: './src/styles.scss', watched: true,  included: true, served: true },
     ],
     preprocessors: {

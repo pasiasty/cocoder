@@ -254,16 +254,17 @@ func (m *UsersManager) triggerResponsesAndSessionCleanup() {
 
 			m.sessionsInactivity[id] = 0
 
-			users := []*User{}
-			for _, u := range s.Users {
-				users = append(users, u)
-			}
+			// TODO: make it work without flickering
+			// users := []*User{}
+			// for _, u := range s.Users {
+			// 	users = append(users, u)
+			// }
 
-			ms.toUsersHandler(&UpdateSessionResponse{
-				NewText:  s.Text,
-				Language: s.Language,
-				Users:    users,
-			})
+			// ms.toUsersHandler(&UpdateSessionResponse{
+			// 	NewText:  s.Text,
+			// 	Language: s.Language,
+			// 	Users:    users,
+			// })
 		}
 	}
 

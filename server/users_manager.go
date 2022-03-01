@@ -246,15 +246,16 @@ func (m *UsersManager) triggerResponsesAndSessionCleanup() {
 		if len(ms.Users) == 0 {
 			m.sessionsInactivity[id]++
 		} else {
-			s, err := m.sm.LoadSession(ms.SessionID)
-			if err != nil {
-				log.Printf("Failed to load session: %v", err)
-				continue
-			}
-
 			m.sessionsInactivity[id] = 0
 
 			// TODO: make it work without flickering
+
+			// s, err := m.sm.LoadSession(ms.SessionID)
+			// if err != nil {
+			// 	log.Printf("Failed to load session: %v", err)
+			// 	continue
+			// }
+
 			// users := []*User{}
 			// for _, u := range s.Users {
 			// 	users = append(users, u)

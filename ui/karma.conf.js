@@ -10,8 +10,17 @@ module.exports = function (config) {
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage'),
-      require('@angular-devkit/build-angular/plugins/karma')
+      require('@angular-devkit/build-angular/plugins/karma'),
+      require('@alasdair/karma-scss-preprocessor'),
+      require('node-sass-tilde-importer'),
     ],
+    files: [
+      { pattern: './node_modules/bootstrap-icons/font/bootstrap-icons.css', included: true, served: true },
+      { pattern: './src/styles.scss', watched: true,  included: true, served: true },
+    ],
+    preprocessors: {
+      'src/**/*.scss': ['scss']
+    },
     client: {
       jasmine: {
         // you can add configuration options for Jasmine here
@@ -39,6 +48,6 @@ module.exports = function (config) {
     autoWatch: true,
     browsers: ['Chrome'],
     singleRun: false,
-    restartOnFileChange: true
+    restartOnFileChange: true,
   });
 };

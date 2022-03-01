@@ -34,12 +34,14 @@
     "ngx-cookie-service": "^13.1.2",
     "ngx-filesaver": "^13.0.0",
     "ngx-monaco-editor": "^12.0.0",
+    "node-sass-tilde-importer": "^1.0.2",
     "rxjs": "~6.6.0",
     "tslib": "^2.3.0",
     "uuid": "^8.3.2",
     "zone.js": "~0.11.4"
   },
   "devDependencies": {
+    "@alasdair/karma-scss-preprocessor": "^5.0.0-3",
     "@angular-devkit/build-angular": "^13.2.5",
     "@angular/cli": "~13.2.5",
     "@angular/compiler-cli": "~13.2.4",
@@ -53,6 +55,9 @@
     "karma-coverage": "~2.0.3",
     "karma-jasmine": "~4.0.0",
     "karma-jasmine-html-reporter": "~1.7.0",
+    "karma-scss-preprocessor": "^4.0.0",
+    "node-sass": "^7.0.1",
+    "sass": "^1.49.9",
     "typescript": "~4.5.5"
   }
 }

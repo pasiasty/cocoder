@@ -27,6 +27,6 @@ $decoration-colors: magenta, green, yellow, red, blue;
   }
 }
 
-@import "~bootstrap-icons/font/bootstrap-icons.css";
+@import "../node_modules/bootstrap-icons/font/bootstrap-icons.css";
 @import "./local-toggle-bootstrap.scss";
 @import "./local-toggle-bootstrap-dark.scss";

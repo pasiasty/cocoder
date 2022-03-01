@@ -45,6 +45,6 @@ describe('HomeComponent', () => {
 
   it('should create', async () => {
     expect(component).toBeTruthy();
-    await new Promise(f => setTimeout(f, 3000));
+    await new Promise(f => setTimeout(f, 500));
   });
 });

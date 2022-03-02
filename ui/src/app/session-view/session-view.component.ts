@@ -28,6 +28,9 @@ export class SessionViewComponent implements OnInit, OnDestroy {
 
   initialSessionPromise!: Promise<GetSessionResponse | null>;
 
+  editorInitializedPromise: Promise<boolean>;
+  editorInitializedResolve!: (val: boolean) => void;
+
   constructor(
     private route: ActivatedRoute,
     private cdRef: ChangeDetectorRef,
@@ -37,6 +40,9 @@ export class SessionViewComponent implements OnInit, OnDestroy {
     private themeService: ThemeService,
     private editorControllerService: EditorControllerService) {
     this.darkModeEnabled = this.themeService.isDarkThemeEnabled();
+    this.editorInitializedPromise = new Promise<boolean>((resolve, reject) => {
+      this.editorInitializedResolve = resolve;
+    });
   }
 
   ngOnInit(): void {
@@ -117,10 +123,16 @@ export class SessionViewComponent implements OnInit, OnDestroy {
     this.editorService.SetUserID(this.apiService.GetUserID());
 
     if (!this.editorServiceInitialized) {
+      this.editorInitializedResolve(true);
+
       this.editorService.SetText('');
       this.editorServiceInitialized = true;
       this.initializeEditorService();
     }
+  }
+
+  editorInitialized(): Promise<boolean> {
+    return this.editorInitializedPromise;
   }
 
   updateSession() {

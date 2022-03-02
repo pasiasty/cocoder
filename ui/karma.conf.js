@@ -16,14 +16,15 @@ module.exports = function (config) {
     ],
     files: [
       { pattern: './node_modules/bootstrap-icons/font/bootstrap-icons.css', included: true, served: true },
-      { pattern: './node_modules/bootstrap-icons/fonts/*', included: true, served: true },
+      { pattern: './node_modules/bootstrap-icons/font/fonts/*', included: false, served: true },
       { pattern: './src/styles.scss', watched: true,  included: true, served: true },
       {
-        pattern: "./node_modules/ngx-monaco-editor/min/**/*", included: true, served: true
+        pattern: "./node_modules/monaco-editor/**/*", included: false, served: true
       },
     ],
     proxies: {
-      "/assets/monaco-editor/": "/base/node_modules/ngx-monaco-editor/",
+      "/assets/monaco-editor": "/base/node_modules/monaco-editor",
+      // "/vs": "/base/node_modules/monaco-editor/min/vs",
     },
     preprocessors: {
       'src/**/*.scss': ['scss']

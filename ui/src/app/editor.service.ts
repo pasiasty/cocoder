@@ -6,7 +6,7 @@ import { sampleTime } from 'rxjs/operators';
 import { ThemeService } from './theme.service';
 import { EditorControllerService } from './editor-controller.service';
 import { FileSaverService } from 'ngx-filesaver';
-import {Selection } from './common';
+import { Selection } from './common';
 
 type DecorationDescription = {
   UserID: string
@@ -279,6 +279,7 @@ export class EditorService implements OnDestroy {
   }
 
   userToDecoration(u: User): DecorationDescription {
+    const decorationThemeSelector = this.themeService.isDarkThemeEnabled() ? '-dark' : '';
     const colorIdx = u.Index % 5 + 1
     let decoration: monaco.editor.IModelDeltaDecoration
     if (u.HasSelection) {
@@ -287,7 +288,7 @@ export class EditorService implements OnDestroy {
       decoration = {
         range: new monaco.Range(selStart.lineNumber, selStart.column, selEnd.lineNumber, selEnd.column),
         options: {
-          className: `other-user-selection-${colorIdx}`,
+          className: `other-user-selection${decorationThemeSelector}-${colorIdx}`,
           stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
         },
       }
@@ -296,7 +297,7 @@ export class EditorService implements OnDestroy {
       decoration = {
         range: new monaco.Range(userPos.lineNumber, userPos.column, userPos.lineNumber, userPos.column + 1),
         options: {
-          className: `other-user-cursor-${colorIdx}`,
+          className: `other-user-cursor${decorationThemeSelector}-${colorIdx}`,
           stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
         },
       }

@@ -11,17 +11,34 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
-$decoration-colors: magenta, green, yellow, red, blue;
+$cursor-colors: rgb(255,255, 0), rgb(0, 128, 0), rgb(255, 0, 255), rgb(255, 0, 0), rgb(0, 0, 255);
+$selection-colors: rgb(255,255, 0), rgb(0, 128, 0), rgb(255, 0, 255), rgb(255, 0, 0), rgb(0, 0, 255);
 
-@for $i from 1 through list.length($decoration-colors) {
+$cursor-colors-dark: rgb(255,255, 0), rgb(0, 128, 0), rgb(255, 0, 255), rgb(255, 0, 0), rgb(0, 0, 255);
+$selection-colors-dark: rgb(255,255, 100), rgb(128, 255, 128), rgb(255, 0, 255), rgb(255, 0, 0), rgb(100, 100, 255);
+
+@for $i from 1 through list.length($cursor-colors) {
+  
   .other-user-cursor-#{$i} {
-    background: list.nth($decoration-colors, $i);
+    background: list.nth($cursor-colors, $i);
     width: 2px !important;
   }
 
   .other-user-selection-#{$i} {
-    background: list.nth($decoration-colors, $i);
+    background: list.nth($selection-colors, $i);
     opacity: 0.3;
+    min-width: 0.5em !important;
+    border-radius: 3px;
+  }
+
+  .other-user-cursor-dark-#{$i} {
+    background: list.nth($cursor-colors-dark, $i);
+    width: 2px !important;
+  }
+
+  .other-user-selection-dark-#{$i} {
+    background: list.nth($selection-colors-dark, $i);
+    opacity: 0.4;
     min-width: 0.5em !important;
     border-radius: 3px;
   }

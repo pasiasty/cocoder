@@ -140,8 +140,4 @@ export class SessionViewComponent implements OnInit, OnDestroy {
     this.apiService.UpdateSession(this.lastBaseText, newText, this.editorService.Position(), this.editorService.OtherUsers(), this.editorService.Selection());
     this.lastBaseText = newText;
   }
-
-  editorCreateOptions() {
-    return this.editorService.createOptions();
-  }
 }

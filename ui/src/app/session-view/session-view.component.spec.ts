@@ -24,7 +24,9 @@ describe('SessionViewComponent', () => {
   let themeService: ThemeService;
   let sessionObservable: Observable<EditResponse>;
 
-  let testText = `def something():
+  let testText = `#some comment
+  
+def something():
   return [el for el in 'abc']
   
   this_is_yet_another_line_of_code
@@ -131,7 +133,7 @@ describe('SessionViewComponent', () => {
 });
 
 function generateCursors(): User[] {
-  const firstUserPosition = 59;
+  const firstUserPosition = 77;
   const selectionStartAddition = 5;
   const selectionEndAddition = 14;
   const userOffset = 36;

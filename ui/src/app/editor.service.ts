@@ -22,7 +22,6 @@ export class EditorService implements OnDestroy {
   editor?: monaco.editor.IStandaloneCodeEditor;
   language!: string;
   fontSize: number;
-  theme: string;
   oldDecorations: string[];
   currentDecorations: DecorationDescription[];
   editsSubject: Subject<void>;
@@ -40,7 +39,7 @@ export class EditorService implements OnDestroy {
     private themeService: ThemeService,
     private editorControllerService: EditorControllerService,
     private fileSaverService: FileSaverService) {
-    this.theme = themeService.editorThemeName();
+    monaco.editor.setTheme(themeService.editorThemeName());
 
     this.oldDecorations = [];
     this.currentDecorations = [];
@@ -60,7 +59,7 @@ export class EditorService implements OnDestroy {
       next: _ => {
         this.fileSaverService.saveText(this.Text(), `code.${this.GetLanguageExtension()}`);
       }
-    })
+    });
   }
 
   GetLanguageExtension(): string {
@@ -151,18 +150,11 @@ export class EditorService implements OnDestroy {
     )
   }
 
-  createOptions(): monaco.editor.IStandaloneEditorConstructionOptions {
-    return {
-      theme: this.theme,
-    }
-  }
-
   updateOptions() {
     this.editor!.updateOptions({
       cursorBlinking: 'smooth',
       fontSize: this.fontSize,
       showUnused: true,
-      theme: this.theme,
       scrollbar: {
         verticalScrollbarSize: 0,
       },
@@ -274,8 +266,7 @@ export class EditorService implements OnDestroy {
   }
 
   SetTheme(t: string) {
-    this.theme = t;
-    this.updateOptions();
+    monaco.editor.setTheme(t);
   }
 
   userToDecoration(u: User): DecorationDescription {

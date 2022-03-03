@@ -7,6 +7,7 @@ import { Title } from '@angular/platform-browser';
 import { ScrollingService } from '../scrolling.service';
 import { Subscription } from 'rxjs';
 import { Analytics } from 'aws-amplify';
+import { GoogleAnalyticsService } from '../google-analytics.service';
 
 type ExampleUsage = {
   header: string
@@ -63,7 +64,8 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     private httpClient: HttpClient,
     private titleService: Title,
     private scrollingService: ScrollingService,
-    private route: ActivatedRoute) { }
+    private route: ActivatedRoute,
+    private googleAnalyticsService: GoogleAnalyticsService) { }
 
   ngOnInit(): void {
     this.titleService.setTitle('coCoder');
@@ -93,21 +95,22 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   scrollToEl(el: string) {
     switch (el) {
       case "home":
-        this.homeElement?.nativeElement.scrollIntoView({behavior: "smooth"});
+        this.homeElement?.nativeElement.scrollIntoView({ behavior: "smooth" });
         break;
       case "about":
-        this.aboutElement?.nativeElement.scrollIntoView({behavior: "smooth"});
+        this.aboutElement?.nativeElement.scrollIntoView({ behavior: "smooth" });
         break;
       case "faq":
-        this.faqElement?.nativeElement.scrollIntoView({behavior: "smooth"});
+        this.faqElement?.nativeElement.scrollIntoView({ behavior: "smooth" });
         break;
       case "contact":
-        this.contactElement?.nativeElement.scrollIntoView({behavior: "smooth"});
+        this.contactElement?.nativeElement.scrollIntoView({ behavior: "smooth" });
         break;
     }
   }
 
   newSession(): void {
+    this.googleAnalyticsService.event('new_session', 'engagement', 'home');
     Analytics.record({ name: 'newSession' });
 
     this.httpClient.get<string>(environment.api + 'new_session').pipe(

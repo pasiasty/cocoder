@@ -41,9 +41,6 @@ export class GoogleAnalyticsService {
         gtag('config', environment.googleAnalyticsId, {
           page_path: event.urlAfterRedirects,
         });
-
-        console.log('Sending Google Analytics tracking for: ', event.urlAfterRedirects);
-        console.log('Google Analytics property ID: ', environment.googleAnalyticsId);
       }
     });
 
@@ -56,8 +53,5 @@ export class GoogleAnalyticsService {
       ...(eventLabel && { event_label: eventLabel }),
       ...(value && { value: value }),
     });
-
-    console.log('Sending Google Analytics tracking for event: ', action, eventCategory, eventLabel, value);
-    console.log('Google Analytics property ID: ', environment.googleAnalyticsId);
   }
 }

@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { Subscription } from 'rxjs';
@@ -28,8 +28,7 @@ export class SessionViewComponent implements OnInit, OnDestroy {
 
   initialSessionPromise!: Promise<GetSessionResponse | null>;
 
-  editorInitializedPromise: Promise<boolean>;
-  editorInitializedResolve!: (val: boolean) => void;
+  @Output() editorInitialized = new EventEmitter<boolean>();
 
   constructor(
     private route: ActivatedRoute,
@@ -40,9 +39,6 @@ export class SessionViewComponent implements OnInit, OnDestroy {
     private themeService: ThemeService,
     private editorControllerService: EditorControllerService) {
     this.darkModeEnabled = this.themeService.isDarkThemeEnabled();
-    this.editorInitializedPromise = new Promise<boolean>((resolve, reject) => {
-      this.editorInitializedResolve = resolve;
-    });
   }
 
   ngOnInit(): void {
@@ -123,16 +119,12 @@ export class SessionViewComponent implements OnInit, OnDestroy {
     this.editorService.SetUserID(this.apiService.GetUserID());
 
     if (!this.editorServiceInitialized) {
-      this.editorInitializedResolve(true);
+      this.editorInitialized.emit(true);
 
       this.editorService.SetText('');
       this.editorServiceInitialized = true;
       this.initializeEditorService();
     }
-  }
-
-  editorInitialized(): Promise<boolean> {
-    return this.editorInitializedPromise;
   }
 
   updateSession() {

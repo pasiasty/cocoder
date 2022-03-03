@@ -8,7 +8,7 @@ import { AppRoutingModule } from '../app-routing.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { MonacoEditorModule } from 'ngx-monaco-editor';
 import { TopBarComponent } from '../top-bar/top-bar.component';
-import { Renderer2, Type } from '@angular/core';
+import { Component, Renderer2, Type } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { EditorService } from '../editor.service';
@@ -16,25 +16,97 @@ import { ToastsContainerComponent } from '../toasts-container/toasts-container.c
 import { ApiService, EditResponse, GetSessionResponse, User } from '../api.service';
 import { ThemeService } from '../theme.service';
 
+@Component({
+  template: `
+  <div style="height: 500px">
+    <app-session-view
+        (editorInitialized)="onEditorInitialized()">
+      </app-session-view>
+  </div>`
+})
+class TestHostComponent {
+  editorInitializedPromise: Promise<boolean>
+  editorInitializedResolve!: (val: boolean) => void
+
+  constructor() {
+    this.editorInitializedPromise = new Promise<boolean>((resolve, _) => {
+      this.editorInitializedResolve = resolve;
+    });
+  }
+  onEditorInitialized() {
+    this.editorInitializedResolve(true);
+  }
+}
+
 describe('SessionViewComponent', () => {
-  let component: SessionViewComponent;
-  let fixture: ComponentFixture<SessionViewComponent>;
+  let component: TestHostComponent;
+  let fixture: ComponentFixture<TestHostComponent>;
   let renderer2: Renderer2;
   let editorService: EditorService;
   let themeService: ThemeService;
   let sessionObservable: Observable<EditResponse>;
 
-  let testText = `#some comment
+  let textPreamble = `# some comment
   
-def something():
+def something(): # local selection
   return [el for el in 'abc']
   
-  this_is_yet_another_line_of_code
-  this_is_yet_another_line_of_code
-  this_is_yet_another_line_of_code
-  this_is_yet_another_line_of_code
-  this_is_yet_another_line_of_code
-  `
+`;
+
+  function sampleLine(idx: number): string {
+    return `this_is_yet_another_line_of_code # this is user ${idx} selection`
+  }
+
+  function testText(numUsers: number): string {
+    let res = textPreamble;
+
+    for (let i = 0; i < numUsers; i++)
+      res += sampleLine(i) + '\n';
+
+    return res;
+  }
+
+  function generateCursors(): User[] {
+    const firstUserPosition = textPreamble.length + 8;
+    const selectionStartAddition = 5;
+    const selectionEndAddition = 16;
+    const userOffset = sampleLine(0).length + 2;
+
+    const res: User[] = [];
+
+    for (let i = 0; i < 5; i++) {
+      res.push({
+        ID: "some-id",
+        Index: i,
+        HasSelection: false,
+        Position: firstUserPosition + i * userOffset,
+        SelectionStart: 0,
+        SelectionEnd: 0,
+      });
+
+      res.push({
+        ID: "some-id",
+        Index: i,
+        HasSelection: true,
+        Position: 0,
+        SelectionStart: firstUserPosition + selectionStartAddition + i * userOffset,
+        SelectionEnd: firstUserPosition + selectionEndAddition + i * userOffset,
+      })
+    }
+
+    return res;
+  }
+
+  function fillEditor() {
+    editorService.SetText(testText(5));
+    editorService.UpdateCursors(generateCursors());
+    editorService.editor!.setSelection({
+      startLineNumber: 3,
+      startColumn: 5,
+      endLineNumber: 3,
+      endColumn: 14,
+    });
+  }
 
   const apiServiceSpy = jasmine.createSpyObj('ApiService', [
     'GetSession',
@@ -54,6 +126,7 @@ def something():
         MonacoEditorModule.forRoot(),
       ],
       declarations: [
+        TestHostComponent,
         SessionViewComponent,
         TopBarComponent,
         ToastsContainerComponent,
@@ -87,7 +160,7 @@ def something():
       console.log('Called UpdateSession');
     });
 
-    fixture = TestBed.createComponent(SessionViewComponent);
+    fixture = TestBed.createComponent(TestHostComponent);
     component = fixture.componentInstance;
     renderer2 = fixture.debugElement.injector.get(Renderer2);
     editorService = fixture.debugElement.injector.get(EditorService);
@@ -103,63 +176,33 @@ def something():
     expect(component).toBeTruthy();
     renderer2.addClass(document.body, 'bootstrap-dark');
 
-    await component.editorInitialized();
+    await component.editorInitializedPromise;
 
     themeService.setDarkThemeEnabled(true);
-    editorService.SetText(testText);
     editorService.SetTheme('vs-dark');
-    editorService.UpdateCursors(generateCursors());
+    fillEditor();
 
     fixture.detectChanges();
 
-    await new Promise(f => setTimeout(f, 500));
+    await new Promise(f => setTimeout(f, 100));
   });
 
   it('colors presentation light', async () => {
     expect(component).toBeTruthy();
     renderer2.addClass(document.body, 'bootstrap');
 
-    await component.editorInitialized();
+    await component.editorInitializedPromise;
 
     themeService.setDarkThemeEnabled(false);
-    editorService.SetText(testText);
+    editorService.SetText(testText(5));
     editorService.SetTheme('vs');
-    editorService.UpdateCursors(generateCursors());
+    fillEditor();
 
     fixture.detectChanges();
 
-    await new Promise(f => setTimeout(f, 3000));
+    await new Promise(f => setTimeout(f, 100));
   });
 });
 
-function generateCursors(): User[] {
-  const firstUserPosition = 77;
-  const selectionStartAddition = 5;
-  const selectionEndAddition = 14;
-  const userOffset = 36;
 
-  const res: User[] = [];
-
-  for (let i = 0; i < 5; i++) {
-    res.push({
-      ID: "some-id",
-      Index: i,
-      HasSelection: false,
-      Position: firstUserPosition + i * userOffset,
-      SelectionStart: 0,
-      SelectionEnd: 0,
-    });
-
-    res.push({
-      ID: "some-id",
-      Index: i,
-      HasSelection: true,
-      Position: 0,
-      SelectionStart: firstUserPosition + selectionStartAddition + i * userOffset,
-      SelectionEnd: firstUserPosition + selectionEndAddition + i * userOffset,
-    })
-  }
-
-  return res;
-}
 

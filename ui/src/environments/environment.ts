@@ -6,6 +6,7 @@ export const environment = {
   production: false,
   api: 'http://localhost:5000/api/',
   apiWs: 'ws://localhost:5000/api/',
+  googleAnalyticsId: '',
 };
 
 /*

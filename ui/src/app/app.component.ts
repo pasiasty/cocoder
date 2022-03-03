@@ -1,4 +1,6 @@
 import { Component, OnInit, Renderer2 } from '@angular/core';
+import { environment } from 'src/environments/environment';
+import { GoogleAnalyticsService } from './google-analytics.service';
 import { ThemeService } from './theme.service';
 
 @Component({
@@ -11,9 +13,16 @@ export class AppComponent implements OnInit {
   lightThemeClass = 'bootstrap';
   darkThemeClass = 'bootstrap-dark';
 
-  constructor(private themeService: ThemeService, private renderer: Renderer2) { }
+  constructor(
+    private themeService: ThemeService,
+    private renderer: Renderer2,
+    private readonly googleAnalyticsService: GoogleAnalyticsService) { }
 
   ngOnInit(): void {
+    if (environment.production) {
+      this.googleAnalyticsService.initialize();
+    }
+
     if (this.themeService.isDarkThemeEnabled()) {
       this.renderer.addClass(document.body, this.darkThemeClass);
     } else {

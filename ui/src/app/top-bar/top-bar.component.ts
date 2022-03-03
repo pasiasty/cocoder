@@ -6,6 +6,7 @@ import { ScrollingService } from '../scrolling.service';
 import { ClipboardService } from 'ngx-clipboard'
 import { ToastService } from '../toast.service';
 import { NgbNav } from '@ng-bootstrap/ng-bootstrap';
+import { GoogleAnalyticsService } from '../google-analytics.service';
 
 @Component({
   selector: 'app-top-bar',
@@ -35,7 +36,8 @@ export class TopBarComponent implements OnInit {
     private editorControllerService: EditorControllerService,
     private scrollingService: ScrollingService,
     private clipboardService: ClipboardService,
-    private toastService: ToastService) { }
+    private toastService: ToastService,
+    private googleAnalyticsService: GoogleAnalyticsService) { }
 
   ngOnInit(): void {
     this.editorControllerService.languageChanges().subscribe(val => {
@@ -64,36 +66,44 @@ export class TopBarComponent implements OnInit {
 
   onLanguageChange(val: string) {
     this.editorControllerService.setLanguage(val);
+    this.googleAnalyticsService.event('language_change', 'engagement', 'top_bar', val);
   }
 
   themeButtonClicked(): void {
     this.themeService.toggleTheme();
     this.cdRef.detectChanges();
+    this.googleAnalyticsService.event('theme_change', 'engagement', 'top_bar', this.themeService.isDarkThemeEnabled() ? 'dark' : 'light');
   }
 
   bugButtonClicked(): void {
     window.open("https://github.com/pasiasty/cocoder/issues", "_blank");
+    this.googleAnalyticsService.event('bug_report', 'engagement', 'top_bar');
   }
 
   donateButtonClicked(): void {
     window.open("https://paypal.me/coCoderFund", "_blank");
+    this.googleAnalyticsService.event('donate', 'engagement', 'top_bar');
   }
 
   downloadButtonClicked(): void {
     this.editorControllerService.saveContent();
+    this.googleAnalyticsService.event('download_content', 'engagement', 'top_bar');
   }
 
   shareButtonClicked(): void {
     this.clipboardService.copy(window.location.href);
     this.toastService.show("", "Copied session URL to clipboard");
+    this.googleAnalyticsService.event('share_button', 'engagement', 'top_bar');
   }
 
   zoomInButtonClicked(): void {
     this.editorControllerService.updateFontSize(1);
+    this.googleAnalyticsService.event('zoom', 'engagement', 'top_bar', 'increase');
   }
 
   zoomOutButtonClicked(): void {
     this.editorControllerService.updateFontSize(-1);
+    this.googleAnalyticsService.event('zoom', 'engagement', 'top_bar', 'decrease');
   }
 
   navClicked(val: string): void {
@@ -102,5 +112,6 @@ export class TopBarComponent implements OnInit {
     if (val === 'home') {
       this.navigation?.select(null);
     }
+    this.googleAnalyticsService.event('navigation', 'engagement', 'top_bar', val);
   }
 }

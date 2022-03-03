@@ -9,6 +9,8 @@ declare var gtag: Function;
 })
 export class GoogleAnalyticsService {
 
+  initialized = false;
+
   constructor(private router: Router) { }
 
   public initialize() {
@@ -29,6 +31,8 @@ export class GoogleAnalyticsService {
         gtag('js', new Date());
         gtag('config', '${environment.googleAnalyticsId}', {'send_page_view': false});`;
       document.head.appendChild(dataLayerScript);
+
+      this.initialized = true;
     } catch (e) {
       console.error('Error adding Google Analytics', e);
     }
@@ -37,6 +41,9 @@ export class GoogleAnalyticsService {
   // track visited routes
   private onRouteChange() {
     this.router.events.subscribe((event) => {
+      if (!this.initialized) {
+        return;
+      }
       if (event instanceof NavigationEnd) {
         gtag('config', environment.googleAnalyticsId, {
           page_path: event.urlAfterRedirects,
@@ -48,6 +55,10 @@ export class GoogleAnalyticsService {
 
   // use gtag.js to send Google Analytics Events
   public event(action: string, eventCategory?: string, eventLabel?: string, value?: string) {
+    if (!this.initialized) {
+      return;
+    }
+
     gtag('event', action, {
       ...(eventCategory && { event_category: eventCategory }),
       ...(eventLabel && { event_label: eventLabel }),

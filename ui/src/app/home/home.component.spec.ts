@@ -7,7 +7,6 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { TopBarComponent } from '../top-bar/top-bar.component';
 import { ProgressiveImgLoaderComponent } from '../progressive-img-loader/progressive-img-loader.component';
-import { MonacoEditorModule } from 'ngx-monaco-editor';
 import { AppRoutingModule } from '../app-routing.module';
 import { Renderer2, Type } from '@angular/core';
 
@@ -23,7 +22,6 @@ describe('HomeComponent', () => {
         RouterTestingModule,
         HttpClientTestingModule,
         NgbModule,
-        MonacoEditorModule.forRoot(),
       ],
       declarations: [
         HomeComponent,

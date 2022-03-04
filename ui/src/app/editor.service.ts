@@ -57,37 +57,16 @@ export class EditorService implements OnDestroy {
 
     this.editorControllerService.saveTriggersObservable().subscribe({
       next: _ => {
-        this.fileSaverService.saveText(this.Text(), `code.${this.GetLanguageExtension()}`);
+        this.fileSaverService.saveText(this.Text(), `code${this.GetLanguageExtension()}`);
       }
     });
   }
 
   GetLanguageExtension(): string {
-    console.log(this.language);
-    switch (this.language) {
-      case "python":
-        return "py";
-      case "java":
-        return "java";
-      case "go":
-        return "go";
-      case "cpp":
-        return "cpp";
-      case "c":
-        return "c";
-      case "r":
-        return "r";
-      case "json":
-        return "json";
-      case "shell":
-        return "sh";
-      case "yaml":
-        return "yaml";
-      case "sql":
-        return "sql";
-      default:
-        return "txt";
-    }
+    const lep = monaco.languages.getLanguages().find(val => val.id == this.language);
+    if (lep === undefined || lep.extensions === undefined || lep.extensions?.length === 0)
+      return '.txt';
+    return lep.extensions[0];
   }
 
   DisposeEditorSubscriptions() {
@@ -157,9 +136,6 @@ export class EditorService implements OnDestroy {
       showUnused: true,
       scrollbar: {
         verticalScrollbarSize: 0,
-      },
-      inlineHints: {
-        enabled: true,
       },
       parameterHints: {
         enabled: true,
@@ -231,12 +207,6 @@ export class EditorService implements OnDestroy {
   }
 
   OtherUsers(): User[] {
-    const positions = this.oldDecorations.map(d => this.model.getDecorationRange(d)).map(r => {
-      if (r === null) {
-        return null;
-      }
-      return this.positionToNumber(new monaco.Position(r.startLineNumber, r.startColumn));
-    })
     return this.currentDecorations.map((d, idx): User | null => {
       const dr = this.model.getDecorationRange(this.oldDecorations[idx]);
       if (dr === null) {

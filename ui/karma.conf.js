@@ -24,7 +24,7 @@ module.exports = function (config) {
     ],
     proxies: {
       "/assets/monaco-editor": "/base/node_modules/monaco-editor",
-      // "/vs": "/base/node_modules/monaco-editor/min/vs",
+      "/vs": "/base/node_modules/monaco-editor/min/vs",
     },
     preprocessors: {
       'src/**/*.scss': ['scss']

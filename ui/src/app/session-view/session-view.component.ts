@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { Subscription } from 'rxjs';
@@ -29,6 +29,9 @@ export class SessionViewComponent implements OnInit, OnDestroy {
   initialSessionPromise!: Promise<GetSessionResponse | null>;
 
   @Output() editorInitialized = new EventEmitter<boolean>();
+
+  @ViewChild("editorField")
+  editorField!: ElementRef<HTMLDivElement>;
 
   constructor(
     private route: ActivatedRoute,
@@ -67,14 +70,24 @@ export class SessionViewComponent implements OnInit, OnDestroy {
     });
   }
 
+  onEditorCreated(editor: monaco.editor.IStandaloneCodeEditor) {
+    this.editorService.SetEditor(editor);
+    this.editorService.SetUserID(this.apiService.GetUserID());
+
+    if (!this.editorServiceInitialized) {
+      this.editorInitialized.emit(true);
+
+      this.editorService.SetText('');
+      this.editorServiceInitialized = true;
+      this.initializeEditorService();
+    }
+  }
+
+
   ngOnDestroy() {
     this.sessionSubscription?.unsubscribe();
     this.editsSubscription?.unsubscribe();
     this.languageChangesSubscription?.unsubscribe();
-  }
-
-  selectedTheme(): string {
-    return this.themeService.editorThemeName();
   }
 
   initializeEditorService() {
@@ -112,19 +125,6 @@ export class SessionViewComponent implements OnInit, OnDestroy {
         this.updateSession();
       },
     });
-  }
-
-  onInit(editor: monaco.editor.IStandaloneCodeEditor) {
-    this.editorService.SetEditor(editor);
-    this.editorService.SetUserID(this.apiService.GetUserID());
-
-    if (!this.editorServiceInitialized) {
-      this.editorInitialized.emit(true);
-
-      this.editorService.SetText('');
-      this.editorServiceInitialized = true;
-      this.initializeEditorService();
-    }
   }
 
   updateSession() {

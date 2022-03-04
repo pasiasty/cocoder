@@ -3,7 +3,6 @@
     <div class="content-container">
         <app-top-bar editorMode>
         </app-top-bar>
-        <ngx-monaco-editor [options]="{theme: selectedTheme()}" (onInit)="onInit($event)" class="editor-field">
-        </ngx-monaco-editor>
+        <app-monaco-editor class="editor-container" (editorCreated)="onEditorCreated($event)"></app-monaco-editor>
     </div>
 </ng-template>

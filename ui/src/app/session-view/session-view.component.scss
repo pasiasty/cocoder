@@ -1,18 +1,15 @@
 @import "../common.scss";
 
-.editor-field {
-  margin-top: 15px;
-  margin-left: 30px;
-  margin-right: 30px;
-  position: relative;
-  overflow: hidden;
-  flex-grow: 1;
-}
-
 .content-container {
   overflow: hidden;
   display: flex;
   position: relative;
   flex-direction: column;
   height: 100%;
+}
+
+.editor-container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
 }

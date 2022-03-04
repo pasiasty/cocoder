@@ -23,8 +23,9 @@ export class EditorControllerService {
   }
 
   setLanguage(val: string) {
-    if (val !== this.selectedLanguage)
+    if (val !== this.selectedLanguage) {
       this.languageSelection.next(val);
+    }
     this.selectedLanguage = val;
   }
 

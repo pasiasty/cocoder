@@ -1,6 +1,7 @@
 import { Component, OnInit, Renderer2 } from '@angular/core';
 import { environment } from 'src/environments/environment';
 import { GoogleAnalyticsService } from './google-analytics.service';
+import { MonacoEditorService } from './monaco-editor.service';
 import { ThemeService } from './theme.service';
 
 @Component({
@@ -16,9 +17,12 @@ export class AppComponent implements OnInit {
   constructor(
     private themeService: ThemeService,
     private renderer: Renderer2,
-    private readonly googleAnalyticsService: GoogleAnalyticsService) { }
+    private readonly googleAnalyticsService: GoogleAnalyticsService,
+    private monacoEditorService: MonacoEditorService) { }
 
   ngOnInit(): void {
+    this.monacoEditorService.load();
+
     if (environment.production) {
       this.googleAnalyticsService.initialize();
     }

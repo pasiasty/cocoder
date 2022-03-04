@@ -58,3 +58,9 @@ import 'zone.js';  // Included with Angular CLI.
 
 // Add global to window, assigning the value of window itself.
 (window as any).global = window;
+
+(window as any).MonacoEnvironment = {
+    getWorkerUrl(module: any, label: string): string {
+        return '/assets/monaco-editor/min/vs/base/worker/workerMain.js';
+    }
+}

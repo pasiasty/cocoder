@@ -6,7 +6,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { AppRoutingModule } from '../app-routing.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { MonacoEditorModule } from 'ngx-monaco-editor';
 import { TopBarComponent } from '../top-bar/top-bar.component';
 import { Component, Renderer2, Type } from '@angular/core';
 import { Observable, of } from 'rxjs';
@@ -34,6 +33,7 @@ class TestHostComponent {
     });
   }
   onEditorInitialized() {
+    console.log('Initialized!');
     this.editorInitializedResolve(true);
   }
 }
@@ -123,7 +123,6 @@ def something(): # local selection
         RouterTestingModule,
         HttpClientTestingModule,
         NgbModule,
-        MonacoEditorModule.forRoot(),
       ],
       declarations: [
         TestHostComponent,

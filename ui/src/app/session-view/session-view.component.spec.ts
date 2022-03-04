@@ -14,6 +14,8 @@ import { EditorService } from '../editor.service';
 import { ToastsContainerComponent } from '../toasts-container/toasts-container.component';
 import { ApiService, EditResponse, GetSessionResponse, User } from '../api.service';
 import { ThemeService } from '../theme.service';
+import { MonacoEditorService } from '../monaco-editor.service';
+import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component';
 
 @Component({
   template: `
@@ -33,7 +35,6 @@ class TestHostComponent {
     });
   }
   onEditorInitialized() {
-    console.log('Initialized!');
     this.editorInitializedResolve(true);
   }
 }
@@ -43,6 +44,7 @@ describe('SessionViewComponent', () => {
   let fixture: ComponentFixture<TestHostComponent>;
   let renderer2: Renderer2;
   let editorService: EditorService;
+  let monacoEditorService: MonacoEditorService;
   let themeService: ThemeService;
   let sessionObservable: Observable<EditResponse>;
 
@@ -129,9 +131,11 @@ def something(): # local selection
         SessionViewComponent,
         TopBarComponent,
         ToastsContainerComponent,
+        MonacoEditorComponent,
       ],
       providers: [
         Renderer2,
+        MonacoEditorService,
         {
           provide: ActivatedRoute,
           useValue: {
@@ -163,7 +167,10 @@ def something(): # local selection
     component = fixture.componentInstance;
     renderer2 = fixture.debugElement.injector.get(Renderer2);
     editorService = fixture.debugElement.injector.get(EditorService);
+    monacoEditorService = fixture.debugElement.injector.get(MonacoEditorService);
     themeService = fixture.debugElement.injector.get(ThemeService);
+
+    monacoEditorService.load();
     fixture.detectChanges();
   });
 

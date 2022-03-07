@@ -114,4 +114,17 @@ export class TopBarComponent implements OnInit {
     }
     this.googleAnalyticsService.event('navigation', 'engagement', 'top_bar', val);
   }
+
+  notificationsTitle(): string {
+    return this.areNotificationsEnabled() ? 'Click to disable hints' : 'Click to enable hints';
+  }
+
+  areNotificationsEnabled(): boolean {
+    return this.editorControllerService.hintsAreEnabled();
+  }
+
+  notificationsButtonClicked(): void {
+    this.editorControllerService.toggleHints();
+    this.cdRef.detectChanges();
+  }
 }

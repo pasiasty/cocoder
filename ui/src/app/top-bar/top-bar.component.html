@@ -34,6 +34,14 @@
         <div type="button" class="btn btn-default" (click)="zoomOutButtonClicked()" title="Zoom out">
             <i class="bi bi-zoom-out h5"></i>
         </div>
+        <div type="button" class="btn btn-default" (click)="notificationsButtonClicked()"
+            [title]="notificationsTitle()">
+            <i *ngIf="areNotificationsEnabled() else notificationsDisabledVariant"
+                class="bi bi-chat-right-text-fill h5"></i>
+            <ng-template #notificationsDisabledVariant>
+                <i class="bi bi-chat-right-text h5"></i>
+            </ng-template>
+        </div>
     </div>
 
     <div class="empty-space">

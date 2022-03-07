@@ -115,6 +115,10 @@ export class EditorService implements OnDestroy {
       localStorage.setItem("font_size", this.fontSize.toString());
       this.updateOptions();
     });
+
+    this.editorControllerService.toggleHintsObservable().subscribe(val => {
+      this.updateOptions();
+    })
   }
 
   ngOnDestroy() {
@@ -136,16 +140,34 @@ export class EditorService implements OnDestroy {
   }
 
   updateOptions() {
+    const withHints = this.editorControllerService.hintsAreEnabled();
+
+    monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: !withHints,
+      noSuggestionDiagnostics: !withHints,
+      noSyntaxValidation: !withHints,
+    });
+
     this.editor!.updateOptions({
       cursorBlinking: 'smooth',
       fontSize: this.fontSize,
-      showUnused: true,
+      showUnused: withHints,
       scrollbar: {
         verticalScrollbarSize: 0,
       },
       parameterHints: {
-        enabled: true,
+        enabled: withHints,
       },
+      inlayHints: {
+        enabled: withHints,
+      },
+      inlineSuggest: {
+        enabled: withHints,
+      },
+      quickSuggestions: withHints,
+      snippetSuggestions: withHints ? 'inline' : 'none',
+      showDeprecated: withHints,
+      suggestOnTriggerCharacters: withHints,
     });
   }
 

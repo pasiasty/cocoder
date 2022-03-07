@@ -31,7 +31,8 @@ export class EditorService implements OnDestroy {
   themeChangesSubscription?: Subscription;
   languageChangesSubscription?: Subscription;
 
-  contentChangeDisposable?: monaco.IDisposable;
+  pastedDisposable?: monaco.IDisposable;
+  keyPressedDisposable?: monaco.IDisposable;
   cursorPositionChangeDisposable?: monaco.IDisposable;
   cursorSelectionChangeDisposable?: monaco.IDisposable;
 
@@ -70,7 +71,8 @@ export class EditorService implements OnDestroy {
   }
 
   DisposeEditorSubscriptions() {
-    this.contentChangeDisposable?.dispose();
+    this.keyPressedDisposable?.dispose();
+    this.pastedDisposable?.dispose();
     this.cursorPositionChangeDisposable?.dispose();
     this.cursorSelectionChangeDisposable?.dispose();
   }
@@ -84,7 +86,12 @@ export class EditorService implements OnDestroy {
 
     this.updateOptions();
 
-    this.contentChangeDisposable = this.editor.onDidChangeModelContent(() => {
+    this.keyPressedDisposable = this.editor.onKeyDown(() => {
+      console.log('Key pressed');
+      this.editsSubject.next();
+    });
+
+    this.pastedDisposable = this.editor.onDidPaste(() => {
       this.editsSubject.next();
     });
 
@@ -125,7 +132,7 @@ export class EditorService implements OnDestroy {
 
   editsObservable(): Observable<void> {
     return this.editsSubject.pipe(
-      sampleTime(300),
+      sampleTime(50),
     )
   }
 

@@ -155,7 +155,8 @@ export class ApiService implements OnDestroy {
   }
 
   UpdateSession(baseText: string, newText: string, cursorPos: number, otherUsers: User[], selection?: Selection) {
-    this.lastUpdateTimestamp = Date.now();
+    if (baseText !== newText)
+      this.lastUpdateTimestamp = Date.now();
     let language = '';
 
     if (Date.now() - this.lastLanguageUpdateTimestamp < LANGUAGE_SETTING_TIME_HORIZON) {

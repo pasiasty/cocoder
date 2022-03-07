@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -38,11 +39,11 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-func NewRouterManager(c *redis.Client) *RouteManager {
+func NewRouterManager(ctx context.Context, c *redis.Client) *RouteManager {
 	r := gin.Default()
 	pprof.Register(r)
 	sm := NewSessionManager(c)
-	um := NewUsersManager(sm)
+	um := NewUsersManager(ctx, sm)
 
 	r.Use(limits.RequestSizeLimiter(1024 * 1024))
 	r.Use(CORSMiddleware())
@@ -73,7 +74,7 @@ func NewRouterManager(c *redis.Client) *RouteManager {
 			return
 		}
 
-		um.RegisterUser(sessionID, userID, conn)
+		um.RegisterUser(c, sessionID, userID, conn)
 	})
 
 	g.POST("/:session_id", func(c *gin.Context) {

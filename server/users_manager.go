@@ -2,11 +2,13 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"encoding/gob"
 	"encoding/json"
 	"io"
 	"log"
+	"runtime/trace"
 	"sync"
 	"time"
 
@@ -20,7 +22,7 @@ type ConnectedUser struct {
 
 	UserID           UserID
 	conn             *websocket.Conn
-	fromUsersHandler func(*UpdateSessionRequest)
+	fromUsersHandler func(context.Context, *UpdateSessionRequest)
 	toUser           chan *UpdateSessionResponse
 	cancelled        bool
 }
@@ -34,7 +36,7 @@ func (u *ConnectedUser) send(resp *UpdateSessionResponse) {
 	}
 }
 
-func NewConnectedUser(userID UserID, conn *websocket.Conn, fromUsersHandler func(*UpdateSessionRequest)) *ConnectedUser {
+func NewConnectedUser(ctx context.Context, userID UserID, conn *websocket.Conn, fromUsersHandler func(context.Context, *UpdateSessionRequest)) *ConnectedUser {
 	log.Printf("connected user: %v", userID)
 	u := &ConnectedUser{
 		UserID:           userID,
@@ -43,13 +45,13 @@ func NewConnectedUser(userID UserID, conn *websocket.Conn, fromUsersHandler func
 		toUser:           make(chan *UpdateSessionResponse, 32),
 	}
 
-	go u.readLoop()
-	go u.writeLoop()
+	go u.readLoop(ctx)
+	go u.writeLoop(ctx)
 
 	return u
 }
 
-func (u *ConnectedUser) readLoop() {
+func (u *ConnectedUser) readLoop(ctx context.Context) {
 	defer u.Cancel()
 
 	for {
@@ -71,11 +73,11 @@ func (u *ConnectedUser) readLoop() {
 			continue
 		}
 
-		u.fromUsersHandler(req)
+		u.fromUsersHandler(ctx, req)
 	}
 }
 
-func (u *ConnectedUser) writeLoop() {
+func (u *ConnectedUser) writeLoop(ctx context.Context) {
 	defer u.Cancel()
 
 	for {
@@ -102,6 +104,16 @@ func (u *ConnectedUser) Cancel() {
 	u.cancelled = true
 }
 
+type FromUsersItem struct {
+	task *trace.Task
+	req  *UpdateSessionRequest
+}
+
+type ToUsersItem struct {
+	task *trace.Task
+	resp *UpdateSessionResponse
+}
+
 type ManagedSession struct {
 	mux sync.Mutex
 
@@ -111,38 +123,48 @@ type ManagedSession struct {
 	Users     map[UserID]*ConnectedUser
 	sm        *SessionManager
 
-	fromUsers chan *UpdateSessionRequest
+	fromUsers chan FromUsersItem
 	toUsers   chan *UpdateSessionResponse
 
 	lastResponseHash []byte
+
+	runningTasks map[int64]*trace.Task
 }
 
-func (s *ManagedSession) fromUsersHandler(req *UpdateSessionRequest) {
+func (s *ManagedSession) fromUsersHandler(ctx context.Context, req *UpdateSessionRequest) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
 	if !s.cancelled {
-		s.fromUsers <- req
+		_, task := trace.NewTask(ctx, "user_request")
+
+		s.fromUsers <- FromUsersItem{
+			task: task,
+			req:  req,
+		}
 	}
 }
 
-func (s *ManagedSession) toUsersHandler(resp *UpdateSessionResponse) {
+func (s *ManagedSession) toUsersHandler(ctx context.Context, tui *ToUsersItem) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
 	if !s.cancelled {
-		s.toUsers <- resp
+		if tui.task != nil {
+			tui.task.End()
+		}
+		s.toUsers <- tui.resp
 	}
 }
 
-func (s *ManagedSession) AddUser(userID UserID, conn *websocket.Conn) {
+func (s *ManagedSession) AddUser(ctx context.Context, userID UserID, conn *websocket.Conn) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
 	if u, ok := s.Users[userID]; ok {
 		u.Cancel()
 	}
-	s.Users[userID] = NewConnectedUser(userID, conn, s.fromUsersHandler)
+	s.Users[userID] = NewConnectedUser(ctx, userID, conn, s.fromUsersHandler)
 }
 
 func (s *ManagedSession) Cancel() {
@@ -177,18 +199,21 @@ func (s *ManagedSession) sendResponseToUsers(resp *UpdateSessionResponse) {
 	s.lastResponseHash = newHash
 }
 
-func (s *ManagedSession) loop() {
+func (s *ManagedSession) loop(ctx context.Context) {
 	for {
 		select {
-		case req, ok := <-s.fromUsers:
+		case fromUsersItem, ok := <-s.fromUsers:
 			if !ok {
 				return
 			}
-			resp, err := s.sm.UpdateSession(s.SessionID, req)
+			resp, err := s.sm.UpdateSession(s.SessionID, fromUsersItem.req)
 			if err != nil {
 				log.Printf("Failed to update session: %v", err)
 			}
-			s.toUsersHandler(resp)
+			s.toUsersHandler(ctx, &ToUsersItem{
+				task: fromUsersItem.task,
+				resp: resp,
+			})
 		case resp, ok := <-s.toUsers:
 			if !ok {
 				return
@@ -217,16 +242,17 @@ func (s *ManagedSession) cleanupInactiveUsers() {
 	}
 }
 
-func NewManagedSession(sessionID SessionID, sm *SessionManager) *ManagedSession {
+func NewManagedSession(ctx context.Context, sessionID SessionID, sm *SessionManager) *ManagedSession {
 	s := &ManagedSession{
-		SessionID: sessionID,
-		sm:        sm,
-		fromUsers: make(chan *UpdateSessionRequest, 32),
-		toUsers:   make(chan *UpdateSessionResponse, 32),
-		Users:     make(map[UserID]*ConnectedUser),
+		SessionID:    sessionID,
+		sm:           sm,
+		fromUsers:    make(chan FromUsersItem, 32),
+		toUsers:      make(chan *UpdateSessionResponse, 32),
+		Users:        make(map[UserID]*ConnectedUser),
+		runningTasks: make(map[int64]*trace.Task),
 	}
 
-	go s.loop()
+	go s.loop(ctx)
 
 	return s
 }
@@ -238,19 +264,19 @@ type UsersManager struct {
 	sm                 *SessionManager
 }
 
-func NewUsersManager(sm *SessionManager) *UsersManager {
+func NewUsersManager(ctx context.Context, sm *SessionManager) *UsersManager {
 	um := &UsersManager{
 		sm:                 sm,
 		managedSessions:    make(map[SessionID]*ManagedSession),
 		sessionsInactivity: make(map[SessionID]int32),
 	}
 
-	go um.loop()
+	go um.loop(ctx)
 
 	return um
 }
 
-func (m *UsersManager) triggerResponsesAndSessionCleanup() {
+func (m *UsersManager) triggerResponsesAndSessionCleanup(ctx context.Context) {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
@@ -271,10 +297,12 @@ func (m *UsersManager) triggerResponsesAndSessionCleanup() {
 				users = append(users, u)
 			}
 
-			ms.toUsersHandler(&UpdateSessionResponse{
-				NewText:  s.Text,
-				Language: s.Language,
-				Users:    users,
+			ms.toUsersHandler(ctx, &ToUsersItem{
+				resp: &UpdateSessionResponse{
+					NewText:  s.Text,
+					Language: s.Language,
+					Users:    users,
+				},
 			})
 		}
 	}
@@ -291,22 +319,22 @@ func (m *UsersManager) triggerResponsesAndSessionCleanup() {
 	}
 }
 
-func (m *UsersManager) loop() {
+func (m *UsersManager) loop(ctx context.Context) {
 	for {
 		<-time.After(time.Second)
-		m.triggerResponsesAndSessionCleanup()
+		m.triggerResponsesAndSessionCleanup(ctx)
 	}
 }
 
-func (m *UsersManager) RegisterUser(sessionID SessionID, userID UserID, conn *websocket.Conn) {
+func (m *UsersManager) RegisterUser(ctx context.Context, sessionID SessionID, userID UserID, conn *websocket.Conn) {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	if _, ok := m.managedSessions[sessionID]; !ok {
-		m.managedSessions[sessionID] = NewManagedSession(sessionID, m.sm)
+		m.managedSessions[sessionID] = NewManagedSession(ctx, sessionID, m.sm)
 	}
 	ms := m.managedSessions[sessionID]
 	if u, ok := ms.Users[userID]; ok {
 		u.Cancel()
 	}
-	ms.AddUser(userID, conn)
+	ms.AddUser(ctx, userID, conn)
 }

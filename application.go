@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +13,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	redisAddr := os.Getenv("REDIS_HOST")
 	if redisAddr == "" {
 		redisAddr = "localhost:6379"
@@ -29,7 +32,7 @@ func main() {
 		DB:       int(redisDB),
 	})
 
-	m := server.NewRouterManager(redisClient)
+	m := server.NewRouterManager(ctx, redisClient)
 	r := m.Router()
 	r.LoadHTMLGlob("templates/*.tmpl.html")
 

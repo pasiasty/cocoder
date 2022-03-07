@@ -37,7 +37,7 @@
         <div type="button" class="btn btn-default" (click)="notificationsButtonClicked()"
             [title]="notificationsTitle()">
             <i *ngIf="areNotificationsEnabled() else notificationsDisabledVariant"
-                class="bi bi-chat-right-text-fill h5"></i>
+                class="bi bi-chat-right-text-fill glowing-icon h5"></i>
             <ng-template #notificationsDisabledVariant>
                 <i class="bi bi-chat-right-text h5"></i>
             </ng-template>

@@ -9,7 +9,7 @@ import { EditorControllerService } from './editor-controller.service';
 import { Selection } from './common';
 import { ToastService } from './toast.service';
 
-const SILENCE_AFTER_EDITING = 2000
+const SILENCE_AFTER_EDITING = 200
 const PING_FREQUENCY = 1000
 const PONG_THRESHOLD = 3000
 const WEBSOCKET_RECONNECT_FREQUENCY = 6000

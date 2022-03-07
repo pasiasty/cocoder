@@ -1,0 +1,13 @@
+{
+    "AWSEBDockerrunVersion": "1",
+    "Image": {
+        "Name": "redis:latest",
+        "Update": "true"
+    },
+    "Ports": [
+        {
+            "ContainerPort": "6379"
+        }
+    ],
+    "Command": "docker-entrypoint.sh redis-server --appendonly yes --requirepass 'PASSWORD'"
+}

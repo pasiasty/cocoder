@@ -1,4 +1,6 @@
 @import "../common.scss";
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
 
 .logo {
   font-family: "Courier New", Courier, monospace;
@@ -80,4 +82,8 @@
 
 .activable-item.active {
   border-radius: 10px;
+}
+
+.glowing-icon {
+  text-shadow: 0px 0px 12px $primary;
 }

@@ -1,9 +1,11 @@
 package server
 
 import (
+	"context"
 	"encoding/gob"
 	"fmt"
 	"log"
+	"runtime/trace"
 	"sort"
 	"time"
 
@@ -74,30 +76,41 @@ func sequencesToInsertByPosition(m map[string]*User) []SpecialSequence {
 
 type requestProcessor = func(req interface{}, s *Session) interface{}
 
-func (m *SessionManager) modifySession(sessionID SessionID, req interface{}, processor requestProcessor) (interface{}, error) {
+func (m *SessionManager) modifySession(ctx context.Context, sessionID SessionID, req interface{}, processor requestProcessor) (interface{}, error) {
 	resp := *new(interface{})
-	if err := m.c.Watch(func(tx *redis.Tx) error {
-		ss, err := tx.Get(string(sessionID)).Result()
-		if err != nil && err != redis.Nil {
-			return err
-		}
-		session := deserializeSession(ss)
+	var watchErr error
 
-		_, err = tx.Pipelined(func(pipe redis.Pipeliner) error {
-			resp = processor(req, session)
-			pipe.Set(string(sessionID), serializeSession(session), sessionExpiry)
-			return nil
-		})
-		return err
-	}, string(sessionID)); err != nil {
-		return nil, fmt.Errorf("failed to modify session '%s': %v", sessionID, err)
+	trace.WithRegion(ctx, "modify_session", func() {
+		watchErr = m.c.Watch(func(tx *redis.Tx) error {
+			trace.Log(ctx, "start", "")
+			ss, err := tx.Get(string(sessionID)).Result()
+			if err != nil && err != redis.Nil {
+				return err
+			}
+
+			trace.Log(ctx, "deserializing", "")
+			session := deserializeSession(ss)
+
+			trace.Log(ctx, "storing", "")
+
+			_, err = tx.Pipelined(func(pipe redis.Pipeliner) error {
+				resp = processor(req, session)
+				pipe.Set(string(sessionID), serializeSession(session), sessionExpiry)
+				return nil
+			})
+			return err
+		}, string(sessionID))
+	})
+
+	if watchErr != nil {
+		return nil, fmt.Errorf("failed to modify session '%s': %v", sessionID, watchErr)
 	}
 
 	return resp, nil
 }
 
-func (m *SessionManager) UpdateSession(sessionID SessionID, req *UpdateSessionRequest) (*UpdateSessionResponse, error) {
-	resp, err := m.modifySession(sessionID, req, func(req interface{}, s *Session) interface{} {
+func (m *SessionManager) UpdateSession(ctx context.Context, sessionID SessionID, req *UpdateSessionRequest) (*UpdateSessionResponse, error) {
+	resp, err := m.modifySession(ctx, sessionID, req, func(req interface{}, s *Session) interface{} {
 		return s.Update(req.(*UpdateSessionRequest))
 	})
 	if err != nil {

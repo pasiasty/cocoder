@@ -87,7 +87,7 @@ func NewRouterManager(ctx context.Context, c *redis.Client) *RouteManager {
 			return
 		}
 
-		resp, err := sm.UpdateSession(sessionID, req)
+		resp, err := sm.UpdateSession(c, sessionID, req)
 		if err != nil {
 			c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to update session text: %v", err))
 			return

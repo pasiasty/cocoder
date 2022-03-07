@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -62,6 +63,7 @@ func TestSerializeDeserialize(t *testing.T) {
 }
 
 func TestLoadSession(t *testing.T) {
+	ctx := context.Background()
 	sm := prepareSessionManager(t)
 
 	userID1 := "user_1"
@@ -81,7 +83,7 @@ func TestLoadSession(t *testing.T) {
 
 	nowSource = func() time.Time { return date1 }
 
-	if _, err := sm.UpdateSession(existingSessionID1, &UpdateSessionRequest{
+	if _, err := sm.UpdateSession(ctx, existingSessionID1, &UpdateSessionRequest{
 		NewText:  sampleText,
 		UserID:   userID1,
 		Language: sampleLanguage,
@@ -91,13 +93,13 @@ func TestLoadSession(t *testing.T) {
 
 	nowSource = func() time.Time { return date2 }
 
-	if _, err := sm.UpdateSession(existingSessionID2, &UpdateSessionRequest{
+	if _, err := sm.UpdateSession(ctx, existingSessionID2, &UpdateSessionRequest{
 		UserID: userID1,
 	}); err != nil {
 		t.Fatalf("Failed to update session text: %v", err)
 	}
 
-	if _, err := sm.UpdateSession(existingSessionID2, &UpdateSessionRequest{
+	if _, err := sm.UpdateSession(ctx, existingSessionID2, &UpdateSessionRequest{
 		NewText: anotherSampleText,
 		UserID:  userID2,
 	}); err != nil {
@@ -236,18 +238,20 @@ func TestUpdateSessionText(t *testing.T) {
 		
 		|`,
 	}} {
+		ctx := context.Background()
+
 		t.Run(tc.name, func(t *testing.T) {
 			sm := prepareSessionManager(t)
 			s := sm.NewSession()
 
-			if _, err := sm.UpdateSession(s, &UpdateSessionRequest{NewText: tc.initialState}); err != nil {
+			if _, err := sm.UpdateSession(ctx, s, &UpdateSessionRequest{NewText: tc.initialState}); err != nil {
 				t.Fatalf("Initial edit should not fail, but did: %v", err)
 			}
 
 			es := editRequestForTesting(tc.clientEditState)
 			es.BaseText = tc.clientBase
 
-			resEs, err := sm.UpdateSession(s, es)
+			resEs, err := sm.UpdateSession(ctx, s, es)
 			if err != nil {
 				t.Fatalf("Test edit fail, but shouldn't: %v", err)
 			}

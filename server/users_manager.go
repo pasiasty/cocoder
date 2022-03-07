@@ -206,7 +206,7 @@ func (s *ManagedSession) loop(ctx context.Context) {
 			if !ok {
 				return
 			}
-			resp, err := s.sm.UpdateSession(s.SessionID, fromUsersItem.req)
+			resp, err := s.sm.UpdateSession(ctx, s.SessionID, fromUsersItem.req)
 			if err != nil {
 				log.Printf("Failed to update session: %v", err)
 			}

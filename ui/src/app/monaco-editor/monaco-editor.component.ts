@@ -39,4 +39,7 @@ export class MonacoEditorComponent implements AfterViewInit {
     this.editorCreated.emit(this._editor);
   }
 
+  onResize(): void {
+    this._editor.layout();
+  }
 }

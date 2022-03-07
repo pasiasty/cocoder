@@ -145,7 +145,7 @@ export class EditorService implements OnDestroy {
       },
       parameterHints: {
         enabled: true,
-      }
+      },
     });
   }
 

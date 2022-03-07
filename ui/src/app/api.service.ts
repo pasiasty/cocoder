@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { webSocket, WebSocketSubject } from "rxjs/webSocket";
 import { EditorControllerService } from './editor-controller.service';
 import { Selection } from './common';
+import { ToastService } from './toast.service';
 
 const SILENCE_AFTER_EDITING = 2000
 const PING_FREQUENCY = 1000
@@ -67,6 +68,7 @@ export class ApiService implements OnDestroy {
   constructor(
     private httpClient: HttpClient,
     private editorControllerService: EditorControllerService,
+    private toastService: ToastService,
   ) {
     const userID = localStorage.getItem('user_id');
     if (userID !== null) {
@@ -128,6 +130,7 @@ export class ApiService implements OnDestroy {
       if (now - this.lastPongTimestamp > PONG_THRESHOLD &&
         now - this.lastReconnectTimestamp > WEBSOCKET_RECONNECT_FREQUENCY) {
         console.log('Reconnecting the websocket');
+        this.toastService.show('', 'Lost connection to the server. Reconnecting...', 5000);
         try {
           this.connectWebsocket();
         } catch (err: any) {

@@ -87,7 +87,6 @@ export class EditorService implements OnDestroy {
     this.updateOptions();
 
     this.keyPressedDisposable = this.editor.onKeyDown(() => {
-      console.log('Key pressed');
       this.editsSubject.next();
     });
 

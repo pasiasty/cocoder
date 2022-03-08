@@ -8,6 +8,7 @@ import { ScrollingService } from '../scrolling.service';
 import { Subscription } from 'rxjs';
 import { Analytics } from 'aws-amplify';
 import { GoogleAnalyticsService } from '../google-analytics.service';
+import { ToastService } from '../toast.service';
 
 type ExampleUsage = {
   header: string
@@ -65,7 +66,8 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     private titleService: Title,
     private scrollingService: ScrollingService,
     private route: ActivatedRoute,
-    private googleAnalyticsService: GoogleAnalyticsService) { }
+    private googleAnalyticsService: GoogleAnalyticsService,
+    private toastService: ToastService) { }
 
   ngOnInit(): void {
     this.titleService.setTitle('coCoder');
@@ -75,6 +77,12 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
         this.scrollToEl(val);
       },
     })
+
+    const bannerShown = localStorage.getItem('policy_banner_shown');
+    if (bannerShown !== 'true') {
+      this.toastService.show('', 'By using this website you agree to our <a href="/cookies">Cookies</a> and <a href="/privacy">Privacy</a> policies.', 15000);
+      localStorage.setItem('policy_banner_shown', 'true');
+    }
   }
 
   ngAfterViewInit(): void {

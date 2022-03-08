@@ -1,2 +1,7 @@
-<ngb-toast *ngFor="let toast of ToastService.toasts" [header]="toast.header" [autohide]="true"
-    [delay]="toast.delay || 2000" (hide)="ToastService.remove(toast)">{{toast.body}}</ngb-toast>
+<div class="toasts-container">
+    <div class="toasts-column">
+        <ngb-toast class="toast-element" *ngFor="let toast of ToastService.toasts" [header]="toast.header"
+            [animation]="false" [autohide]="true" [delay]="toast.delay || 2000" (hide)="ToastService.remove(toast)"
+            [innerHtml]="toast.body"></ngb-toast>
+    </div>
+</div>

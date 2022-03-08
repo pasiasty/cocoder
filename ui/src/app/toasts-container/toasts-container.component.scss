@@ -1,7 +1,30 @@
-:host {
+.toasts-container {
   position: fixed;
+  width: 100%;
   bottom: 0;
-  left: 50vw;
-  margin: 0.5em;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
   z-index: 1200;
+}
+
+.toasts-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast-element {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 1300;
+  margin: 1em;
+  height: min-content !important;
+  padding: 1em;
+  flex-basis: 0px;
+  text-align: center;
+  width: fit-content;
 }

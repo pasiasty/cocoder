@@ -18,6 +18,7 @@ import { ToastsContainerComponent } from './toasts-container/toasts-container.co
 import { ProgressiveImgLoaderComponent } from './progressive-img-loader/progressive-img-loader.component';
 import { MonacoEditorComponent } from './monaco-editor/monaco-editor.component';
 import { PrivacyViewComponent } from './privacy-view/privacy-view.component';
+import { CookiesViewComponent } from './cookies-view/cookies-view.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -25,6 +26,8 @@ const routes: Routes = [
   { path: 's/:session_id/', component: SessionViewComponent },
   { path: 'privacy/', component: PrivacyViewComponent },
   { path: 'privacy', component: PrivacyViewComponent },
+  { path: 'cookies/', component: CookiesViewComponent },
+  { path: 'cookies', component: CookiesViewComponent },
   { path: '**', component: PageNotFoundComponent },
 ];
 
@@ -38,7 +41,8 @@ const routes: Routes = [
     ToastsContainerComponent,
     ProgressiveImgLoaderComponent,
     MonacoEditorComponent,
-    PrivacyViewComponent
+    PrivacyViewComponent,
+    CookiesViewComponent
   ],
   imports: [
     BrowserModule,

@@ -140,3 +140,22 @@
 .contact-list-item:not(:last-child) {
   margin-bottom: 50px;
 }
+
+.policies-container {
+  flex-direction: row;
+  width: 100%;
+  justify-content: center;
+  background-color: rgb(200, 200, 200);
+}
+
+:host-context(.bootstrap-dark) {
+  @import "~@forevolve/bootstrap-dark/scss/dark-variables";
+  @import "../../custom-colors-dark.scss";
+  .policies-container {
+    background-color: #16191d;
+  }
+}
+
+.policies-nav {
+  padding: 0px;
+}

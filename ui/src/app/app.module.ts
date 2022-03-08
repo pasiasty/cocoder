@@ -17,11 +17,14 @@ import { ClipboardModule } from 'ngx-clipboard';
 import { ToastsContainerComponent } from './toasts-container/toasts-container.component';
 import { ProgressiveImgLoaderComponent } from './progressive-img-loader/progressive-img-loader.component';
 import { MonacoEditorComponent } from './monaco-editor/monaco-editor.component';
+import { PrivacyViewComponent } from './privacy-view/privacy-view.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 's/:session_id', component: SessionViewComponent },
   { path: 's/:session_id/', component: SessionViewComponent },
+  { path: 'privacy/', component: PrivacyViewComponent },
+  { path: 'privacy', component: PrivacyViewComponent },
   { path: '**', component: PageNotFoundComponent },
 ];
 
@@ -34,7 +37,8 @@ const routes: Routes = [
     TopBarComponent,
     ToastsContainerComponent,
     ProgressiveImgLoaderComponent,
-    MonacoEditorComponent
+    MonacoEditorComponent,
+    PrivacyViewComponent
   ],
   imports: [
     BrowserModule,

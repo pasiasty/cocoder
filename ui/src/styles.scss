@@ -47,3 +47,20 @@ $selection-colors-dark: rgb(155, 106, 42), rgb(128, 255, 128), rgb(255, 0, 255),
 @import "../node_modules/bootstrap-icons/font/bootstrap-icons.css";
 @import "./local-toggle-bootstrap.scss";
 @import "./local-toggle-bootstrap-dark.scss";
+
+h1 {
+  margin-top: 70px;
+  margin-left: 10px;
+}
+
+h2,
+h3,
+h4,
+h5,
+p {
+  margin-left: 30px;
+}
+
+.header-separator {
+  margin: 0px !important;
+}

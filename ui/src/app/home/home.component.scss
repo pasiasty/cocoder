@@ -73,10 +73,6 @@
   flex-grow: 1;
 }
 
-.header-separator {
-  margin: 0px !important;
-}
-
 .carousel-caption {
   background-color: rgba(0, 0, 0, 0.6);
   box-shadow: 0 0 5px 10px rgba(0, 0, 0, 0.6);
@@ -131,19 +127,6 @@
   flex-direction: column;
   justify-content: center;
   gap: 50px;
-}
-
-h1 {
-  margin-top: 70px;
-  margin-left: 10px;
-}
-
-h2,
-h3,
-h4,
-h5,
-p {
-  margin-left: 30px;
 }
 
 .contact-info-container {

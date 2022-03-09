@@ -306,7 +306,7 @@ export class EditorService implements OnDestroy {
     this.currentDecorations = users.filter(u => this.userID != u.ID).map(u => this.userToDecoration(u));
     this.updateDecorations();
     for (const u of users) {
-      if (u.ID == this.userID && this.Position() != u.Position) {
+      if (u.ID == this.userID && this.Position() != u.Position && this.Selection() === undefined) {
         this.SetPosition(u.Position);
       }
     }

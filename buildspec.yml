@@ -9,7 +9,7 @@ phases:
   build:
     commands:
       # Build our application
-      - pushd server && go build -o ../application && popd
+      - pushd server && go build -o application && cp -r * ../ && popd
 
 artifacts:
   files:

@@ -4,12 +4,12 @@ phases:
   pre_build:
     commands:
       # Run all tests included with our application
-      - go test ./... -v
+      - pushd server && go test ./... -v && popd
 
   build:
     commands:
       # Build our application
-      - go build -o application
+      - pushd server && go build -o ../application && popd
 
 artifacts:
   files:

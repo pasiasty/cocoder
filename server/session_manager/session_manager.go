@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"runtime/trace"
-	"sort"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -62,18 +61,6 @@ func (m *SessionManager) LoadSession(session SessionID) (*Session, error) {
 	} else {
 		return deserializeSession(val), nil
 	}
-}
-
-func sequencesToInsertByPosition(m map[string]*common.User) []SpecialSequence {
-	res := []SpecialSequence{}
-	for _, u := range m {
-		res = append(res, sequencesToInsert(u)...)
-	}
-
-	sort.Slice(res, func(i, j int) bool {
-		return res[i].position > res[j].position
-	})
-	return res
 }
 
 type requestProcessor = func(req interface{}, s *Session) interface{}

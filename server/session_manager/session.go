@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -33,13 +34,28 @@ func sequencesToInsert(u *common.User) []SpecialSequence {
 
 	if u.HasSelection {
 		res = append(res, SpecialSequence{
+			userID:   u.ID,
 			position: u.SelectionStart,
 			text:     fmt.Sprintf(specialSequenceFormat(), fmt.Sprintf("start%v", u.Index)),
 		}, SpecialSequence{
+			userID:   u.ID,
 			position: u.SelectionEnd,
 			text:     fmt.Sprintf(specialSequenceFormat(), fmt.Sprintf("end%v", u.Index)),
 		})
 	}
+
+	return res
+}
+
+func sequencesToInsertByPosition(m map[string]*common.User) []SpecialSequence {
+	res := []SpecialSequence{}
+	for _, u := range m {
+		res = append(res, sequencesToInsert(u)...)
+	}
+
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].position > res[j].position
+	})
 
 	return res
 }
@@ -127,6 +143,13 @@ func findTokenPosition(token string, textWithCursors string) int {
 	return len(cursorSpecialSequenceRe().ReplaceAllString(textWithCursors[:rawNewPosition], ""))
 }
 
+func updateUserPosition(old *common.User, new *common.User) {
+	old.Position = new.Position
+	old.HasSelection = new.HasSelection
+	old.SelectionStart = new.SelectionStart
+	old.SelectionEnd = new.SelectionEnd
+}
+
 func (s *Session) Update(req *common.UpdateSessionRequest) *common.UpdateSessionResponse {
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -140,13 +163,11 @@ func (s *Session) Update(req *common.UpdateSessionRequest) *common.UpdateSession
 
 	if s.Text == req.BaseText {
 		for _, u := range req.Users {
-			s.Users[u.ID] = u
+			updateUserPosition(s.Users[u.ID], u)
 		}
 		s.Text = req.NewText
 		return s.prepareResponse(req)
 	}
-
-	keepUserPositionFromRequest := s.Text == req.BaseText
 
 	for _, seq := range sequencesToInsertByPosition(s.Users) {
 		if seq.userID == req.UserID {
@@ -167,14 +188,6 @@ func (s *Session) Update(req *common.UpdateSessionRequest) *common.UpdateSession
 		if u.HasSelection {
 			u.SelectionStart = findTokenPosition(fmt.Sprintf("start%d", u.Index), textWithCursors)
 			u.SelectionEnd = findTokenPosition(fmt.Sprintf("end%d", u.Index), textWithCursors)
-		}
-
-		if keepUserPositionFromRequest && u.ID == req.UserID {
-			u.Position = req.CursorPos
-			if u.HasSelection {
-				u.SelectionStart = req.SelectionStart
-				u.SelectionEnd = req.SelectionEnd
-			}
 		}
 	}
 

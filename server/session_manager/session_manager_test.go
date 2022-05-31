@@ -9,6 +9,7 @@ import (
 
 	"github.com/alicebob/miniredis"
 	"github.com/go-redis/redis"
+	"github.com/google/go-cmp/cmp"
 	"github.com/r3labs/diff/v2"
 
 	"github.com/pasiasty/cocoder/server/common"
@@ -260,17 +261,8 @@ func TestUpdateSessionText(t *testing.T) {
 			resEs.Users = nil
 			wantEs := editResponseForTesting(tc.wantEditState)
 
-			changelog, err := diff.Diff(resEs, wantEs)
-			if err != nil {
-				t.Fatalf("Diffing failed, but shouldn't: %v", err)
-			}
-
-			if len(changelog) > 0 {
-				t.Errorf("Following changes were detected:\n%v", changelog)
-				gotStr, _ := json.MarshalIndent(resEs, "", "  ")
-				wantStr, _ := json.MarshalIndent(wantEs, "", "  ")
-				t.Errorf("Want:\n%s", wantStr)
-				t.Errorf("Got:\n%s", gotStr)
+			if diff := cmp.Diff(wantEs, resEs); diff != "" {
+				t.Errorf("UpdateSession has returned wrong result, -want +got:\n%v", diff)
 			}
 		})
 	}

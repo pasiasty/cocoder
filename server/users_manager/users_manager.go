@@ -18,6 +18,14 @@ import (
 	"github.com/pasiasty/cocoder/server/session_manager"
 )
 
+var (
+	amountOfTriggersForSessionToBeInactive int32 = 120
+
+	userReadIntervalChannelSource               = func() <-chan time.Time { return time.After(10 * time.Millisecond) }
+	inactiveUserCleanupIntervalChannelSource    = func() <-chan time.Time { return time.After(1 * time.Second) }
+	inactiveSessionCleanupIntervalChannelSource = func() <-chan time.Time { return time.After(1 * time.Second) }
+)
+
 type UserID string
 
 type ConnectedUser struct {
@@ -58,25 +66,29 @@ func (u *ConnectedUser) readLoop(ctx context.Context) {
 	defer u.Cancel()
 
 	for {
-		<-time.After(10 * time.Millisecond)
-		_, msg, err := u.conn.ReadMessage()
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("Unexpected websocket error: %v, user: %v", err, u.UserID)
+		select {
+		case <-userReadIntervalChannelSource():
+			_, msg, err := u.conn.ReadMessage()
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Printf("Unexpected websocket error: %v, user: %v", err, u.UserID)
+				}
+				return
 			}
+			req := &common.UpdateSessionRequest{}
+			if err := json.Unmarshal(msg, req); err != nil {
+				log.Printf("Failed to unmarshal UpdateSessionRequest: %v", err)
+				continue
+			}
+			if req.Ping {
+				u.send(&common.UpdateSessionResponse{Ping: true})
+				continue
+			}
+
+			u.fromUsersHandler(ctx, req)
+		case <-ctx.Done():
 			return
 		}
-		req := &common.UpdateSessionRequest{}
-		if err := json.Unmarshal(msg, req); err != nil {
-			log.Printf("Failed to unmarshal UpdateSessionRequest: %v", err)
-			continue
-		}
-		if req.Ping {
-			u.send(&common.UpdateSessionResponse{Ping: true})
-			continue
-		}
-
-		u.fromUsersHandler(ctx, req)
 	}
 }
 
@@ -84,12 +96,16 @@ func (u *ConnectedUser) writeLoop(ctx context.Context) {
 	defer u.Cancel()
 
 	for {
-		resp, ok := <-u.toUser
-		if !ok {
+		select {
+		case resp, ok := <-u.toUser:
+			if !ok {
+				return
+			}
+			if err := u.conn.WriteJSON(resp); err != nil {
+				log.Printf("Failed to send response to user: %v", err)
+			}
+		case <-ctx.Done():
 			return
-		}
-		if err := u.conn.WriteJSON(resp); err != nil {
-			log.Printf("Failed to send response to user: %v", err)
 		}
 	}
 }
@@ -222,7 +238,7 @@ func (s *ManagedSession) loop(ctx context.Context) {
 				return
 			}
 			s.sendResponseToUsers(resp)
-		case <-time.After(1 * time.Second):
+		case <-inactiveUserCleanupIntervalChannelSource():
 			s.cleanupInactiveUsers()
 		}
 	}
@@ -311,7 +327,7 @@ func (m *UsersManager) triggerResponsesAndSessionCleanup(ctx context.Context) {
 	}
 
 	for sID, val := range m.sessionsInactivity {
-		if val > 120 {
+		if val > amountOfTriggersForSessionToBeInactive {
 			s, ok := m.managedSessions[sID]
 			if ok {
 				s.Cancel()
@@ -324,7 +340,7 @@ func (m *UsersManager) triggerResponsesAndSessionCleanup(ctx context.Context) {
 
 func (m *UsersManager) loop(ctx context.Context) {
 	for {
-		<-time.After(time.Second)
+		<-inactiveSessionCleanupIntervalChannelSource()
 		m.triggerResponsesAndSessionCleanup(ctx)
 	}
 }

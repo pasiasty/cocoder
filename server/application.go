@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/alicebob/miniredis"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/pasiasty/cocoder/server/route_manager"
@@ -17,7 +18,11 @@ func main() {
 
 	redisAddr := os.Getenv("REDIS_HOST")
 	if redisAddr == "" {
-		redisAddr = "localhost:6379"
+		mr, err := miniredis.Run()
+		if err != nil {
+			log.Fatalf("Failed to setup miniredis: %v", err)
+		}
+		redisAddr = mr.Addr()
 	}
 	redisPassw := os.Getenv("REDIS_PASSWORD")
 	redisDBStr := os.Getenv("REDIS_DB")

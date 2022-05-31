@@ -10,9 +10,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis"
+	"github.com/go-redis/redis"
 	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/websocket"
 	"github.com/pasiasty/cocoder/server/common"
+	"github.com/pasiasty/cocoder/server/session_manager"
 )
 
 var upgrader = websocket.Upgrader{}
@@ -36,8 +39,8 @@ func (m testMessage) toUpdateSessionResponse() *common.UpdateSessionResponse {
 type testServer struct {
 	http.Handler
 
-	conn       *websocket.Conn
-	gotMessage chan testMessage
+	connections []*websocket.Conn
+	gotMessage  chan testMessage
 
 	server *httptest.Server
 }
@@ -49,7 +52,7 @@ func (s *testServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.Close()
 
-	s.conn = c
+	s.connections = append(s.connections, c)
 	for {
 		mt, message, err := c.ReadMessage()
 		if err != nil {
@@ -57,10 +60,6 @@ func (s *testServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		s.gotMessage <- testMessage{mt: mt, body: message}
 	}
-}
-
-func (s *testServer) Send(mt int, body []byte) error {
-	return s.conn.WriteMessage(mt, body)
 }
 
 func (s *testServer) connect() *websocket.Conn {
@@ -77,7 +76,9 @@ func (s *testServer) connect() *websocket.Conn {
 }
 
 func (s *testServer) Close() {
-	s.conn.Close()
+	for _, c := range s.connections {
+		c.Close()
+	}
 	s.server.Close()
 	close(s.gotMessage)
 }
@@ -89,6 +90,18 @@ func prepareTestServer() *testServer {
 	res.server = httptest.NewServer(res)
 
 	return res
+}
+
+func prepareSessionmanager() *session_manager.SessionManager {
+	mr, err := miniredis.Run()
+	if err != nil {
+		log.Fatalf("Failed to setup miniredis: %v", err)
+	}
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: mr.Addr(),
+	})
+
+	return session_manager.NewSessionManager(redisClient)
 }
 
 func TestUserSend(t *testing.T) {
@@ -137,7 +150,7 @@ func TestUserRead(t *testing.T) {
 		NewText: "abc",
 	}
 
-	if err := ts.conn.WriteJSON(req); err != nil {
+	if err := ts.connections[0].WriteJSON(req); err != nil {
 		t.Fatalf("Failed to write: %v", err)
 	}
 
@@ -166,7 +179,7 @@ func TestUserPing(t *testing.T) {
 		Ping: true,
 	}
 
-	if err := ts.conn.WriteJSON(req); err != nil {
+	if err := ts.connections[0].WriteJSON(req); err != nil {
 		t.Fatalf("Failed to write: %v", err)
 	}
 
@@ -177,5 +190,75 @@ func TestUserPing(t *testing.T) {
 		}
 	case <-time.After(time.Second):
 		t.Fatalf("Response did not come within the given deadline.")
+	}
+}
+
+func TestSessionBroadcast(t *testing.T) {
+	ctx := context.Background()
+	ts := prepareTestServer()
+	defer ts.Close()
+
+	ws1 := ts.connect()
+	defer ws1.Close()
+
+	ws2 := ts.connect()
+	defer ws2.Close()
+
+	sm := prepareSessionmanager()
+	sID := sm.NewSession()
+
+	ms := NewManagedSession(ctx, sID, sm)
+	defer ms.Cancel()
+	ms.AddUser(ctx, "u1", ws1)
+	ms.AddUser(ctx, "u2", ws2)
+
+	req := &common.UpdateSessionRequest{
+		NewText: "abc",
+	}
+
+	if err := ts.connections[0].WriteJSON(req); err != nil {
+		t.Fatalf("Failed to write: %v", err)
+	}
+
+	select {
+	case tm := <-ts.gotMessage:
+		resp := tm.toUpdateSessionResponse()
+		resp.Users = nil
+		if diff := cmp.Diff(&common.UpdateSessionResponse{
+			NewText:  "abc",
+			Language: "plaintext",
+		}, resp); diff != "" {
+			t.Errorf("Received wrong message, -want +got:\n%v", diff)
+		}
+	case <-time.After(time.Second):
+		t.Fatalf("Response did not come within the given deadline.")
+	}
+}
+
+func TestSessionCleanupInactiveUsers(t *testing.T) {
+	ctx := context.Background()
+	ts := prepareTestServer()
+	defer ts.Close()
+
+	ws1 := ts.connect()
+	defer ws1.Close()
+
+	sm := prepareSessionmanager()
+	sID := sm.NewSession()
+
+	cleanupTrigger := make(chan time.Time)
+	inactiveUserCleanupIntervalChannelSource = func() <-chan time.Time { return cleanupTrigger }
+
+	ms := NewManagedSession(ctx, sID, sm)
+	defer ms.Cancel()
+	ms.AddUser(ctx, "u1", ws1)
+	ms.Users["u1"].Cancel()
+
+	cleanupTrigger <- time.Now()
+
+	time.Sleep(10 * time.Millisecond)
+
+	if diff := cmp.Diff(map[UserID]*ConnectedUser{}, ms.Users); diff != "" {
+		t.Errorf("Cleanup was not performed correctly:\n%v", diff)
 	}
 }

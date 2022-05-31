@@ -7,6 +7,7 @@ import { ThemeService } from './theme.service';
 import { EditorControllerService } from './editor-controller.service';
 import { FileSaverService } from 'ngx-filesaver';
 import { Selection } from './common';
+import { Diff, DiffMatchPatch, PatchObject, DiffOperation } from 'diff-match-patch-typescript';
 
 type DecorationDescription = {
   UserID: string
@@ -36,6 +37,8 @@ export class EditorService implements OnDestroy {
   cursorPositionChangeDisposable?: monaco.IDisposable;
   cursorSelectionChangeDisposable?: monaco.IDisposable;
 
+  dmp: DiffMatchPatch;
+
   constructor(
     private themeService: ThemeService,
     private editorControllerService: EditorControllerService,
@@ -61,6 +64,8 @@ export class EditorService implements OnDestroy {
         this.fileSaverService.saveText(this.Text(), `code${this.GetLanguageExtension()}`);
       }
     });
+
+    this.dmp = new DiffMatchPatch();
   }
 
   GetLanguageExtension(): string {
@@ -172,7 +177,7 @@ export class EditorService implements OnDestroy {
   }
 
   positionToNumber(p: monaco.Position | null): number {
-    let text = this.Text()
+    let text = this.Text();
 
     if (p === null) {
       return 0;
@@ -213,7 +218,27 @@ export class EditorService implements OnDestroy {
   }
 
   SetText(t: string) {
-    this.model.setValue(t);
+    this.model.applyEdits(this.NewTextToOperations(t));
+  }
+
+  NewTextToOperations(newText: string): monaco.editor.IIdentifiedSingleEditOperation[] {
+    let patches = this.dmp.patch_make(this.Text(), newText);
+    let res: monaco.editor.IIdentifiedSingleEditOperation[] = [];
+
+    patches.forEach((patch: PatchObject) => {
+      const start = patch.start1;
+      const end = start + patch.length1;
+      const startPos = this.numberToPosition(start);
+      const endPos = this.numberToPosition(end);
+      const text = this.Text().slice(start, end);
+      const applied = this.dmp.patch_apply([patch], text)[0];
+      res.push({
+        range: new monaco.Range(startPos.lineNumber, startPos.column, endPos.lineNumber, endPos.column),
+        text: applied,
+      });
+    });
+
+    return res;
   }
 
   Position(): number {

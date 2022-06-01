@@ -8,6 +8,7 @@ require (
 	github.com/gin-contrib/pprof v1.3.0
 	github.com/gin-contrib/size v0.0.0-20220501091047-44dc10afe2e0
 	github.com/gin-gonic/gin v1.7.7
+	github.com/go-playground/assert/v2 v2.0.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gomodule/redigo/redis v0.0.1 // indirect
 	github.com/google/go-cmp v0.5.5

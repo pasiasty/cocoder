@@ -3,9 +3,12 @@ package route_manager
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,6 +16,7 @@ import (
 	"github.com/go-playground/assert/v2"
 	"github.com/go-redis/redis"
 	"github.com/google/go-cmp/cmp"
+	"github.com/gorilla/websocket"
 	"github.com/pasiasty/cocoder/server/common"
 	"github.com/pasiasty/cocoder/server/session_manager"
 )
@@ -96,4 +100,50 @@ func TestLoadNonExistingSession(t *testing.T) {
 	rm.Router().ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestInteractWithTheWebsocket(t *testing.T) {
+	ctx := context.Background()
+
+	rm := prepareRouteManager(ctx)
+
+	sID := createSession(t, rm)
+
+	srv := httptest.NewServer(rm.Router())
+	defer srv.Close()
+
+	u := url.URL{
+		Scheme: "ws",
+		Host:   strings.Replace(srv.URL, "http://", "", 1),
+		Path:   fmt.Sprintf("/api/%s/u1/ws", sID),
+	}
+
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		t.Fatalf("Failed to dial to the websocket: %v", err)
+	}
+	defer conn.Close()
+
+	conn.WriteJSON(&common.UpdateSessionRequest{
+		NewText: "abc",
+	})
+
+	conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+	_, respBytes, err := conn.ReadMessage()
+	if err != nil {
+		t.Fatalf("Failed to read message from socket: %v", err)
+	}
+
+	resp := &common.UpdateSessionResponse{}
+	if err := json.Unmarshal(respBytes, resp); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
+	resp.Users = nil
+
+	if diff := cmp.Diff(&common.UpdateSessionResponse{
+		NewText:  "abc",
+		Language: "plaintext",
+	}, resp); diff != "" {
+		t.Errorf("Obtained wrong response, -want +got:\n%v", diff)
+	}
 }

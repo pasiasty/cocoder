@@ -33,6 +33,7 @@ func (m testMessage) toUpdateSessionResponse() *common.UpdateSessionResponse {
 	if err := json.Unmarshal(m.body, resp); err != nil {
 		log.Fatalf("Failed to unmarshal message: %v", err)
 	}
+	resp.Users = nil
 	return resp
 }
 
@@ -104,6 +105,17 @@ func prepareSessionmanager() *session_manager.SessionManager {
 	return session_manager.NewSessionManager(redisClient)
 }
 
+func assertChannelGotMessage(t *testing.T, ch <-chan testMessage, wantResp *common.UpdateSessionResponse) {
+	select {
+	case tm := <-ch:
+		if diff := cmp.Diff(wantResp, tm.toUpdateSessionResponse()); diff != "" {
+			t.Errorf("Received wrong message, -want +got:\n%v", diff)
+		}
+	case <-time.After(time.Second):
+		t.Fatalf("Response did not come within the given deadline.")
+	}
+}
+
 func TestUserSend(t *testing.T) {
 	ctx := context.Background()
 	ts := prepareTestServer()
@@ -120,15 +132,7 @@ func TestUserSend(t *testing.T) {
 	}
 
 	u.send(resp)
-
-	select {
-	case tm := <-ts.gotMessage:
-		if diff := cmp.Diff(resp, tm.toUpdateSessionResponse()); diff != "" {
-			t.Errorf("Received wrong message, -want +got:\n%v", diff)
-		}
-	case <-time.After(time.Second):
-		t.Fatalf("Response did not come within the given deadline.")
-	}
+	assertChannelGotMessage(t, ts.gotMessage, resp)
 }
 
 func TestUserRead(t *testing.T) {
@@ -183,14 +187,7 @@ func TestUserPing(t *testing.T) {
 		t.Fatalf("Failed to write: %v", err)
 	}
 
-	select {
-	case tm := <-ts.gotMessage:
-		if diff := cmp.Diff(&common.UpdateSessionResponse{Ping: true}, tm.toUpdateSessionResponse()); diff != "" {
-			t.Errorf("Received wrong message, -want +got:\n%v", diff)
-		}
-	case <-time.After(time.Second):
-		t.Fatalf("Response did not come within the given deadline.")
-	}
+	assertChannelGotMessage(t, ts.gotMessage, &common.UpdateSessionResponse{Ping: true})
 }
 
 func TestSessionBroadcast(t *testing.T) {
@@ -220,19 +217,14 @@ func TestSessionBroadcast(t *testing.T) {
 		t.Fatalf("Failed to write: %v", err)
 	}
 
-	select {
-	case tm := <-ts.gotMessage:
-		resp := tm.toUpdateSessionResponse()
-		resp.Users = nil
-		if diff := cmp.Diff(&common.UpdateSessionResponse{
-			NewText:  "abc",
-			Language: "plaintext",
-		}, resp); diff != "" {
-			t.Errorf("Received wrong message, -want +got:\n%v", diff)
-		}
-	case <-time.After(time.Second):
-		t.Fatalf("Response did not come within the given deadline.")
-	}
+	assertChannelGotMessage(t, ts.gotMessage, &common.UpdateSessionResponse{
+		NewText:  "abc",
+		Language: "plaintext",
+	})
+	assertChannelGotMessage(t, ts.gotMessage, &common.UpdateSessionResponse{
+		NewText:  "abc",
+		Language: "plaintext",
+	})
 }
 
 func TestSessionCleanupInactiveUsers(t *testing.T) {
@@ -260,5 +252,70 @@ func TestSessionCleanupInactiveUsers(t *testing.T) {
 
 	if diff := cmp.Diff(map[UserID]*ConnectedUser{}, ms.Users); diff != "" {
 		t.Errorf("Cleanup was not performed correctly:\n%v", diff)
+	}
+}
+
+func TestUsersManagerPeriodicResponse(t *testing.T) {
+	ctx := context.Background()
+	ts := prepareTestServer()
+	defer ts.Close()
+
+	ws1 := ts.connect()
+	defer ws1.Close()
+
+	sm := prepareSessionmanager()
+	sID := sm.NewSession()
+	sm.UpdateSession(ctx, sID, &common.UpdateSessionRequest{
+		NewText: "some text",
+	})
+
+	umTrigger := make(chan time.Time)
+
+	inactiveSessionCleanupIntervalChannelSource = func() <-chan time.Time { return umTrigger }
+
+	um := NewUsersManager(ctx, sm)
+	um.RegisterUser(ctx, sID, "u1", ws1)
+
+	umTrigger <- time.Now()
+
+	assertChannelGotMessage(t, ts.gotMessage, &common.UpdateSessionResponse{
+		NewText:  "some text",
+		Language: "plaintext",
+	})
+}
+
+func TestUsersManagerInactiveSessionCleanup(t *testing.T) {
+	ctx := context.Background()
+	ts := prepareTestServer()
+	defer ts.Close()
+
+	ws1 := ts.connect()
+	defer ws1.Close()
+
+	sm := prepareSessionmanager()
+	sID := sm.NewSession()
+
+	umTrigger := make(chan time.Time)
+
+	sessionCleanupTrigger := make(chan time.Time)
+	inactiveUserCleanupIntervalChannelSource = func() <-chan time.Time { return sessionCleanupTrigger }
+
+	amountOfTriggersForSessionToBeInactive = 1
+	inactiveSessionCleanupIntervalChannelSource = func() <-chan time.Time { return umTrigger }
+
+	um := NewUsersManager(ctx, sm)
+	um.RegisterUser(ctx, sID, "u1", ws1)
+	um.managedSessions[sID].Users["u1"].Cancel()
+
+	sessionCleanupTrigger <- time.Now()
+	time.Sleep(10 * time.Millisecond)
+
+	umTrigger <- time.Now()
+	umTrigger <- time.Now()
+
+	time.Sleep(10 * time.Millisecond)
+
+	if len(um.managedSessions) != 0 {
+		t.Errorf("Session %v not cleaned up as expected", sID)
 	}
 }

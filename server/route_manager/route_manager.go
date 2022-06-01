@@ -11,7 +11,6 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
 
-	"github.com/pasiasty/cocoder/server/common"
 	"github.com/pasiasty/cocoder/server/session_manager"
 	"github.com/pasiasty/cocoder/server/users_manager"
 )
@@ -79,25 +78,6 @@ func NewRouterManager(ctx context.Context, c *redis.Client) *RouteManager {
 		}
 
 		um.RegisterUser(c, sessionID, userID, conn)
-	})
-
-	g.POST("/:session_id", func(c *gin.Context) {
-		sessionID := session_manager.SessionID(c.Param("session_id"))
-
-		req := &common.UpdateSessionRequest{}
-
-		if err := c.ShouldBind(req); err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
-			return
-		}
-
-		resp, err := sm.UpdateSession(c, sessionID, req)
-		if err != nil {
-			c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to update session text: %v", err))
-			return
-		}
-
-		c.JSON(http.StatusOK, resp)
 	})
 
 	return &RouteManager{

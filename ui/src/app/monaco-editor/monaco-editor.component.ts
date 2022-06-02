@@ -1,11 +1,11 @@
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import { first, sampleTime } from 'rxjs/operators';
+import { first, mergeMap, sampleTime } from 'rxjs/operators';
 import { MonacoEditorService } from './monaco-editor.service';
 import * as monaco from 'monaco-editor';
 import { ThemeService } from '../utils/theme.service';
 import { ApiService, GetSessionResponse, User } from '../api.service';
 import { EditorControllerService } from './editor-controller.service';
-import { Observable, Subject, Subscription } from 'rxjs';
+import { from, Subject } from 'rxjs';
 import { FileSaverService } from 'ngx-filesaver';
 import { DiffMatchPatch, PatchObject } from 'diff-match-patch-typescript';
 import { Selection } from '../common';
@@ -21,15 +21,9 @@ type DecorationDescription = {
   templateUrl: './monaco-editor.component.html',
   styleUrls: ['./monaco-editor.component.scss']
 })
-export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
+export class MonacoEditorComponent implements AfterViewInit, OnInit {
 
   editorServiceInitialized = false;
-
-  languageChangesSubscription?: Subscription;
-  sessionSubscription?: Subscription;
-  editsSubscription?: Subscription;
-
-  initialSessionPromise!: Promise<GetSessionResponse | null>;
 
   lastBaseText = "";
 
@@ -80,7 +74,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   ngOnInit(): void {
-    this.initialSessionPromise = this.apiService.GetSession().then(data => {
+    const initialStateObservable = from(this.apiService.GetSession().then((data: GetSessionResponse) => {
       this.editorControllerService.setLanguage(data.Language);
       this.cdRef.detectChanges();
       return data;
@@ -90,9 +84,17 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
         this.invalidSession.emit();
         return null;
       },
-    );
+    ));
 
-    this.languageChangesSubscription = this.editorControllerService.languageChanges().subscribe(_ => {
+    this.editorCreated.asObservable().pipe(
+      mergeMap(() => initialStateObservable)
+    ).subscribe({
+      next: (data: GetSessionResponse | null) => {
+        this.applyInitialState(data);
+      }
+    });
+
+    this.editorControllerService.languageChanges().subscribe(_ => {
       if (this.editorServiceInitialized) {
         this.updateSession();
       }
@@ -110,13 +112,6 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
     }
   }
 
-  ngOnDestroy(): void {
-    this._editor?.dispose();
-    this.languageChangesSubscription?.unsubscribe();
-    this.sessionSubscription?.unsubscribe();
-    this.editsSubscription?.unsubscribe();
-  }
-
   private createEditor(): void {
     this._editor = monaco.editor.create(
       this._editorContainer.nativeElement,
@@ -125,15 +120,9 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
         language: this.language,
       }
     );
-
-    this.SetEditor(this._editor);
+    this.updateOptions();
+    this.BindEvents();
     this.SetUserID(this.apiService.GetUserID());
-
-    if (!this.editorServiceInitialized) {
-      this.SetText('');
-      this.editorServiceInitialized = true;
-      this.initializeEditorService();
-    }
 
     this.editorCreated.emit();
   }
@@ -148,39 +137,29 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
     this.lastBaseText = newText;
   }
 
-  initializeEditorService() {
-    this.initialSessionPromise.then(
-      data => {
-        if (data === null) {
-          return;
+  applyInitialState(data: GetSessionResponse | null) {
+    if (data === null) {
+      return;
+    }
+    this.SetText(data.Text);
+    this.SetLanguage(data.Language);
+    this.lastBaseText = data.Text;
+
+    this.apiService.SessionObservable().subscribe({
+      next: data => {
+        if (data.Language)
+          this.editorControllerService.setLanguage(data.Language);
+
+        if (data.NewText !== this.Text()) {
+          this.SetText(data.NewText!);
         }
-        this.SetText(data.Text);
-        this.SetLanguage(data.Language);
-        this.lastBaseText = data.Text;
 
-        this.sessionSubscription = this.apiService.SessionObservable().subscribe({
-          next: data => {
-            if (data.Language)
-              this.editorControllerService.setLanguage(data.Language);
+        this.lastBaseText = data.NewText!;
 
-            if (data.NewText !== this.Text()) {
-              this.SetText(data.NewText!);
-            }
-
-            this.lastBaseText = data.NewText!;
-
-            this.UpdateCursors(data.Users!);
-          },
-          error: err => {
-            console.log("Failed to update session:", err);
-          },
-        });
+        this.UpdateCursors(data.Users!);
       },
-    );
-
-    this.editsSubscription = this.editsObservable().subscribe({
-      next: () => {
-        this.updateSession();
+      error: err => {
+        console.log("Failed to update session:", err);
       },
     });
   }
@@ -192,11 +171,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
     return lep.extensions[0];
   }
 
-  SetEditor(editor: monaco.editor.IStandaloneCodeEditor) {
-    this._editor = editor;
-
-    this.updateOptions();
-
+  BindEvents() {
     this._editor.onKeyDown(() => {
       this.editsSubject.next();
     });
@@ -229,17 +204,19 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
 
     this.editorControllerService.toggleHintsObservable().subscribe(val => {
       this.updateOptions();
-    })
+    });
+
+    this.editsSubject.pipe(
+      sampleTime(50),
+    ).subscribe({
+      next: () => {
+        this.updateSession();
+      },
+    });
   }
 
   SetUserID(userID: string) {
     this.userID = userID;
-  }
-
-  editsObservable(): Observable<void> {
-    return this.editsSubject.pipe(
-      sampleTime(50),
-    )
   }
 
   updateOptions() {

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { MonacoEditorComponent } from './monaco-editor.component';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ChangeDetectorRef, Component, Renderer2, ViewChild } from '@angular/core';
+import { Component, Renderer2, ViewChild } from '@angular/core';
 import { ApiService, EditResponse, GetSessionResponse, User } from '../api.service';
 import { MonacoEditorService } from './monaco-editor.service';
 import { ThemeService } from '../utils/theme.service';
@@ -16,8 +16,8 @@ import * as monaco from 'monaco-editor';
 
 @Component({
   template: `
-  <div style="height: 500px">
-    <app-monaco-editor (editorCreated)="onEditorInitialized()">
+  <div style="height: 500px; display: flex">
+    <app-monaco-editor style="width: 100%; height: 500px" (editorCreated)="onEditorInitialized()">
     </app-monaco-editor>
   </div>
 `
@@ -33,6 +33,7 @@ class TestHostComponent {
       this.editorInitializedResolve = resolve;
     });
   }
+
   onEditorInitialized() {
     this.editorInitializedResolve(true);
   }
@@ -175,6 +176,7 @@ def something(): # local selection
 
   it('colors presentation dark', async () => {
     expect(component).toBeTruthy();
+    renderer2.removeClass(document.body, 'bootstrap');
     renderer2.addClass(document.body, 'bootstrap-dark');
 
     await component.editorInitializedPromise;
@@ -185,11 +187,12 @@ def something(): # local selection
 
     fixture.detectChanges();
 
-    await new Promise(f => setTimeout(f, 100));
+    await new Promise(f => setTimeout(f, 2000));
   });
 
   it('colors presentation light', async () => {
     expect(component).toBeTruthy();
+    renderer2.removeClass(document.body, 'bootstrap-dark');
     renderer2.addClass(document.body, 'bootstrap');
 
     await component.editorInitializedPromise;
@@ -199,9 +202,10 @@ def something(): # local selection
     component.monacoEditorComponent.SetTheme('vs');
     fillEditor();
 
+    fixture.changeDetectorRef.detectChanges();
     fixture.detectChanges();
 
-    await new Promise(f => setTimeout(f, 100));
+    await new Promise(f => setTimeout(f, 2000));
   });
 
   it('simple new text to operations', async () => {

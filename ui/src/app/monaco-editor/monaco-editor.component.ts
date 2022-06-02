@@ -1,12 +1,20 @@
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
-import { first } from 'rxjs/operators';
+import { first, sampleTime } from 'rxjs/operators';
 import { MonacoEditorService } from './monaco-editor.service';
 import * as monaco from 'monaco-editor';
 import { ThemeService } from '../utils/theme.service';
-import { EditorService } from './editor.service';
-import { ApiService, GetSessionResponse } from '../api.service';
+import { ApiService, GetSessionResponse, User } from '../api.service';
 import { EditorControllerService } from './editor-controller.service';
-import { Subscription } from 'rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
+import { FileSaverService } from 'ngx-filesaver';
+import { DiffMatchPatch, PatchObject } from 'diff-match-patch-typescript';
+import { Selection } from '../common';
+
+type DecorationDescription = {
+  UserID: string
+  Index: number
+  Decoration: monaco.editor.IModelDeltaDecoration
+};
 
 @Component({
   selector: 'app-monaco-editor',
@@ -25,6 +33,15 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
 
   lastBaseText = "";
 
+  language!: string;
+  fontSize: number;
+  oldDecorations: string[];
+  currentDecorations: DecorationDescription[];
+  editsSubject: Subject<void>;
+  userID!: string;
+
+  dmp: DiffMatchPatch;
+
   public _editor!: monaco.editor.IStandaloneCodeEditor;
   @ViewChild('editorContainer', { static: true }) _editorContainer!: ElementRef;
 
@@ -34,10 +51,32 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
   constructor(
     private monacoEditorService: MonacoEditorService,
     private themeService: ThemeService,
-    private editorService: EditorService,
     private apiService: ApiService,
     private editorControllerService: EditorControllerService,
-    private cdRef: ChangeDetectorRef) {
+    private cdRef: ChangeDetectorRef,
+    private fileSaverService: FileSaverService) {
+    monaco.editor.setTheme(themeService.editorThemeName());
+
+    this.oldDecorations = [];
+    this.currentDecorations = [];
+    this.editsSubject = new Subject<void>();
+
+    this.language = 'plaintext';
+
+    const fontSize = localStorage.getItem('font_size');
+    if (fontSize !== null) {
+      this.fontSize = parseInt(fontSize);
+    } else {
+      this.fontSize = 15;
+    }
+
+    this.editorControllerService.saveTriggersObservable().subscribe({
+      next: _ => {
+        this.fileSaverService.saveText(this.Text(), `code${this.GetLanguageExtension()}`);
+      }
+    });
+
+    this.dmp = new DiffMatchPatch();
   }
 
   ngOnInit(): void {
@@ -72,6 +111,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   ngOnDestroy(): void {
+    this._editor?.dispose();
     this.languageChangesSubscription?.unsubscribe();
     this.sessionSubscription?.unsubscribe();
     this.editsSubscription?.unsubscribe();
@@ -82,14 +122,15 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
       this._editorContainer.nativeElement,
       {
         theme: this.themeService.editorThemeName(),
+        language: this.language,
       }
     );
 
-    this.editorService.SetEditor(this._editor);
-    this.editorService.SetUserID(this.apiService.GetUserID());
+    this.SetEditor(this._editor);
+    this.SetUserID(this.apiService.GetUserID());
 
     if (!this.editorServiceInitialized) {
-      this.editorService.SetText('');
+      this.SetText('');
       this.editorServiceInitialized = true;
       this.initializeEditorService();
     }
@@ -102,8 +143,8 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   updateSession() {
-    const newText = this.editorService.Text();
-    this.apiService.UpdateSession(this.lastBaseText, newText, this.editorService.Position(), this.editorService.OtherUsers(), this.editorService.Selection());
+    const newText = this.Text();
+    this.apiService.UpdateSession(this.lastBaseText, newText, this.Position(), this.OtherUsers(), this.Selection());
     this.lastBaseText = newText;
   }
 
@@ -113,8 +154,8 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
         if (data === null) {
           return;
         }
-        this.editorService.SetText(data.Text);
-        this.editorService.SetLanguage(data.Language);
+        this.SetText(data.Text);
+        this.SetLanguage(data.Language);
         this.lastBaseText = data.Text;
 
         this.sessionSubscription = this.apiService.SessionObservable().subscribe({
@@ -122,13 +163,13 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
             if (data.Language)
               this.editorControllerService.setLanguage(data.Language);
 
-            if (data.NewText !== this.editorService.Text()) {
-              this.editorService.SetText(data.NewText!);
+            if (data.NewText !== this.Text()) {
+              this.SetText(data.NewText!);
             }
 
             this.lastBaseText = data.NewText!;
 
-            this.editorService.UpdateCursors(data.Users!);
+            this.UpdateCursors(data.Users!);
           },
           error: err => {
             console.log("Failed to update session:", err);
@@ -137,10 +178,260 @@ export class MonacoEditorComponent implements AfterViewInit, OnDestroy, OnInit {
       },
     );
 
-    this.editsSubscription = this.editorService.editsObservable().subscribe({
+    this.editsSubscription = this.editsObservable().subscribe({
       next: () => {
         this.updateSession();
       },
     });
+  }
+
+  GetLanguageExtension(): string {
+    const lep = monaco.languages.getLanguages().find(val => val.id == this.language);
+    if (lep === undefined || lep.extensions === undefined || lep.extensions?.length === 0)
+      return '.txt';
+    return lep.extensions[0];
+  }
+
+  SetEditor(editor: monaco.editor.IStandaloneCodeEditor) {
+    this._editor = editor;
+
+    this.updateOptions();
+
+    this._editor.onKeyDown(() => {
+      this.editsSubject.next();
+    });
+
+    this._editor.onDidPaste(() => {
+      this.editsSubject.next();
+    });
+
+    this._editor.onDidChangeCursorPosition(() => {
+      this.editsSubject.next();
+    });
+
+    this._editor.onDidChangeCursorSelection(() => {
+      this.editsSubject.next();
+    });
+
+    this.themeService.themeChanges().subscribe(() => {
+      this.SetTheme(this.themeService.editorThemeName());
+    });
+
+    this.editorControllerService.languageChanges().subscribe(val => {
+      this.SetLanguage(val);
+    });
+
+    this.editorControllerService.fontUpdates().subscribe(val => {
+      this.fontSize += val;
+      localStorage.setItem("font_size", this.fontSize.toString());
+      this.updateOptions();
+    });
+
+    this.editorControllerService.toggleHintsObservable().subscribe(val => {
+      this.updateOptions();
+    })
+  }
+
+  SetUserID(userID: string) {
+    this.userID = userID;
+  }
+
+  editsObservable(): Observable<void> {
+    return this.editsSubject.pipe(
+      sampleTime(50),
+    )
+  }
+
+  updateOptions() {
+    const withHints = this.editorControllerService.hintsAreEnabled();
+
+    monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: !withHints,
+      noSuggestionDiagnostics: !withHints,
+      noSyntaxValidation: !withHints,
+    });
+
+    this._editor!.updateOptions({
+      cursorBlinking: 'smooth',
+      fontSize: this.fontSize,
+      showUnused: withHints,
+      scrollbar: {
+        verticalScrollbarSize: 0,
+      },
+      parameterHints: {
+        enabled: withHints,
+      },
+      inlayHints: {
+        enabled: withHints,
+      },
+      inlineSuggest: {
+        enabled: withHints,
+      },
+      quickSuggestions: withHints,
+      snippetSuggestions: withHints ? 'inline' : 'none',
+      showDeprecated: withHints,
+      suggestOnTriggerCharacters: withHints,
+    });
+  }
+
+  positionToNumber(p: monaco.Position | null): number {
+    let text = this.Text();
+
+    if (p === null) {
+      return 0;
+    }
+    let idx = 0;
+    let foundNewlines = 0;
+    while (foundNewlines < (p.lineNumber - 1)) {
+      if (text[idx] == "\n")
+        foundNewlines++;
+      idx++;
+    }
+
+    return idx + p.column - 1;
+  }
+
+  numberToPosition(n: number): monaco.Position {
+    let text = this.Text();
+    let idx = 0;
+    let lineNumber = 1;
+    let lastNewline = 0;
+    while (idx < n && idx < text.length) {
+      if (text[idx] == '\n') {
+        lastNewline = idx;
+        lineNumber++;
+      }
+
+      idx++;
+    }
+
+    if (lineNumber > 1)
+      lastNewline++;
+
+    return new monaco.Position(lineNumber, n - lastNewline + 1);
+  }
+
+  Text(): string {
+    return this._editor!.getModel()!.getValue(monaco.editor.EndOfLinePreference.CRLF);
+  }
+
+  SetText(t: string) {
+    this._editor!.getModel()!.applyEdits(this.NewTextToOperations(t));
+  }
+
+  NewTextToOperations(newText: string): monaco.editor.IIdentifiedSingleEditOperation[] {
+    let patches = this.dmp.patch_make(this.Text(), newText);
+    let res: monaco.editor.IIdentifiedSingleEditOperation[] = [];
+
+    patches.forEach((patch: PatchObject) => {
+      const start = patch.start1;
+      const end = start + patch.length1;
+      const startPos = this.numberToPosition(start);
+      const endPos = this.numberToPosition(end);
+      const text = this.Text().slice(start, end);
+      const applied = this.dmp.patch_apply([patch], text)[0];
+      res.push({
+        range: new monaco.Range(startPos.lineNumber, startPos.column, endPos.lineNumber, endPos.column),
+        text: applied,
+      });
+    });
+
+    return res;
+  }
+
+  Position(): number {
+    return this.positionToNumber(this._editor!.getPosition());
+  }
+
+  Selection(): Selection | undefined {
+    const editorSelection = this._editor!.getSelection()
+    if (editorSelection === null || editorSelection.getStartPosition().equals(editorSelection.getEndPosition())) {
+      return;
+    }
+    const start = this.positionToNumber(editorSelection.getStartPosition());
+    const end = this.positionToNumber(editorSelection.getEndPosition());
+
+    return {
+      start: start,
+      end: end,
+    }
+  }
+
+  OtherUsers(): User[] {
+    return this.currentDecorations.map((d, idx): User | null => {
+      const dr = this._editor!.getModel()!.getDecorationRange(this.oldDecorations[idx]);
+      if (dr === null) {
+        return null;
+      }
+      const p = this.positionToNumber(dr.getStartPosition());
+      const selStart = p;
+      const selEnd = this.positionToNumber(dr.getEndPosition());
+      return {
+        ID: d.UserID,
+        Index: d.Index,
+        Position: p,
+        HasSelection: selEnd - selStart > 1,
+        SelectionStart: selStart,
+        SelectionEnd: selEnd,
+      }
+    }).filter(u => u !== null).map(u => u!);
+  }
+
+  SetPosition(p: number) {
+    this._editor!.setPosition(this.numberToPosition(p));
+  }
+
+  SetLanguage(l: string) {
+    this.language = l;
+    monaco.editor.setModelLanguage(this._editor!.getModel()!, l);
+  }
+
+  SetTheme(t: string) {
+    monaco.editor.setTheme(t);
+  }
+
+  userToDecoration(u: User): DecorationDescription {
+    const decorationThemeSelector = this.themeService.isDarkThemeEnabled() ? '-dark' : '';
+    const colorIdx = u.Index % 5 + 1
+    let decoration: monaco.editor.IModelDeltaDecoration
+    if (u.HasSelection) {
+      const selStart = this.numberToPosition(u.SelectionStart);
+      const selEnd = this.numberToPosition(u.SelectionEnd);
+      decoration = {
+        range: new monaco.Range(selStart.lineNumber, selStart.column, selEnd.lineNumber, selEnd.column),
+        options: {
+          className: `other-user-selection${decorationThemeSelector}-${colorIdx}`,
+          stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+        },
+      }
+    } else {
+      let userPos = this.numberToPosition(u.Position);
+      decoration = {
+        range: new monaco.Range(userPos.lineNumber, userPos.column, userPos.lineNumber, userPos.column + 1),
+        options: {
+          className: `other-user-cursor${decorationThemeSelector}-${colorIdx}`,
+          stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+        },
+      }
+    }
+    return {
+      UserID: u.ID,
+      Index: u.Index,
+      Decoration: decoration,
+    }
+  }
+
+  updateDecorations() {
+    this.oldDecorations = this._editor!.deltaDecorations(this.oldDecorations, this.currentDecorations.map(d => d.Decoration));
+  }
+
+  UpdateCursors(users: User[]) {
+    this.currentDecorations = users.filter(u => this.userID != u.ID).map(u => this.userToDecoration(u));
+    this.updateDecorations();
+    for (const u of users) {
+      if (u.ID == this.userID && this.Position() != u.Position && this.Selection() === undefined) {
+        this.SetPosition(u.Position);
+      }
+    }
   }
 }

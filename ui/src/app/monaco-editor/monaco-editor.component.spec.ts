@@ -2,9 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { MonacoEditorComponent } from './monaco-editor.component';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, Renderer2 } from '@angular/core';
+import { ChangeDetectorRef, Component, Renderer2, ViewChild } from '@angular/core';
 import { ApiService, EditResponse, GetSessionResponse, User } from '../api.service';
-import { EditorService } from './editor.service';
 import { MonacoEditorService } from './monaco-editor.service';
 import { ThemeService } from '../utils/theme.service';
 import { Observable, of } from 'rxjs';
@@ -12,6 +11,8 @@ import { AppRoutingModule } from '../app-routing.module';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ActivatedRoute } from '@angular/router';
+
+import * as monaco from 'monaco-editor';
 
 @Component({
   template: `
@@ -24,6 +25,8 @@ import { ActivatedRoute } from '@angular/router';
 class TestHostComponent {
   editorInitializedPromise: Promise<boolean>
   editorInitializedResolve!: (val: boolean) => void
+
+  @ViewChild(MonacoEditorComponent) monacoEditorComponent!: MonacoEditorComponent;
 
   constructor() {
     this.editorInitializedPromise = new Promise<boolean>((resolve, _) => {
@@ -40,7 +43,6 @@ describe('MonacoEditorComponent', () => {
   let fixture: ComponentFixture<TestHostComponent>;
 
   let renderer2: Renderer2;
-  let editorService: EditorService;
   let monacoEditorService: MonacoEditorService;
   let themeService: ThemeService;
   let sessionObservable: Observable<EditResponse>;
@@ -97,9 +99,9 @@ def something(): # local selection
   }
 
   function fillEditor() {
-    editorService.SetText(testText(5));
-    editorService.UpdateCursors(generateCursors());
-    editorService.editor!.setSelection({
+    component.monacoEditorComponent.SetText(testText(5));
+    component.monacoEditorComponent.UpdateCursors(generateCursors());
+    component.monacoEditorComponent._editor!.setSelection({
       startLineNumber: 3,
       startColumn: 5,
       endLineNumber: 3,
@@ -160,7 +162,6 @@ def something(): # local selection
     fixture = TestBed.createComponent(TestHostComponent);
     component = fixture.componentInstance;
     renderer2 = fixture.debugElement.injector.get(Renderer2);
-    editorService = fixture.debugElement.injector.get(EditorService);
     monacoEditorService = fixture.debugElement.injector.get(MonacoEditorService);
     themeService = fixture.debugElement.injector.get(ThemeService);
 
@@ -179,7 +180,7 @@ def something(): # local selection
     await component.editorInitializedPromise;
 
     themeService.setDarkThemeEnabled(true);
-    editorService.SetTheme('vs-dark');
+    component.monacoEditorComponent.SetTheme('vs-dark');
     fillEditor();
 
     fixture.detectChanges();
@@ -194,12 +195,73 @@ def something(): # local selection
     await component.editorInitializedPromise;
 
     themeService.setDarkThemeEnabled(false);
-    editorService.SetText(testText(5));
-    editorService.SetTheme('vs');
+    component.monacoEditorComponent.SetText(testText(5));
+    component.monacoEditorComponent.SetTheme('vs');
     fillEditor();
 
     fixture.detectChanges();
 
     await new Promise(f => setTimeout(f, 100));
+  });
+
+  it('simple new text to operations', async () => {
+    await component.editorInitializedPromise;
+
+    component.monacoEditorComponent._editor.setValue('some text was');
+    expect(component.monacoEditorComponent.NewTextToOperations('some script was modified')).toEqual([{
+      range: new monaco.Range(1, 2, 1, 14),
+      text: 'ome script was modified',
+    }]);
+  });
+
+  it('complex new text to operations', async () => {
+    await component.editorInitializedPromise;
+
+    component.monacoEditorComponent._editor.setValue(`
+    this line will be modified
+    this line will be the same
+    this line will also be modified
+    `);
+    const newText = `
+    this line will really be modified
+    this line will be the same
+    this line will be modified
+    `;
+
+    const t0 = `
+    this line will be modif`;
+
+    const t1 = `ine will really be modi`;
+
+    const t2 = `dified
+    this line wil`;
+
+    const t3 = `ame
+    this lin`;
+
+    const t4 = `be modif`;
+
+    const t5 = "ified\n  ";
+
+    expect(component.monacoEditorComponent.NewTextToOperations(newText)).toEqual([{
+      range: new monaco.Range(1, 1, 2, 28),
+      text: t0,
+    }, {
+      range: new monaco.Range(2, 11, 2, 27),
+      text: t1,
+    }, {
+      range: new monaco.Range(2, 25, 3, 18),
+      text: t2,
+    }, {
+      range: new monaco.Range(3, 28, 4, 13),
+      text: t3,
+    }, {
+      range: new monaco.Range(4, 20, 4, 33),
+      text: t4,
+    }, {
+      range: new monaco.Range(4, 31, 5, 3),
+      text: t5,
+    },
+    ]);
   });
 });

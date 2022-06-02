@@ -7,13 +7,10 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { AppRoutingModule } from '../app-routing.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { TopBarComponent } from '../top-bar/top-bar.component';
-import { Component, Renderer2, Type } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Component, Renderer2 } from '@angular/core';
+import { of } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
-import { EditorService } from '../monaco-editor/editor.service';
 import { ToastsContainerComponent } from '../toasts-container/toasts-container.component';
-import { ApiService, EditResponse, GetSessionResponse, User } from '../api.service';
-import { ThemeService } from '../utils/theme.service';
 import { MonacoEditorService } from '../monaco-editor/monaco-editor.service';
 import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component';
 

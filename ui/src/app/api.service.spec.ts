@@ -14,7 +14,7 @@ describe('ApiService', () => {
       ],
     });
     service = TestBed.inject(ApiService);
-    service.SetSessionID("abc");
+    service.StartSession("abc");
   });
 
   it('should be created', () => {

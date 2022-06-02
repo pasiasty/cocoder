@@ -3,6 +3,6 @@
     <div class="content-container">
         <app-top-bar editorMode>
         </app-top-bar>
-        <app-monaco-editor class="editor-container" (editorCreated)="onEditorCreated($event)"></app-monaco-editor>
+        <app-monaco-editor class="editor-container" (invalidSession)="sessionInvalid=true"></app-monaco-editor>
     </div>
 </ng-template>

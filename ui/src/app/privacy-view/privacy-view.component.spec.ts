@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { TopBarComponent } from '../top-bar/top-bar.component';
 
 import { PrivacyViewComponent } from './privacy-view.component';
 
@@ -8,9 +10,15 @@ describe('PrivacyViewComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ PrivacyViewComponent ]
+      imports: [
+        RouterTestingModule,
+      ],
+      declarations: [
+        PrivacyViewComponent,
+        TopBarComponent,
+      ],
     })
-    .compileComponents();
+      .compileComponents();
   });
 
   beforeEach(() => {

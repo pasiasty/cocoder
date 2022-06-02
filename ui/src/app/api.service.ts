@@ -118,7 +118,7 @@ export class ApiService implements OnDestroy {
     });
   }
 
-  SetSessionID(sessionID: string) {
+  StartSession(sessionID: string) {
     this.sessionID = sessionID;
     this.connectWebsocket();
 
@@ -184,7 +184,7 @@ export class ApiService implements OnDestroy {
 
   GetSession(): Promise<GetSessionResponse> {
     return this.httpClient.get<GetSessionResponse>(environment.api + this.sessionID).pipe(
-      retry(3),
+      retry(2),
       tap(data => this.selectedLanguage = data.Language),
     ).toPromise();
   }

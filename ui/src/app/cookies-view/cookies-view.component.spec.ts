@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { TopBarComponent } from '../top-bar/top-bar.component';
 
 import { CookiesViewComponent } from './cookies-view.component';
 
@@ -8,9 +10,15 @@ describe('CookiesViewComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ CookiesViewComponent ]
+      imports: [
+        RouterTestingModule,
+      ],
+      declarations: [
+        CookiesViewComponent,
+        TopBarComponent,
+      ],
     })
-    .compileComponents();
+      .compileComponents();
   });
 
   beforeEach(() => {

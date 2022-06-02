@@ -57,6 +57,7 @@ export class EditorService implements OnDestroy {
     } else {
       this.fontSize = 15;
     }
+
     this.model = monaco.editor.createModel('', this.language, monaco.Uri.parse(this.language));
 
     this.editorControllerService.saveTriggersObservable().subscribe({
@@ -83,7 +84,9 @@ export class EditorService implements OnDestroy {
   }
 
   SetEditor(editor: monaco.editor.IStandaloneCodeEditor) {
+    this.editor?.setModel(null);
     this.editor?.dispose();
+
     this.DisposeEditorSubscriptions();
     editor.setModel(this.model);
 

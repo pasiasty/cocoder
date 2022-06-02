@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
 import { first, mergeMap, sampleTime } from 'rxjs/operators';
 import { MonacoEditorService } from './monaco-editor.service';
 import * as monaco from 'monaco-editor';
@@ -293,6 +293,9 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
   }
 
   SetText(t: string) {
+    // Workaround for unwanted selection produced as a side effect of invoking applyEdits.
+    // Context: https://github.com/microsoft/monaco-editor/issues/1811
+
     const oldSelection = this._editor.getSelection();
 
     this._editor!.getModel()!.applyEdits(this.NewTextToOperations(t));

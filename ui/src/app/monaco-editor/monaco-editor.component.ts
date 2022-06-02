@@ -23,8 +23,6 @@ type DecorationDescription = {
 })
 export class MonacoEditorComponent implements AfterViewInit, OnInit {
 
-  editorServiceInitialized = false;
-
   lastBaseText = "";
 
   language!: string;
@@ -94,8 +92,10 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
       }
     });
 
-    this.editorControllerService.languageChanges().subscribe(_ => {
-      if (this.editorServiceInitialized) {
+    this.editorCreated.asObservable().pipe(
+      mergeMap(() => this.editorControllerService.languageChanges())
+    ).subscribe({
+      next: () => {
         this.updateSession();
       }
     });

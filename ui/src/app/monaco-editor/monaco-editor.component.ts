@@ -293,7 +293,13 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
   }
 
   SetText(t: string) {
+    const oldSelection = this._editor.getSelection();
+
     this._editor!.getModel()!.applyEdits(this.NewTextToOperations(t));
+
+    if (oldSelection !== null) {
+      this._editor.setSelection(oldSelection);
+    }
   }
 
   NewTextToOperations(newText: string): monaco.editor.IIdentifiedSingleEditOperation[] {
@@ -321,7 +327,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
   }
 
   Selection(): Selection | undefined {
-    const editorSelection = this._editor!.getSelection()
+    const editorSelection = this._editor!.getSelection();
     if (editorSelection === null || editorSelection.getStartPosition().equals(editorSelection.getEndPosition())) {
       return;
     }

@@ -1,13 +1,13 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import * as monaco from 'monaco-editor';
-import { User } from './api.service';
+import { User } from '../api.service';
 import { Observable, Subject, Subscription } from 'rxjs';
 import { sampleTime } from 'rxjs/operators';
-import { ThemeService } from './theme.service';
+import { ThemeService } from '../utils/theme.service';
 import { EditorControllerService } from './editor-controller.service';
 import { FileSaverService } from 'ngx-filesaver';
-import { Selection } from './common';
-import { Diff, DiffMatchPatch, PatchObject, DiffOperation } from 'diff-match-patch-typescript';
+import { Selection } from '../common';
+import { DiffMatchPatch, PatchObject } from 'diff-match-patch-typescript';
 
 type DecorationDescription = {
   UserID: string

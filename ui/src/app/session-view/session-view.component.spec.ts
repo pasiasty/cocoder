@@ -1,4 +1,4 @@
-import { ComponentFixture, flush, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { SessionViewComponent } from './session-view.component';
 
@@ -10,11 +10,11 @@ import { TopBarComponent } from '../top-bar/top-bar.component';
 import { Component, Renderer2, Type } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
-import { EditorService } from '../editor.service';
+import { EditorService } from '../monaco-editor/editor.service';
 import { ToastsContainerComponent } from '../toasts-container/toasts-container.component';
 import { ApiService, EditResponse, GetSessionResponse, User } from '../api.service';
-import { ThemeService } from '../theme.service';
-import { MonacoEditorService } from '../monaco-editor.service';
+import { ThemeService } from '../utils/theme.service';
+import { MonacoEditorService } from '../monaco-editor/monaco-editor.service';
 import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component';
 
 @Component({

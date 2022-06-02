@@ -1,12 +1,12 @@
 import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
-import { EditorControllerService } from '../editor-controller.service';
-import { ThemeService } from '../theme.service';
+import { EditorControllerService } from '../monaco-editor/editor-controller.service';
+import { ThemeService } from '../utils/theme.service';
 import * as monaco from 'monaco-editor';
-import { ScrollingService } from '../scrolling.service';
+import { ScrollingService } from '../utils/scrolling.service';
 import { ClipboardService } from 'ngx-clipboard'
-import { ToastService } from '../toast.service';
+import { ToastService } from '../utils/toast.service';
 import { NgbNav } from '@ng-bootstrap/ng-bootstrap';
-import { GoogleAnalyticsService } from '../google-analytics.service';
+import { GoogleAnalyticsService } from '../utils/google-analytics.service';
 
 @Component({
   selector: 'app-top-bar',

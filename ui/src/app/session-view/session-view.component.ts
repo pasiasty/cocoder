@@ -1,13 +1,13 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { Subscription } from 'rxjs';
 import { Title } from '@angular/platform-browser';
 import { ApiService, GetSessionResponse } from '../api.service';
-import { EditorService } from '../editor.service';
+import { EditorService } from '../monaco-editor/editor.service';
 import * as monaco from 'monaco-editor';
-import { ThemeService } from '../theme.service';
-import { EditorControllerService } from '../editor-controller.service';
+import { ThemeService } from '../utils/theme.service';
+import { EditorControllerService } from '../monaco-editor/editor-controller.service';
 
 @Component({
   selector: 'app-session-view',

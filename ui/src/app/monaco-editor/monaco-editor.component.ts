@@ -1,8 +1,8 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
 import { first } from 'rxjs/operators';
-import { MonacoEditorService } from '../monaco-editor.service';
+import { MonacoEditorService } from './monaco-editor.service';
 import * as monaco from 'monaco-editor';
-import { ThemeService } from '../theme.service';
+import { ThemeService } from '../utils/theme.service';
 
 @Component({
   selector: 'app-monaco-editor',

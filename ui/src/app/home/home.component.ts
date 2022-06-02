@@ -4,11 +4,11 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { retry } from 'rxjs/operators';
 import { Title } from '@angular/platform-browser';
-import { ScrollingService } from '../scrolling.service';
+import { ScrollingService } from '../utils/scrolling.service';
 import { Subscription } from 'rxjs';
 import { Analytics } from 'aws-amplify';
-import { GoogleAnalyticsService } from '../google-analytics.service';
-import { ToastService } from '../toast.service';
+import { GoogleAnalyticsService } from '../utils/google-analytics.service';
+import { ToastService } from '../utils/toast.service';
 
 type ExampleUsage = {
   header: string

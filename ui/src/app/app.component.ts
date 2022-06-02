@@ -1,8 +1,8 @@
 import { Component, OnInit, Renderer2 } from '@angular/core';
 import { environment } from 'src/environments/environment';
-import { GoogleAnalyticsService } from './google-analytics.service';
-import { MonacoEditorService } from './monaco-editor.service';
-import { ThemeService } from './theme.service';
+import { GoogleAnalyticsService } from './utils/google-analytics.service';
+import { MonacoEditorService } from './monaco-editor/monaco-editor.service';
+import { ThemeService } from './utils/theme.service';
 
 @Component({
   selector: 'app-root',

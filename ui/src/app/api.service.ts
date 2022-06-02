@@ -1,13 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, OnDestroy } from '@angular/core';
-import { from, interval, Observable, of, Subject, Subscription } from 'rxjs';
-import { audit, catchError, filter, map, retry, sample, tap } from 'rxjs/operators';
+import { interval, Observable, of, Subject, Subscription } from 'rxjs';
+import { filter, map, retry, sample, tap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 import { webSocket, WebSocketSubject } from "rxjs/webSocket";
-import { EditorControllerService } from './editor-controller.service';
+import { EditorControllerService } from './monaco-editor/editor-controller.service';
 import { Selection } from './common';
-import { ToastService } from './toast.service';
+import { ToastService } from './utils/toast.service';
 
 const SILENCE_AFTER_EDITING = 1000
 const PING_FREQUENCY = 1000

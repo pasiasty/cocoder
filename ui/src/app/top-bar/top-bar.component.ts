@@ -1,11 +1,5 @@
-import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
-import { EditorControllerService } from '../monaco-editor/editor-controller.service';
+import { ChangeDetectorRef, Component, EventEmitter, Output } from '@angular/core';
 import { ThemeService } from '../utils/theme.service';
-import * as monaco from 'monaco-editor';
-import { ScrollingService } from '../utils/scrolling.service';
-import { ClipboardService } from 'ngx-clipboard'
-import { ToastService } from '../utils/toast.service';
-import { NgbNav } from '@ng-bootstrap/ng-bootstrap';
 import { GoogleAnalyticsService } from '../utils/google-analytics.service';
 
 @Component({
@@ -13,60 +7,17 @@ import { GoogleAnalyticsService } from '../utils/google-analytics.service';
   templateUrl: './top-bar.component.html',
   styleUrls: ['./top-bar.component.scss']
 })
-export class TopBarComponent implements OnInit {
-  selectedLanguage!: string;
-  _editorMode = false;
-  _homeMode = false;
-  showToast = false;
+export class TopBarComponent {
 
-  languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "r");
-
-  @ViewChild(NgbNav)
-  navigation?: NgbNav
-
-  links = [
-    { title: 'About', fragment: 'about' },
-    { title: 'FAQ', fragment: 'faq' },
-    { title: 'Contact', fragment: 'contact' },
-  ];
+  @Output() logoClicked = new EventEmitter<void>();
 
   constructor(
     private themeService: ThemeService,
     private cdRef: ChangeDetectorRef,
-    private editorControllerService: EditorControllerService,
-    private scrollingService: ScrollingService,
-    private clipboardService: ClipboardService,
-    private toastService: ToastService,
     private googleAnalyticsService: GoogleAnalyticsService) { }
-
-  ngOnInit(): void {
-    this.editorControllerService.languageChanges().subscribe(val => {
-      this.selectedLanguage = val;
-      this.cdRef.detectChanges();
-    });
-  }
-
-  @Input()
-  set editorMode(param: string) {
-    this._editorMode = true;
-  }
-
-  @Input()
-  set homeMode(param: string) {
-    this._homeMode = true;
-  }
 
   isDarkThemeEnabled(): boolean {
     return this.themeService.isDarkThemeEnabled();
-  }
-
-  otherLanguages(): string[] {
-    return monaco.languages.getLanguages().map((v, _) => v.id).filter(v => !this.languages.includes(v));
-  }
-
-  onLanguageChange(val: string) {
-    this.editorControllerService.setLanguage(val);
-    this.googleAnalyticsService.event('language_change', 'engagement', 'top_bar', val);
   }
 
   themeButtonClicked(): void {
@@ -85,46 +36,7 @@ export class TopBarComponent implements OnInit {
     this.googleAnalyticsService.event('donate', 'engagement', 'top_bar');
   }
 
-  downloadButtonClicked(): void {
-    this.editorControllerService.saveContent();
-    this.googleAnalyticsService.event('download_content', 'engagement', 'top_bar');
-  }
-
-  shareButtonClicked(): void {
-    this.clipboardService.copy(window.location.href);
-    this.toastService.show("", "Copied session URL to clipboard");
-    this.googleAnalyticsService.event('share_button', 'engagement', 'top_bar');
-  }
-
-  zoomInButtonClicked(): void {
-    this.editorControllerService.updateFontSize(1);
-    this.googleAnalyticsService.event('zoom', 'engagement', 'top_bar', 'increase');
-  }
-
-  zoomOutButtonClicked(): void {
-    this.editorControllerService.updateFontSize(-1);
-    this.googleAnalyticsService.event('zoom', 'engagement', 'top_bar', 'decrease');
-  }
-
-  navClicked(val: string): void {
-    this.scrollingService.scrollTo(val);
-
-    if (val === 'home') {
-      this.navigation?.select(null);
-    }
-    this.googleAnalyticsService.event('navigation', 'engagement', 'top_bar', val);
-  }
-
-  notificationsTitle(): string {
-    return this.areNotificationsEnabled() ? 'Click to disable hints' : 'Click to enable hints';
-  }
-
-  areNotificationsEnabled(): boolean {
-    return this.editorControllerService.hintsAreEnabled();
-  }
-
-  notificationsButtonClicked(): void {
-    this.editorControllerService.toggleHints();
-    this.cdRef.detectChanges();
+  logoButtonClicked(): void {
+    this.logoClicked.emit();
   }
 }

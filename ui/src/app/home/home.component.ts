@@ -9,6 +9,7 @@ import { Subscription } from 'rxjs';
 import { Analytics } from 'aws-amplify';
 import { GoogleAnalyticsService } from '../utils/google-analytics.service';
 import { ToastService } from '../utils/toast.service';
+import { NgbNav } from '@ng-bootstrap/ng-bootstrap';
 
 type ExampleUsage = {
   header: string
@@ -23,6 +24,14 @@ type ExampleUsage = {
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild(NgbNav)
+  navigation?: NgbNav
+
+  links = [
+    { title: 'About', fragment: 'about' },
+    { title: 'FAQ', fragment: 'faq' },
+    { title: 'Contact', fragment: 'contact' },
+  ];
 
   exampleUsages: ExampleUsage[] = [
     {
@@ -98,6 +107,15 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy(): void {
     this.scrollingSubscription?.unsubscribe();
     this.fragmentSubscription?.unsubscribe();
+  }
+
+  navClicked(val: string): void {
+    this.scrollingService.scrollTo(val);
+
+    if (val === 'home') {
+      this.navigation?.select(null);
+    }
+    this.googleAnalyticsService.event('navigation', 'engagement', 'top_bar', val);
   }
 
   scrollToEl(el: string) {

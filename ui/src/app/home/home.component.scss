@@ -5,17 +5,21 @@
 :host-context(.bootstrap-dark) {
   @import "~@forevolve/bootstrap-dark/scss/dark-variables";
   @import "../../custom-colors-dark.scss";
+
   .top-bar-container {
     background-color: $body-bg;
   }
 
-  a {
-    color: rgb(93, 93, 236);
+  .content-container {
+    a {
+      color: rgb(93, 93, 236);
+    }
   }
 }
 
 :host-context(.bootstrap) {
   @import "../../custom-colors-light.scss";
+
   .top-bar-container {
     background-color: $body-bg;
   }
@@ -151,6 +155,7 @@
 :host-context(.bootstrap-dark) {
   @import "~@forevolve/bootstrap-dark/scss/dark-variables";
   @import "../../custom-colors-dark.scss";
+
   .policies-container {
     background-color: #16191d;
   }
@@ -158,4 +163,12 @@
 
 .policies-nav {
   padding: 0px;
+}
+
+.activable-item.active {
+  border-radius: 10px;
+}
+
+.home-navigation {
+  gap: 3px;
 }

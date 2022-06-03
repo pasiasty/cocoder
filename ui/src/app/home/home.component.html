@@ -1,5 +1,14 @@
 <div class="top-bar-container">
-  <app-top-bar homeMode></app-top-bar>
+  <app-top-bar (logoClicked)="navClicked('home')">
+    <nav class="navbar">
+      <ul ngbNav activeId="" class="flex-row home-navigation">
+        <li [ngbNavItem]="link.fragment" *ngFor="let link of links">
+          <a ngbNavLink class="activable-item" routerLink="." [fragment]="link.fragment"
+            (click)="navClicked(link.fragment)">{{ link.title }}</a>
+        </li>
+      </ul>
+    </nav>
+  </app-top-bar>
   <hr class="header-separator">
 </div>
 <div class="content-container">

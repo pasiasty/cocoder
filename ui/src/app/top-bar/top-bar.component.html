@@ -1,48 +1,6 @@
 <div class="top-bar-row">
-    <button class="logo btn btn-outline-secondary" [routerLink]="['/']" (click)="navClicked('home')">coCoder</button>
-    <div *ngIf="_homeMode">
-        <nav class="navbar">
-            <ul ngbNav activeId="" class="flex-row home-navigation">
-                <li [ngbNavItem]="link.fragment" *ngFor="let link of links">
-                    <a ngbNavLink class="activable-item" routerLink="." [fragment]="link.fragment"
-                        (click)="navClicked(link.fragment)">{{ link.title }}</a>
-                </li>
-            </ul>
-        </nav>
-    </div>
-    <div *ngIf=" _editorMode" class="editor-controls-container">
-
-        <div ngbDropdown class="d-inline-block language-dropdown" title="Select language">
-            <button class="btn btn-outline-primary" ngbDropdownToggle>{{selectedLanguage}}</button>
-            <div ngbDropdownMenu class="dropdown-menu">
-                <button *ngFor="let language of languages" ngbDropdownItem
-                    (click)="onLanguageChange(language)">{{language}}</button>
-                <hr class="solid">
-                <button *ngFor="let language of otherLanguages()" ngbDropdownItem
-                    (click)="onLanguageChange(language)">{{language}}</button>
-            </div>
-        </div>
-        <div type="button" class="btn btn-default" (click)="downloadButtonClicked()" title="Download your code">
-            <i mdbRipple class="bi bi-file-earmark-arrow-down h5"></i>
-        </div>
-        <div type="button" class="btn btn-default" (click)="shareButtonClicked()" title="Share session with friends">
-            <i class="bi bi-share h5"></i>
-        </div>
-        <div type="button" class="btn btn-default" (click)="zoomInButtonClicked()" title="Zoom in">
-            <i class="bi bi-zoom-in h5"></i>
-        </div>
-        <div type="button" class="btn btn-default" (click)="zoomOutButtonClicked()" title="Zoom out">
-            <i class="bi bi-zoom-out h5"></i>
-        </div>
-        <div type="button" class="btn btn-default" (click)="notificationsButtonClicked()"
-            [title]="notificationsTitle()">
-            <i *ngIf="areNotificationsEnabled() else notificationsDisabledVariant"
-                class="bi bi-chat-right-text-fill glowing-icon h5"></i>
-            <ng-template #notificationsDisabledVariant>
-                <i class="bi bi-chat-right-text h5"></i>
-            </ng-template>
-        </div>
-    </div>
+    <button class="logo btn btn-outline-secondary" [routerLink]="['/']" (click)="logoButtonClicked()">coCoder</button>
+    <ng-content></ng-content>
 
     <div class="empty-space">
     </div>

@@ -12,3 +12,31 @@
   width: 100%;
   justify-content: center;
 }
+
+:host-context(.bootstrap-dark) {
+  .btn:hover {
+    background-color: rgb(90, 90, 90);
+  }
+
+  .btn:active {
+    background-color: rgb(40, 40, 40);
+  }
+
+  .activable-item.active {
+    background-color: rgb(60, 60, 60);
+  }
+}
+
+:host-context(.bootstrap) {
+  .btn:hover {
+    background-color: rgb(200, 200, 200);
+  }
+
+  .btn:active {
+    background-color: rgb(160, 160, 160);
+  }
+
+  .activable-item.active {
+    background-color: rgb(200, 200, 200);
+  }
+}

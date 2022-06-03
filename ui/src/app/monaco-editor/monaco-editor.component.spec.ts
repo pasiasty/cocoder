@@ -212,10 +212,16 @@ def something(): # local selection
     await component.editorInitializedPromise;
 
     component.monacoEditorComponent._editor.setValue('some text was');
-    expect(component.monacoEditorComponent.NewTextToOperations('some script was modified')).toEqual([{
-      range: new monaco.Range(1, 2, 1, 14),
-      text: 'ome script was modified',
-    }]);
+    expect(component.monacoEditorComponent.NewTextToOperations('some script was modified')).toEqual([
+      {
+        range: new monaco.Range(1, 6, 1, 9),
+        text: 'scrip',
+      },
+      {
+        range: new monaco.Range(1, 14, 1, 14),
+        text: ' modified',
+      },
+    ]);
   });
 
   it('complex new text to operations', async () => {
@@ -232,40 +238,36 @@ def something(): # local selection
     this line will be modified
     `;
 
-    const t0 = `
-    this line will be modif`;
-
-    const t1 = `ine will really be modi`;
-
-    const t2 = `dified
-    this line wil`;
-
-    const t3 = `ame
-    this lin`;
-
-    const t4 = `be modif`;
-
-    const t5 = "ified\n  ";
-
     expect(component.monacoEditorComponent.NewTextToOperations(newText)).toEqual([{
-      range: new monaco.Range(1, 1, 2, 28),
-      text: t0,
+      range: new monaco.Range(2, 20, 2, 20),
+      text: 'really ',
     }, {
-      range: new monaco.Range(2, 11, 2, 27),
-      text: t1,
-    }, {
-      range: new monaco.Range(2, 25, 3, 18),
-      text: t2,
-    }, {
-      range: new monaco.Range(3, 28, 4, 13),
-      text: t3,
-    }, {
-      range: new monaco.Range(4, 20, 4, 33),
-      text: t4,
-    }, {
-      range: new monaco.Range(4, 31, 5, 3),
-      text: t5,
-    },
-    ]);
+      range: new monaco.Range(4, 19, 4, 24),
+      text: '',
+    }]);
+  });
+
+  function checkPair(n: number, pos: monaco.Position) {
+    expect(component.monacoEditorComponent.numberToPosition(n)).toEqual(pos);
+    expect(component.monacoEditorComponent.positionToNumber(pos)).toEqual(n);
+  }
+
+  it('cursor and position conversion', async () => {
+    await component.editorInitializedPromise;
+
+    component.monacoEditorComponent._editor.setValue(`
+something
+
+
+another thing
+and also
+
+this thing
+    `);
+    checkPair(0, new monaco.Position(1, 1));
+    checkPair(1, new monaco.Position(2, 1));
+    checkPair(12, new monaco.Position(4, 1));
+    checkPair(20, new monaco.Position(5, 8));
+    checkPair(36, new monaco.Position(7, 1));
   });
 });

@@ -7,7 +7,7 @@ import { ApiService, GetSessionResponse, User } from '../api.service';
 import { EditorControllerService } from './editor-controller.service';
 import { from, Subject } from 'rxjs';
 import { FileSaverService } from 'ngx-filesaver';
-import { DiffMatchPatch, PatchObject } from 'diff-match-patch-typescript';
+import { Diff, DiffMatchPatch, DiffOperation } from 'diff-match-patch-typescript';
 import { Selection } from '../common';
 
 type DecorationDescription = {
@@ -289,7 +289,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
   }
 
   Text(): string {
-    return this._editor!.getModel()!.getValue(monaco.editor.EndOfLinePreference.CRLF);
+    return this._editor!.getModel()!.getValue(monaco.editor.EndOfLinePreference.LF);
   }
 
   SetText(t: string) {
@@ -306,21 +306,61 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
   }
 
   NewTextToOperations(newText: string): monaco.editor.IIdentifiedSingleEditOperation[] {
-    let patches = this.dmp.patch_make(this.Text(), newText);
     let res: monaco.editor.IIdentifiedSingleEditOperation[] = [];
 
-    patches.forEach((patch: PatchObject) => {
-      const start = patch.start1;
-      const end = start + patch.length1;
-      const startPos = this.numberToPosition(start);
-      const endPos = this.numberToPosition(end);
-      const text = this.Text().slice(start, end);
-      const applied = this.dmp.patch_apply([patch], text)[0];
-      res.push({
-        range: new monaco.Range(startPos.lineNumber, startPos.column, endPos.lineNumber, endPos.column),
-        text: applied,
-      });
+    let diffs = this.dmp.diff_main(this.Text(), newText);
+
+    let currIdx = 0;
+    let currOperation: monaco.editor.IIdentifiedSingleEditOperation | null = null;
+
+    diffs.forEach((diff: Diff) => {
+      const operation: DiffOperation = diff[0];
+      const val: string = diff[1];
+
+      switch (operation) {
+        case DiffOperation.DIFF_EQUAL:
+          if (currOperation !== null) {
+            res.push(currOperation)
+            currOperation = null;
+          }
+
+          currIdx += val.length;
+          break;
+        case DiffOperation.DIFF_DELETE:
+          const startPos = this.numberToPosition(currIdx);
+          const endPos = this.numberToPosition(currIdx + val.length);
+          const deleteRange = new monaco.Range(startPos.lineNumber, startPos.column, endPos.lineNumber, endPos.column);
+
+          if (currOperation === null) {
+            currOperation = {
+              range: deleteRange,
+              text: '',
+            }
+          } else {
+            currOperation.range = deleteRange;
+          }
+
+          currIdx += val.length;
+          break;
+        case DiffOperation.DIFF_INSERT:
+          const pos = this.numberToPosition(currIdx);
+          const insertRange = new monaco.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column);
+
+          if (currOperation === null) {
+            currOperation = {
+              range: insertRange,
+              text: val,
+            }
+          } else {
+            currOperation.text = val;
+          }
+          break;
+      }
     });
+
+    if (currOperation !== null) {
+      res.push(currOperation);
+    }
 
     return res;
   }

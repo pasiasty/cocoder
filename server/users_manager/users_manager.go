@@ -182,6 +182,7 @@ func (s *ManagedSession) AddUser(ctx context.Context, userID UserID, conn *webso
 
 	if u, ok := s.Users[userID]; ok {
 		u.Cancel()
+		s.cleanupInactiveUsers()
 	}
 	s.Users[userID] = NewConnectedUser(ctx, userID, conn, s.fromUsersHandler)
 }
@@ -239,15 +240,14 @@ func (s *ManagedSession) loop(ctx context.Context) {
 			}
 			s.sendResponseToUsers(resp)
 		case <-inactiveUserCleanupIntervalChannelSource():
+			s.mux.Lock()
 			s.cleanupInactiveUsers()
+			s.mux.Unlock()
 		}
 	}
 }
 
 func (s *ManagedSession) cleanupInactiveUsers() {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
 	usersToCleanup := make(map[UserID]interface{})
 
 	for _, u := range s.Users {
@@ -352,8 +352,5 @@ func (m *UsersManager) RegisterUser(ctx context.Context, sessionID session_manag
 		m.managedSessions[sessionID] = NewManagedSession(ctx, sessionID, m.sm)
 	}
 	ms := m.managedSessions[sessionID]
-	if u, ok := ms.Users[userID]; ok {
-		u.Cancel()
-	}
 	ms.AddUser(ctx, userID, conn)
 }

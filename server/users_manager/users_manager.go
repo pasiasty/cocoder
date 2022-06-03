@@ -101,9 +101,11 @@ func (u *ConnectedUser) writeLoop(ctx context.Context) {
 			if !ok {
 				return
 			}
+			u.mux.Lock()
 			if err := u.conn.WriteJSON(resp); err != nil {
 				log.Printf("Failed to send response to user: %v", err)
 			}
+			u.mux.Unlock()
 		case <-ctx.Done():
 			return
 		}

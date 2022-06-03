@@ -1,10 +1,9 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, ViewChild } from '@angular/core';
 import { first, mergeMap, sampleTime } from 'rxjs/operators';
 import { MonacoEditorService } from './monaco-editor.service';
 import * as monaco from 'monaco-editor';
 import { ThemeService } from '../utils/theme.service';
 import { ApiService, GetSessionResponse, User } from '../api.service';
-import { EditorControllerService } from './editor-controller.service';
 import { from, Subject } from 'rxjs';
 import { FileSaverService } from 'ngx-filesaver';
 import { Diff, DiffMatchPatch, DiffOperation } from 'diff-match-patch-typescript';
@@ -21,7 +20,7 @@ type DecorationDescription = {
   templateUrl: './monaco-editor.component.html',
   styleUrls: ['./monaco-editor.component.scss']
 })
-export class MonacoEditorComponent implements AfterViewInit, OnInit {
+export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
 
   lastBaseText = "";
 
@@ -39,13 +38,14 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
 
   @Output() invalidSession = new EventEmitter<void>();
   @Output() editorCreated = new EventEmitter<void>();
+  @Output() languageUpdated = new EventEmitter<string>();
+
+  @Input() hintsEnabled: boolean = true;
 
   constructor(
     private monacoEditorService: MonacoEditorService,
     private themeService: ThemeService,
     private apiService: ApiService,
-    private editorControllerService: EditorControllerService,
-    private cdRef: ChangeDetectorRef,
     private fileSaverService: FileSaverService) {
     monaco.editor.setTheme(themeService.editorThemeName());
 
@@ -62,19 +62,12 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
       this.fontSize = 15;
     }
 
-    this.editorControllerService.saveTriggersObservable().subscribe({
-      next: _ => {
-        this.fileSaverService.saveText(this.Text(), `code${this.GetLanguageExtension()}`);
-      }
-    });
-
     this.dmp = new DiffMatchPatch();
   }
 
   ngOnInit(): void {
     const initialStateObservable = from(this.apiService.GetSession().then((data: GetSessionResponse) => {
-      this.editorControllerService.setLanguage(data.Language);
-      this.cdRef.detectChanges();
+      this.languageUpdated.emit(data.Language);
       return data;
     },
       err => {
@@ -91,14 +84,11 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
         this.applyInitialState(data);
       }
     });
+  }
 
-    this.editorCreated.asObservable().pipe(
-      mergeMap(() => this.editorControllerService.languageChanges())
-    ).subscribe({
-      next: () => {
-        this.updateSession();
-      }
-    });
+  ngOnChanges(): void {
+    if (this._editor !== undefined)
+      this.updateOptions();
   }
 
   ngAfterViewInit(): void {
@@ -131,6 +121,10 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
     this._editor.layout();
   }
 
+  saveContent(): void {
+    this.fileSaverService.saveText(this.Text(), `code${this.GetLanguageExtension()}`);
+  }
+
   updateSession() {
     const newText = this.Text();
     this.apiService.UpdateSession(this.lastBaseText, newText, this.Position(), this.OtherUsers(), this.Selection());
@@ -147,8 +141,10 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
 
     this.apiService.SessionObservable().subscribe({
       next: data => {
-        if (data.Language)
-          this.editorControllerService.setLanguage(data.Language);
+        if (data.Language) {
+          this.SetLanguage(data.Language);
+          this.languageUpdated.emit(data.Language);
+        }
 
         if (data.NewText !== this.Text()) {
           this.SetText(data.NewText!);
@@ -192,20 +188,6 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
       this.SetTheme(this.themeService.editorThemeName());
     });
 
-    this.editorControllerService.languageChanges().subscribe(val => {
-      this.SetLanguage(val);
-    });
-
-    this.editorControllerService.fontUpdates().subscribe(val => {
-      this.fontSize += val;
-      localStorage.setItem("font_size", this.fontSize.toString());
-      this.updateOptions();
-    });
-
-    this.editorControllerService.toggleHintsObservable().subscribe(val => {
-      this.updateOptions();
-    });
-
     this.editsSubject.pipe(
       sampleTime(50),
     ).subscribe({
@@ -219,35 +201,39 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
     this.userID = userID;
   }
 
-  updateOptions() {
-    const withHints = this.editorControllerService.hintsAreEnabled();
+  updateFontSize(val: number) {
+    this.fontSize += val;
+    localStorage.setItem("font_size", this.fontSize.toString());
+    this.updateOptions();
+  }
 
+  updateOptions() {
     monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
-      noSemanticValidation: !withHints,
-      noSuggestionDiagnostics: !withHints,
-      noSyntaxValidation: !withHints,
+      noSemanticValidation: !this.hintsEnabled,
+      noSuggestionDiagnostics: !this.hintsEnabled,
+      noSyntaxValidation: !this.hintsEnabled,
     });
 
     this._editor!.updateOptions({
       cursorBlinking: 'smooth',
       fontSize: this.fontSize,
-      showUnused: withHints,
+      showUnused: this.hintsEnabled,
       scrollbar: {
         verticalScrollbarSize: 0,
       },
       parameterHints: {
-        enabled: withHints,
+        enabled: this.hintsEnabled,
       },
       inlayHints: {
-        enabled: withHints,
+        enabled: this.hintsEnabled,
       },
       inlineSuggest: {
-        enabled: withHints,
+        enabled: this.hintsEnabled,
       },
-      quickSuggestions: withHints,
-      snippetSuggestions: withHints ? 'inline' : 'none',
-      showDeprecated: withHints,
-      suggestOnTriggerCharacters: withHints,
+      quickSuggestions: this.hintsEnabled,
+      snippetSuggestions: this.hintsEnabled ? 'inline' : 'none',
+      showDeprecated: this.hintsEnabled,
+      suggestOnTriggerCharacters: this.hintsEnabled,
     });
   }
 
@@ -408,8 +394,12 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit {
   }
 
   SetLanguage(l: string) {
+    if (l === this.language)
+      return;
+
     this.language = l;
     monaco.editor.setModelLanguage(this._editor!.getModel()!, l);
+    this.editsSubject.next();
   }
 
   SetTheme(t: string) {

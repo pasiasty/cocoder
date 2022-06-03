@@ -27,13 +27,14 @@
             </div>
             <div type="button" class="btn btn-default" (click)="notificationsButtonClicked()"
                 [title]="notificationsTitle()">
-                <i *ngIf="areNotificationsEnabled() else notificationsDisabledVariant"
+                <i *ngIf="hintsEnabled else notificationsDisabledVariant"
                     class="bi bi-chat-right-text-fill glowing-icon h5"></i>
                 <ng-template #notificationsDisabledVariant>
                     <i class="bi bi-chat-right-text h5"></i>
                 </ng-template>
             </div>
         </app-top-bar>
-        <app-monaco-editor class="editor-container" (invalidSession)="sessionInvalid=true"></app-monaco-editor>
+        <app-monaco-editor class="editor-container" (invalidSession)="sessionInvalid=true"
+            (languageUpdated)="selectedLanguage=$event" [hintsEnabled]="hintsEnabled"></app-monaco-editor>
     </div>
 </ng-template>

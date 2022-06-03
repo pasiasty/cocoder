@@ -5,7 +5,6 @@ import { filter, map, retry, sample, tap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 import { webSocket, WebSocketSubject } from "rxjs/webSocket";
-import { EditorControllerService } from './monaco-editor/editor-controller.service';
 import { Selection } from './common';
 import { ToastService } from './utils/toast.service';
 
@@ -53,8 +52,6 @@ export class ApiService implements OnDestroy {
   wsSubject?: WebSocketSubject<EditRequest>;
   incomingSubject: Subject<EditResponse>;
 
-  languageChangesSubscription?: Subscription;
-
   lastLanguageUpdateTimestamp!: number;
   lastUpdateTimestamp: number;
   selectedLanguage!: string;
@@ -67,7 +64,6 @@ export class ApiService implements OnDestroy {
 
   constructor(
     private httpClient: HttpClient,
-    private editorControllerService: EditorControllerService,
     private toastService: ToastService,
   ) {
     const userID = localStorage.getItem('user_id');
@@ -79,11 +75,6 @@ export class ApiService implements OnDestroy {
     }
     this.lastUpdateTimestamp = 0;
 
-    this.languageChangesSubscription = this.editorControllerService.languageChanges().subscribe(val => {
-      this.lastLanguageUpdateTimestamp = Date.now();
-      this.selectedLanguage = val;
-    });
-
     this.incomingSubject = new Subject<EditResponse>();
     this.lastPongTimestamp = Date.now();
     this.lastReconnectTimestamp = Date.now();
@@ -91,7 +82,11 @@ export class ApiService implements OnDestroy {
 
   ngOnDestroy() {
     this.wsSubject?.unsubscribe();
-    this.languageChangesSubscription?.unsubscribe();
+  }
+
+  updateLanguage(language: string): void {
+    this.lastLanguageUpdateTimestamp = Date.now();
+    this.selectedLanguage = language;
   }
 
   connectWebsocket() {

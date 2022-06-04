@@ -148,7 +148,7 @@ def something(): # local selection
       .compileComponents();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     sessionObservable = new Observable<EditResponse>();
 
     apiServiceSpy.GetSession.and.returnValue(new Promise<GetSessionResponse>((resolve, reject) => {
@@ -168,18 +168,18 @@ def something(): # local selection
 
     monacoEditorService.load();
     fixture.detectChanges();
+
+    await component.editorInitializedPromise;
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('colors presentation dark', async () => {
+  fit('colors presentation dark', async () => {
     expect(component).toBeTruthy();
     renderer2.removeClass(document.body, 'bootstrap');
     renderer2.addClass(document.body, 'bootstrap-dark');
-
-    await component.editorInitializedPromise;
 
     themeService.setDarkThemeEnabled(true);
     component.monacoEditorComponent.SetTheme('vs-dark');
@@ -190,27 +190,22 @@ def something(): # local selection
     await new Promise(f => setTimeout(f, 2000));
   });
 
-  it('colors presentation light', async () => {
+  fit('colors presentation light', async () => {
     expect(component).toBeTruthy();
     renderer2.removeClass(document.body, 'bootstrap-dark');
     renderer2.addClass(document.body, 'bootstrap');
-
-    await component.editorInitializedPromise;
 
     themeService.setDarkThemeEnabled(false);
     component.monacoEditorComponent.SetText(testText(5));
     component.monacoEditorComponent.SetTheme('vs');
     fillEditor();
 
-    fixture.changeDetectorRef.detectChanges();
     fixture.detectChanges();
 
     await new Promise(f => setTimeout(f, 2000));
   });
 
   it('simple new text to operations', async () => {
-    await component.editorInitializedPromise;
-
     component.monacoEditorComponent._editor.setValue('some text was');
     expect(component.monacoEditorComponent.NewTextToOperations('some script was modified')).toEqual([
       {
@@ -225,8 +220,6 @@ def something(): # local selection
   });
 
   it('complex new text to operations', async () => {
-    await component.editorInitializedPromise;
-
     component.monacoEditorComponent._editor.setValue(`
     this line will be modified
     this line will be the same
@@ -253,8 +246,6 @@ def something(): # local selection
   }
 
   it('cursor and position conversion', async () => {
-    await component.editorInitializedPromise;
-
     component.monacoEditorComponent._editor.setValue(`
 something
 

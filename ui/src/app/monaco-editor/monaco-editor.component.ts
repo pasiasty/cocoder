@@ -108,11 +108,29 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
       {
         theme: this.themeService.editorThemeName(),
         language: this.language,
-      }
+      },
     );
     this.updateOptions();
     this.BindEvents();
     this.SetUserID(this.apiService.GetUserID());
+
+    this._editor.addAction({
+      id: "custom.editor.action.deleteLines",
+      label: "Delete lines",
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyD],
+      run: () => {
+        this._editor.getAction("editor.action.deleteLines").run();
+      },
+    });
+
+    this._editor.addAction({
+      id: "custom.editor.action.saveFile",
+      label: "Save file",
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+      run: () => {
+        this.saveContent();
+      },
+    });
 
     this.editorCreated.emit();
   }

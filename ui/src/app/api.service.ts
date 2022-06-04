@@ -183,4 +183,10 @@ export class ApiService implements OnDestroy {
       tap(data => this.selectedLanguage = data.Language),
     ).toPromise();
   }
+
+  NewSession(): Promise<string> {
+    return this.httpClient.get<string>(environment.api + 'new_session').pipe(
+      retry(3)
+    ).toPromise();
+  }
 }

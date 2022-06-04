@@ -1,8 +1,5 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../environments/environment';
-import { retry } from 'rxjs/operators';
 import { Title } from '@angular/platform-browser';
 import { ScrollingService } from '../utils/scrolling.service';
 import { Subscription } from 'rxjs';
@@ -10,6 +7,7 @@ import { Analytics } from 'aws-amplify';
 import { GoogleAnalyticsService } from '../utils/google-analytics.service';
 import { ToastService } from '../utils/toast.service';
 import { NgbNav } from '@ng-bootstrap/ng-bootstrap';
+import { ApiService } from '../api.service';
 
 type ExampleUsage = {
   header: string
@@ -71,7 +69,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   constructor(
     private router: Router,
-    private httpClient: HttpClient,
+    private apiService: ApiService,
     private titleService: Title,
     private scrollingService: ScrollingService,
     private route: ActivatedRoute,
@@ -139,11 +137,9 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.googleAnalyticsService.event('new_session', 'engagement', 'home');
     Analytics.record({ name: 'newSession' });
 
-    this.httpClient.get<string>(environment.api + 'new_session').pipe(
-      retry(3)
-    ).subscribe((data) => {
-      this.router.navigate(['/s/', data]);
-    })
+    this.apiService.NewSession().then(sessionID => {
+      this.router.navigate(['/s/', sessionID]);
+    });
   }
 
 }

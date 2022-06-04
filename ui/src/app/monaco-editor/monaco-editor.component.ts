@@ -120,6 +120,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
       keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyD],
       run: () => {
         this._editor.getAction("editor.action.deleteLines").run();
+        this.editsSubject.next();
       },
     });
 

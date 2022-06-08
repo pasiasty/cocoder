@@ -140,8 +140,15 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
     this._editor.layout();
   }
 
-  saveContent(): void {
-    this.fileSaverService.saveText(this.Text(), `code${this.GetLanguageExtension()}`);
+  async saveContent() {
+    if ('showSaveFilePicker' in window) {
+      const handle = await (window as any).showSaveFilePicker({ suggestedName: `code${this.GetLanguageExtension()}` });
+      const writable = await handle.createWritable();
+      await writable.write(this.Text());
+      await writable.close();
+    } else {
+      this.fileSaverService.saveText(this.Text(), `code${this.GetLanguageExtension()}`);
+    }
   }
 
   updateSession() {

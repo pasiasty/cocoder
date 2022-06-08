@@ -3,7 +3,7 @@ import { first, mergeMap, sampleTime } from 'rxjs/operators';
 import { MonacoEditorService } from './monaco-editor.service';
 import * as monaco from 'monaco-editor';
 import { ThemeService } from 'src/app/services/theme.service';
-import { ApiService, GetSessionResponse, User } from 'src/app/api.service';
+import { ApiService, GetSessionResponse, User } from 'src/app/services/api.service';
 import { from, Subject } from 'rxjs';
 import { FileSaverService } from 'ngx-filesaver';
 import { Diff, DiffMatchPatch, DiffOperation } from 'diff-match-patch-typescript';

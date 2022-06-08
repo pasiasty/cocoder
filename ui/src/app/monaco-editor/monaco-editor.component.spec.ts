@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MonacoEditorComponent } from './monaco-editor.component';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, Renderer2, ViewChild } from '@angular/core';
-import { ApiService, EditResponse, GetSessionResponse, User } from 'src/app/api.service';
+import { ApiService, EditResponse, GetSessionResponse, User } from 'src/app/services/api.service';
 import { MonacoEditorService } from './monaco-editor.service';
 import { ThemeService } from 'src/app/services/theme.service';
 import { Observable, of } from 'rxjs';
@@ -176,7 +176,7 @@ def something(): # local selection
     expect(component).toBeTruthy();
   });
 
-  fit('colors presentation dark', async () => {
+  it('colors presentation dark', async () => {
     expect(component).toBeTruthy();
     renderer2.removeClass(document.body, 'bootstrap');
     renderer2.addClass(document.body, 'bootstrap-dark');
@@ -187,10 +187,10 @@ def something(): # local selection
 
     fixture.detectChanges();
 
-    await new Promise(f => setTimeout(f, 2000));
+    await new Promise(f => setTimeout(f, 100));
   });
 
-  fit('colors presentation light', async () => {
+  it('colors presentation light', async () => {
     expect(component).toBeTruthy();
     renderer2.removeClass(document.body, 'bootstrap-dark');
     renderer2.addClass(document.body, 'bootstrap');
@@ -202,7 +202,7 @@ def something(): # local selection
 
     fixture.detectChanges();
 
-    await new Promise(f => setTimeout(f, 2000));
+    await new Promise(f => setTimeout(f, 100));
   });
 
   it('simple new text to operations', async () => {

@@ -7,7 +7,7 @@ import { Analytics } from 'aws-amplify';
 import { GoogleAnalyticsService } from 'src/app/services/google-analytics.service';
 import { ToastService } from 'src/app/services/toast.service';
 import { NgbNav } from '@ng-bootstrap/ng-bootstrap';
-import { ApiService } from 'src/app/api.service';
+import { ApiService } from 'src/app/services/api.service';
 
 type ExampleUsage = {
   header: string

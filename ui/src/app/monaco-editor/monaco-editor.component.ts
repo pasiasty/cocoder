@@ -1,13 +1,13 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, ViewChild } from '@angular/core';
 import { first, mergeMap, sampleTime } from 'rxjs/operators';
 import { MonacoEditorService } from './monaco-editor.service';
 import * as monaco from 'monaco-editor';
-import { ThemeService } from '../utils/theme.service';
-import { ApiService, GetSessionResponse, User } from '../api.service';
+import { ThemeService } from 'src/app/services/theme.service';
+import { ApiService, GetSessionResponse, User } from 'src/app/api.service';
 import { from, Subject } from 'rxjs';
 import { FileSaverService } from 'ngx-filesaver';
 import { Diff, DiffMatchPatch, DiffOperation } from 'diff-match-patch-typescript';
-import { Selection } from '../common';
+import { Selection } from 'src/app/common';
 
 type DecorationDescription = {
   UserID: string

@@ -2,13 +2,13 @@ import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { Title } from '@angular/platform-browser';
-import { ApiService } from '../api.service';
+import { ApiService } from 'src/app/api.service';
 
 import * as monaco from 'monaco-editor';
-import { GoogleAnalyticsService } from '../utils/google-analytics.service';
+import { GoogleAnalyticsService } from 'src/app/services/google-analytics.service';
 import { ClipboardService } from 'ngx-clipboard';
-import { ToastService } from '../utils/toast.service';
-import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component';
+import { ToastService } from 'src/app/services/toast.service';
+import { MonacoEditorComponent } from 'src/app/monaco-editor/monaco-editor.component';
 
 @Component({
   selector: 'app-session-view',

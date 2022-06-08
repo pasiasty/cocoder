@@ -1,5 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { TopBarComponent } from '../top-bar/top-bar.component';
+import { Component, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-privacy-view',

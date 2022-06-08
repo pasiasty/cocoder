@@ -5,9 +5,9 @@ import { HomeComponent } from './home.component';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { TopBarComponent } from '../top-bar/top-bar.component';
-import { ProgressiveImgLoaderComponent } from '../progressive-img-loader/progressive-img-loader.component';
-import { AppRoutingModule } from '../app-routing.module';
+import { TopBarComponent } from 'src/app/top-bar/top-bar.component';
+import { ProgressiveImgLoaderComponent } from 'src/app/progressive-img-loader/progressive-img-loader.component';
+import { AppRoutingModule } from 'src/app/app-routing.module';
 import { Renderer2, Type } from '@angular/core';
 
 describe('HomeComponent', () => {

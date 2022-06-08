@@ -6,7 +6,7 @@ import { environment } from '../environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 import { webSocket, WebSocketSubject } from "rxjs/webSocket";
 import { Selection } from './common';
-import { ToastService } from './utils/toast.service';
+import { ToastService } from './services/toast.service';
 
 const SILENCE_AFTER_EDITING = 1000
 const PING_FREQUENCY = 1000

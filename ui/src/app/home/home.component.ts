@@ -1,13 +1,13 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
-import { ScrollingService } from '../utils/scrolling.service';
+import { ScrollingService } from 'src/app/services/scrolling.service';
 import { Subscription } from 'rxjs';
 import { Analytics } from 'aws-amplify';
-import { GoogleAnalyticsService } from '../utils/google-analytics.service';
-import { ToastService } from '../utils/toast.service';
+import { GoogleAnalyticsService } from 'src/app/services/google-analytics.service';
+import { ToastService } from 'src/app/services/toast.service';
 import { NgbNav } from '@ng-bootstrap/ng-bootstrap';
-import { ApiService } from '../api.service';
+import { ApiService } from 'src/app/api.service';
 
 type ExampleUsage = {
   header: string

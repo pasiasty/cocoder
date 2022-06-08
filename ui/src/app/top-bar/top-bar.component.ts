@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, EventEmitter, Output } from '@angular/core';
-import { ThemeService } from '../utils/theme.service';
-import { GoogleAnalyticsService } from '../utils/google-analytics.service';
+import { ThemeService } from 'src/app/services/theme.service';
+import { GoogleAnalyticsService } from 'src/app/services/google-analytics.service';
 
 @Component({
   selector: 'app-top-bar',

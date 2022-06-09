@@ -120,6 +120,9 @@ export class ApiService implements OnDestroy {
     webSocket.onopen = () => {
       onOpenHandler(webSocket);
     };
+    webSocket.onclose = () => {
+      this.openLSPWebsocket(path, onOpenHandler);
+    }
   }
 
   StartSession(sessionID: string) {

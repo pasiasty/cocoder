@@ -49,10 +49,10 @@ describe('MonacoEditorComponent', () => {
   let sessionObservable: Observable<EditResponse>;
 
   let textPreamble = `# some comment
-  
+
 def something(): # local selection
   return [el for el in 'abc']
-  
+
 `;
 
   function sampleLine(idx: number): string {
@@ -116,6 +116,7 @@ def something(): # local selection
     'GetUserID',
     'UpdateSession',
     'SessionObservable',
+    'openLSPWebsocket',
   ]);
 
   beforeEach(async () => {

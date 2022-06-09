@@ -115,7 +115,7 @@ func TestInteractWithTheWebsocket(t *testing.T) {
 	u := url.URL{
 		Scheme: "ws",
 		Host:   strings.Replace(srv.URL, "http://", "", 1),
-		Path:   fmt.Sprintf("/api/%s/u1/ws", sID),
+		Path:   fmt.Sprintf("/api/%s/u1/session_ws", sID),
 	}
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)

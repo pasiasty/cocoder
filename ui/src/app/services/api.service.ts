@@ -8,7 +8,6 @@ import { webSocket, WebSocketSubject } from "rxjs/webSocket";
 import { Selection } from 'src/app/common';
 import { ToastService } from './toast.service';
 
-const SILENCE_AFTER_EDITING = 1000
 const PING_FREQUENCY = 1000
 const PONG_THRESHOLD = 3000
 const WEBSOCKET_RECONNECT_FREQUENCY = 6000
@@ -53,12 +52,10 @@ export class ApiService implements OnDestroy {
   incomingSubject: Subject<EditResponse>;
 
   lastLanguageUpdateTimestamp!: number;
-  lastUpdateTimestamp: number;
   selectedLanguage!: string;
   sessionID!: string;
   userID: string;
 
-  pingSubscription?: Subscription;
   lastPongTimestamp: number;
   lastReconnectTimestamp: number;
 
@@ -73,7 +70,6 @@ export class ApiService implements OnDestroy {
       this.userID = uuidv4();
       localStorage.setItem('user_id', this.userID);
     }
-    this.lastUpdateTimestamp = 0;
 
     this.incomingSubject = new Subject<EditResponse>();
     this.lastPongTimestamp = Date.now();
@@ -107,7 +103,6 @@ export class ApiService implements OnDestroy {
         }
       }),
       filter(data => !data.Ping),
-      sample(interval(100).pipe(filter(() => (Date.now() - this.lastUpdateTimestamp) > SILENCE_AFTER_EDITING))),
     ).subscribe(data => {
       this.incomingSubject.next(data);
     });
@@ -132,7 +127,7 @@ export class ApiService implements OnDestroy {
     this.lastPongTimestamp = Date.now();
     this.lastReconnectTimestamp = Date.now();
 
-    this.pingSubscription = interval(PING_FREQUENCY).subscribe(_ => {
+    interval(PING_FREQUENCY).subscribe(_ => {
       this.wsSubject?.next({
         Ping: true,
       });
@@ -168,8 +163,6 @@ export class ApiService implements OnDestroy {
   }
 
   UpdateSession(baseText: string, newText: string, cursorPos: number, otherUsers: User[], selection?: Selection) {
-    if (baseText !== newText)
-      this.lastUpdateTimestamp = Date.now();
     let language = '';
 
     if (Date.now() - this.lastLanguageUpdateTimestamp < LANGUAGE_SETTING_TIME_HORIZON) {

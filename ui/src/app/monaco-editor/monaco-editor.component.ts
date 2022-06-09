@@ -463,17 +463,8 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
     }
   }
 
-  updateDecorations() {
-    this.oldDecorations = this._editor!.deltaDecorations(this.oldDecorations, this.currentDecorations.map(d => d.Decoration));
-  }
-
   UpdateCursors(users: User[]) {
     this.currentDecorations = users.filter(u => this.userID != u.ID).map(u => this.userToDecoration(u));
-    this.updateDecorations();
-    for (const u of users) {
-      if (u.ID == this.userID && this.Position() != u.Position && this.Selection() === undefined) {
-        this.SetPosition(u.Position);
-      }
-    }
+    this.oldDecorations = this._editor!.deltaDecorations(this.oldDecorations, this.currentDecorations.map(d => d.Decoration));
   }
 }

@@ -126,6 +126,9 @@ export class ApiService implements OnDestroy {
     this.sessionID = sessionID;
     this.connectWebsocket();
 
+    this.lastPongTimestamp = Date.now();
+    this.lastReconnectTimestamp = Date.now();
+
     this.pingSubscription = interval(PING_FREQUENCY).subscribe(_ => {
       this.wsSubject?.next({
         Ping: true,

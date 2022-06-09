@@ -1,9 +1,12 @@
 autopep8==1.6.0
+numpy==1.22.4
 pycodestyle==2.8.0
 pydocstyle==6.1.1
 pyflakes==2.4.0
 pylint==2.14.1
 python-jsonrpc-server==0.4.0
 python-language-server==0.36.2
+rope==1.1.1
 typing_extensions==4.2.0
 wrapt==1.14.1
+yapf==0.32.0

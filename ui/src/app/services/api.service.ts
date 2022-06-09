@@ -116,6 +116,7 @@ export class ApiService implements OnDestroy {
       onOpenHandler(webSocket);
     };
     webSocket.onclose = () => {
+      console.log(`Reconnecting ${path}`);
       this.openLSPWebsocket(path, onOpenHandler);
     }
   }

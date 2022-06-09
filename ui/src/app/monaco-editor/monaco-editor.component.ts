@@ -172,6 +172,11 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
           this.languageUpdated.emit(data.Language);
         }
 
+        // There's nothing new to merge
+        if (data.NewText === this.lastBaseText) {
+          return;
+        }
+
         if (data.NewText !== this.Text()) {
           this.SetText(data.NewText!);
         }

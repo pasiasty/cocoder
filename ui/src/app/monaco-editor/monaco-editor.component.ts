@@ -15,6 +15,11 @@ type DecorationDescription = {
   Decoration: monaco.editor.IModelDeltaDecoration
 };
 
+export interface LanguageUpdate {
+  language: string
+  supportsFormatting: boolean
+}
+
 @Component({
   selector: 'app-monaco-editor',
   templateUrl: './monaco-editor.component.html',
@@ -38,7 +43,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
 
   @Output() invalidSession = new EventEmitter<void>();
   @Output() editorCreated = new EventEmitter<void>();
-  @Output() languageUpdated = new EventEmitter<string>();
+  @Output() languageUpdated = new EventEmitter<LanguageUpdate>();
 
   @Input() hintsEnabled: boolean = true;
 
@@ -67,7 +72,6 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
 
   ngOnInit(): void {
     const initialStateObservable = from(this.apiService.GetSession().then((data: GetSessionResponse) => {
-      this.languageUpdated.emit(data.Language);
       return data;
     },
       err => {
@@ -157,10 +161,23 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
     this.lastBaseText = newText;
   }
 
+  emitLanguageUpdate(language: string) {
+    let supportsFormatting = false;
+    this._editor.getSupportedActions().forEach((action: monaco.editor.IEditorAction) => {
+      if (action.id === 'editor.action.formatDocument')
+        supportsFormatting = true;
+    });
+    this.languageUpdated.emit({
+      language: language,
+      supportsFormatting: supportsFormatting,
+    });
+  }
+
   applyInitialState(data: GetSessionResponse | null) {
     if (data === null) {
       return;
     }
+    this.emitLanguageUpdate(data.Language)
     this.SetText(data.Text);
     this.SetLanguage(data.Language);
     this.lastBaseText = data.Text;
@@ -168,8 +185,8 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
     this.apiService.SessionObservable().subscribe({
       next: data => {
         if (data.Language) {
+          this.emitLanguageUpdate(data.Language)
           this.SetLanguage(data.Language);
-          this.languageUpdated.emit(data.Language);
         }
 
         // Check if the text should be updated
@@ -467,5 +484,9 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
   UpdateCursors(users: User[]) {
     this.currentDecorations = users.filter(u => this.userID != u.ID).map(u => this.userToDecoration(u));
     this.oldDecorations = this._editor!.deltaDecorations(this.oldDecorations, this.currentDecorations.map(d => d.Decoration));
+  }
+
+  FormatText() {
+    this._editor.getAction('editor.action.formatDocument').run();
   }
 }

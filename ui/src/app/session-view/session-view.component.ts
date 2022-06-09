@@ -8,7 +8,7 @@ import * as monaco from 'monaco-editor';
 import { GoogleAnalyticsService } from 'src/app/services/google-analytics.service';
 import { ClipboardService } from 'ngx-clipboard';
 import { ToastService } from 'src/app/services/toast.service';
-import { MonacoEditorComponent } from 'src/app/monaco-editor/monaco-editor.component';
+import { LanguageUpdate, MonacoEditorComponent } from 'src/app/monaco-editor/monaco-editor.component';
 
 @Component({
   selector: 'app-session-view',
@@ -18,6 +18,7 @@ import { MonacoEditorComponent } from 'src/app/monaco-editor/monaco-editor.compo
 export class SessionViewComponent implements OnInit {
   sessionInvalid = false;
   selectedLanguage!: string;
+  supportsFormatting: boolean;
 
   languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "r");
 
@@ -40,6 +41,7 @@ export class SessionViewComponent implements OnInit {
     } else {
       this.hintsEnabled = true;
     }
+    this.supportsFormatting = false;
   }
 
   ngOnInit(): void {
@@ -93,5 +95,9 @@ export class SessionViewComponent implements OnInit {
       localStorage.setItem('hints_enabled', 'disabled');
   }
 
+  updateLanguage(ev: LanguageUpdate) {
+    this.selectedLanguage = ev.language;
+    this.supportsFormatting = ev.supportsFormatting;
+  }
 }
 

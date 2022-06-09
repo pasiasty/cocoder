@@ -5,6 +5,7 @@ import { MonacoLanguageClient, CloseAction, ErrorAction, MonacoServices, Message
 import { toSocket, WebSocketMessageReader, WebSocketMessageWriter } from '@codingame/monaco-jsonrpc';
 
 import * as monaco from 'monaco-editor';
+import { ApiService } from '../services/api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +16,9 @@ export class MonacoEditorService {
 
   public loadingFinished: Subject<void> = new Subject<void>();
 
-  constructor() { }
+  constructor(
+    private apiService: ApiService,
+  ) { }
 
   private finishLoading() {
     this.loaded = true;
@@ -58,14 +61,16 @@ export class MonacoEditorService {
     MonacoServices.install(monaco);
 
     // create the web socket
-    const url = this.createUrl('localhost', 3000, '/python')
-    const webSocket = new WebSocket(url);
+    this.apiService.openLSPWebsocket('python', this.languageOnOpenHandler('Python', ['python']));
+  }
 
-    webSocket.onopen = () => {
-      const socket = toSocket(webSocket);
+  languageOnOpenHandler(name: string, documentSelector: string[]): ((ws: WebSocket) => any) {
+    return (ws: WebSocket) => {
+      const socket = toSocket(ws);
       const reader = new WebSocketMessageReader(socket);
       const writer = new WebSocketMessageWriter(socket);
-      const languageClient = this.createLanguageClient({
+      const languageClient = this.createLanguageClient(
+        name, documentSelector, {
         reader,
         writer
       });
@@ -74,12 +79,12 @@ export class MonacoEditorService {
     };
   }
 
-  createLanguageClient(transports: MessageTransports): MonacoLanguageClient {
+  createLanguageClient(name: string, documentSelector: string[], transports: MessageTransports): MonacoLanguageClient {
     return new MonacoLanguageClient({
-      name: "Python",
+      name: name,
       clientOptions: {
         // use a language id as a document selector
-        documentSelector: ['python'],
+        documentSelector: documentSelector,
         // disable the default error handler
         errorHandler: {
           error: () => ({ action: ErrorAction.Continue }),
@@ -95,7 +100,4 @@ export class MonacoEditorService {
     });
   }
 
-  createUrl(hostname: string, port: number, path: string): string {
-    return 'ws://localhost:5000/api/lsp/my_user/python';
-  }
 }

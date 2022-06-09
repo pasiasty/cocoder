@@ -116,7 +116,7 @@ export class ApiService implements OnDestroy {
       onOpenHandler(webSocket);
     };
     webSocket.onclose = () => {
-      console.log(`Reconnecting ${path}`);
+      console.log(`Reconnecting LSP websocket for '${path}'`);
       this.openLSPWebsocket(path, onOpenHandler);
     }
   }
@@ -135,7 +135,7 @@ export class ApiService implements OnDestroy {
       const now = Date.now();
       if (now - this.lastPongTimestamp > PONG_THRESHOLD &&
         now - this.lastReconnectTimestamp > WEBSOCKET_RECONNECT_FREQUENCY) {
-        console.log('Reconnecting the websocket');
+        console.log('Reconnecting the session websocket');
         this.toastService.show('', 'Lost connection to the server. Reconnecting...', 5000);
         try {
           this.connectWebsocket();

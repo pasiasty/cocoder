@@ -28,7 +28,7 @@ func initialCommand(language string) (*exec.Cmd, error) {
 	switch language {
 	case "python":
 		return &exec.Cmd{
-			Path: "pyls",
+			Path: "/usr/local/bin/pyls",
 			Args: []string{
 				"-v",
 			},

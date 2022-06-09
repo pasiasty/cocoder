@@ -11,6 +11,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
 
+	lsp_proxy "github.com/pasiasty/cocoder/server/lsp_proxy_manager"
 	"github.com/pasiasty/cocoder/server/session_manager"
 	"github.com/pasiasty/cocoder/server/users_manager"
 )
@@ -47,6 +48,7 @@ func NewRouterManager(ctx context.Context, c *redis.Client) *RouteManager {
 	pprof.Register(r)
 	sm := session_manager.NewSessionManager(c)
 	um := users_manager.NewUsersManager(ctx, sm)
+	lspm := lsp_proxy.New()
 
 	r.Use(limits.RequestSizeLimiter(1024 * 1024))
 	r.Use(CORSMiddleware())
@@ -67,7 +69,7 @@ func NewRouterManager(ctx context.Context, c *redis.Client) *RouteManager {
 		}
 	})
 
-	g.GET("/:session_id/:user_id/ws", func(c *gin.Context) {
+	g.GET("/:session_id/:user_id/session_ws", func(c *gin.Context) {
 		sessionID := session_manager.SessionID(c.Param("session_id"))
 		userID := users_manager.UserID(c.Param("user_id"))
 
@@ -78,6 +80,22 @@ func NewRouterManager(ctx context.Context, c *redis.Client) *RouteManager {
 		}
 
 		um.RegisterUser(c, sessionID, userID, conn)
+	})
+
+	g.GET("/lsp/:user_id/:language", func(c *gin.Context) {
+		language := string(session_manager.SessionID(c.Param("language")))
+		userID := users_manager.UserID(c.Param("user_id"))
+
+		conn, err := wsupgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		if err := lspm.Connect(c, conn, language, userID); err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			conn.Close()
+		}
 	})
 
 	return &RouteManager{

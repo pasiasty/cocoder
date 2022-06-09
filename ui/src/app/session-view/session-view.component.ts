@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { Title } from '@angular/platform-browser';
@@ -31,7 +31,6 @@ export class SessionViewComponent implements OnInit {
     private route: ActivatedRoute,
     private titleService: Title,
     private apiService: ApiService,
-    private cdRef: ChangeDetectorRef,
     private googleAnalyticsService: GoogleAnalyticsService,
     private clipboardService: ClipboardService,
     private toastService: ToastService) {

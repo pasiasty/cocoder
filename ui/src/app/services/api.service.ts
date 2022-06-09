@@ -96,7 +96,7 @@ export class ApiService implements OnDestroy {
     }
 
     this.wsSubject = webSocket<EditRequest>({
-      url: this.WsUri() + this.sessionID + "/" + this.userID + "/ws",
+      url: this.WsUri() + this.sessionID + "/" + this.userID + "/session_ws",
     });
 
     this.wsSubject.pipe(

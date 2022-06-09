@@ -24,11 +24,22 @@ func New() *LSPProxyManager {
 	return &LSPProxyManager{}
 }
 
+func pylsPath() string {
+	absolute := "/usr/local/bin/pyls"
+	shortcut := "pyls"
+
+	if _, err := os.Stat(absolute); err == nil {
+		return absolute
+	}
+	return shortcut
+}
+
 func initialCommand(language string) (*exec.Cmd, error) {
+
 	switch language {
 	case "python":
 		return &exec.Cmd{
-			Path: "/usr/local/bin/pyls",
+			Path: pylsPath(),
 			Args: []string{
 				"-v",
 			},

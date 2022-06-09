@@ -11,10 +11,10 @@ export class ThemeService {
 
   constructor() {
     const theme = localStorage.getItem('theme');
-    if (theme == 'dark') {
-      this.darkThemeEnabled = true;
-    } else {
+    if (theme == 'light') {
       this.darkThemeEnabled = false;
+    } else {
+      this.darkThemeEnabled = true;
     }
     this.themeSelection = new BehaviorSubject<boolean>(this.darkThemeEnabled);
   }

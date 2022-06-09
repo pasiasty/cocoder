@@ -41,3 +41,10 @@ type GetSessionResponse struct {
 	Text     string `json:"Text" diff:"text"`
 	Language string `json:"Language" diff:"language"`
 }
+
+type ExecutionResponse struct {
+	Message string `json:"Message"`
+	Failed  bool   `json:"Failed"`
+	Stdout  string `json:"Stdout"`
+	Stderr  string `json:"Stderr"`
+}

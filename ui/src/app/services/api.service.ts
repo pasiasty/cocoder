@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, OnDestroy } from '@angular/core';
-import { interval, Observable, Subject, Subscription } from 'rxjs';
-import { filter, map, retry, sample, tap } from 'rxjs/operators';
+import { interval, Observable, Subject } from 'rxjs';
+import { filter, map, retry, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 import { webSocket, WebSocketSubject } from "rxjs/webSocket";
@@ -41,6 +41,13 @@ export type EditResponse = {
 export type GetSessionResponse = {
   Text: string
   Language: string
+}
+
+export type ExecutionResponse = {
+  Message: string
+  Failed: boolean
+  Stdout: string
+  Stderr: string
 }
 
 @Injectable({
@@ -197,5 +204,12 @@ export class ApiService implements OnDestroy {
     return this.httpClient.get<string>(environment.api + 'new_session').pipe(
       retry(3)
     ).toPromise();
+  }
+
+  ExecuteCode(code: string, stdin: string): Promise<ExecutionResponse> {
+    const formData = new FormData();
+    formData.set('code', code);
+    formData.set('stdin', stdin);
+    return this.httpClient.post<ExecutionResponse>(`${environment.api}execute/${this.userID}/${this.selectedLanguage}`, formData).toPromise();
   }
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
 
+	"github.com/pasiasty/cocoder/server/executor"
 	lsp_proxy "github.com/pasiasty/cocoder/server/lsp_proxy_manager"
 	"github.com/pasiasty/cocoder/server/session_manager"
 	"github.com/pasiasty/cocoder/server/users_manager"
@@ -49,6 +50,7 @@ func NewRouterManager(ctx context.Context, c *redis.Client) *RouteManager {
 	sm := session_manager.NewSessionManager(c)
 	um := users_manager.NewUsersManager(ctx, sm)
 	lspm := lsp_proxy.New()
+	e := executor.New()
 
 	r.Use(limits.RequestSizeLimiter(1024 * 1024))
 	r.Use(CORSMiddleware())
@@ -96,6 +98,22 @@ func NewRouterManager(ctx context.Context, c *redis.Client) *RouteManager {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			conn.Close()
 		}
+	})
+
+	g.POST("/execute/:user_id/:language", func(c *gin.Context) {
+		language := string(session_manager.SessionID(c.Param("language")))
+		userID := users_manager.UserID(c.Param("user_id"))
+
+		code := c.PostForm("code")
+		stdin := c.PostForm("stdin")
+
+		resp, err := e.Execute(c, userID, language, code, stdin)
+		if err != nil {
+			fmt.Printf("Failed to execute: %v\n", err)
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		c.JSON(http.StatusOK, resp)
 	})
 
 	return &RouteManager{

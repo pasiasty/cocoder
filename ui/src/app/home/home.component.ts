@@ -3,7 +3,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { ScrollingService } from 'src/app/services/scrolling.service';
 import { Subscription } from 'rxjs';
-import { Analytics } from 'aws-amplify';
 import { GoogleAnalyticsService } from 'src/app/services/google-analytics.service';
 import { ToastService } from 'src/app/services/toast.service';
 import { NgbNav } from '@ng-bootstrap/ng-bootstrap';
@@ -135,7 +134,6 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   newSession(): void {
     this.googleAnalyticsService.event('new_session', 'engagement', 'home');
-    Analytics.record({ name: 'newSession' });
 
     this.apiService.NewSession().then(sessionID => {
       this.router.navigate(['/s/', sessionID]);

@@ -115,7 +115,6 @@ export class ApiService implements OnDestroy {
 
   openLSPWebsocket(path: string, onOpenHandler: ((ws: WebSocket) => void)) {
     const url = `${this.WsUri()}lsp/${this.userID}/${path}`;
-    console.log('ws url', url)
     const webSocket = new WebSocket(url);
 
     webSocket.onopen = () => {

@@ -88,7 +88,10 @@ export class MonacoEditorService {
         // disable the default error handler
         errorHandler: {
           error: () => ({ action: ErrorAction.Continue }),
-          closed: () => ({ action: CloseAction.DoNotRestart })
+          closed: () => ({
+            action: CloseAction.Restart,
+            message: "connection closed unexpectedly",
+          })
         }
       },
       // create a language client connection from the JSON RPC connection on demand

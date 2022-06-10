@@ -15,13 +15,11 @@
 
 :host-context(.bootstrap-dark) {
 
-  .btn:hover,
-  .btn-sm:hover {
+  .btn:hover:not(.btn-primary) {
     background-color: rgb(90, 90, 90);
   }
 
-  .btn:active,
-  .btn-sm:hover {
+  .btn:active:not(.btn-primary) {
     background-color: rgb(40, 40, 40);
   }
 
@@ -32,12 +30,11 @@
 
 :host-context(.bootstrap) {
 
-  .btn:hover,
-  .btn-sm:hover {
+  .btn:hover:not(.btn-primary) {
     background-color: rgb(200, 200, 200);
   }
 
-  .btn:active {
+  .btn:active:not(.btn-primary) {
     background-color: rgb(160, 160, 160);
   }
 

@@ -34,7 +34,6 @@
 
 .resize-handle {
   height: 20px;
-  margin-bottom: 10px;
 }
 
 .handle-line {
@@ -55,4 +54,10 @@
 
 .bottom-bar {
   height: 300px;
+}
+
+.navbar-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }

@@ -44,15 +44,35 @@
       <div class="resize-handle" (mousedown)="startDragging($event)" [style.cursor]="resizeHandleCursor">
         <div class="handle-line"></div>
       </div>
-      <div *ngIf="bottomBarCollapsed else collapseButtonVariant" type="button" class="btn-sm btn-default"
-        (click)="toggleCollapse()" title="Expand">
-        <i class="bi bi-caret-up h7"></i>
+      <div class="navbar-container">
+        <nav class="navbar navbar-expand-lg" style="width: 50%;">
+          <div *ngIf="bottomBarCollapsed else collapseButtonVariant" type="button" class="btn btn-default"
+            (click)="toggleCollapse()" title="Expand">
+            <i class="bi bi-caret-up h7"></i>
+          </div>
+          <ng-template #collapseButtonVariant>
+            <div type="button" class="btn btn-default" (click)="toggleCollapse()" title="Collapse">
+              <i class="bi bi-caret-down h6"></i>
+            </div>
+          </ng-template>
+          <div class="btn-group btn-group-toggle" data-toggle="buttons">
+            <label class="btn btn-secondary active">
+              <input type="radio" autocomplete="off"> STDIN
+            </label>
+          </div>
+        </nav>
+        <nav class="navbar navbar-expand-lg" style="width: 50%;">
+          <div class="btn-group btn-group-toggle" data-toggle="buttons">
+            <label class="btn btn-secondary" [class.active]="stdoutActive" (click)="stdoutClicked()">
+              <input type="radio" name="options" id="option1" autocomplete="off"> STDOUT
+            </label>
+            <label class="btn btn-secondary" [class.active]="stderrActive" (click)="stderrClicked()">
+              <input type="radio" name="options" id="option1" autocomplete="off"> STDERR
+            </label>
+          </div>
+        </nav>
+        <button type="button" class="btn btn-primary" style="width: fit-content; height: fit-content;">Run</button>
       </div>
-      <ng-template #collapseButtonVariant>
-        <div type="button" class="btn-sm btn-default" (click)="toggleCollapse()" title="Collapse">
-          <i class="bi bi-caret-down h7"></i>
-        </div>
-      </ng-template>
     </div>
   </div>
 </ng-template>

@@ -41,6 +41,9 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   bottomBarCollapsed: boolean = false;
   resizeHandleCursor = 'ns-resize';
 
+  stdoutActive = true;
+  stderrActive = false;
+
   constructor(
     private route: ActivatedRoute,
     private titleService: Title,
@@ -162,12 +165,22 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
       this.resizeHandleCursor = 'ns-resize';
       this.renderer.setStyle(this.editorContainer.nativeElement, 'height', `${this.editorHeight}px`);
     } else {
-      this.renderer.setStyle(this.bottomBar.nativeElement, 'height', `70px`);
+      this.renderer.setStyle(this.bottomBar.nativeElement, 'height', `75px`);
       this.resizeHandleCursor = '';
-      this.renderer.setStyle(this.editorContainer.nativeElement, 'height', `${this.fullHeight - 70}px`);
+      this.renderer.setStyle(this.editorContainer.nativeElement, 'height', `${this.fullHeight - 75}px`);
     }
 
     this.bottomBarCollapsed = !this.bottomBarCollapsed;
+  }
+
+  stdoutClicked() {
+    this.stdoutActive = true;
+    this.stderrActive = false;
+  }
+
+  stderrClicked() {
+    this.stdoutActive = false;
+    this.stderrActive = true;
   }
 }
 

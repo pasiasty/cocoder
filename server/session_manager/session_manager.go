@@ -18,8 +18,6 @@ var (
 	sessionExpiry = time.Hour * 24 * 7
 
 	nowSource = time.Now
-
-	cursorSpecialGlyph = "!!@@##AA"
 )
 
 func init() {

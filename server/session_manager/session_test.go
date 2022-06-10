@@ -39,17 +39,17 @@ func TestSequencesToInsertByPosition(t *testing.T) {
 			{
 				userID:   "user_3",
 				position: 7,
-				text:     fmt.Sprintf(specialSequenceFormat(), 2),
+				text:     string(specialRune(2, Cursor)),
 			},
 			{
 				userID:   "user_1",
 				position: 3,
-				text:     fmt.Sprintf(specialSequenceFormat(), 0),
+				text:     string(specialRune(0, Cursor)),
 			},
 			{
 				userID:   "user_2",
 				position: 1,
-				text:     fmt.Sprintf(specialSequenceFormat(), 1),
+				text:     string(specialRune(1, Cursor)),
 			},
 		},
 	}, {
@@ -75,32 +75,32 @@ func TestSequencesToInsertByPosition(t *testing.T) {
 		wantRes: []SpecialSequence{
 			{
 				userID:   "user_2",
-				text:     fmt.Sprintf(specialSequenceFormat(), 1),
+				text:     string(specialRune(1, Cursor)),
 				position: 20,
 			},
 			{
 				userID:   "user_2",
-				text:     fmt.Sprintf(specialSequenceFormat(), fmt.Sprintf("end%v", 1)),
+				text:     string(specialRune(1, SelectionEnd)),
 				position: 20,
 			},
 			{
 				userID:   "user_2",
-				text:     fmt.Sprintf(specialSequenceFormat(), fmt.Sprintf("start%v", 1)),
+				text:     string(specialRune(1, SelectionStart)),
 				position: 10,
 			},
 			{
 				userID:   "user_1",
-				text:     fmt.Sprintf(specialSequenceFormat(), 0),
+				text:     string(specialRune(0, Cursor)),
 				position: 5,
 			},
 			{
 				userID:   "user_1",
-				text:     fmt.Sprintf(specialSequenceFormat(), fmt.Sprintf("end%v", 0)),
+				text:     string(specialRune(0, SelectionEnd)),
 				position: 5,
 			},
 			{
 				userID:   "user_1",
-				text:     fmt.Sprintf(specialSequenceFormat(), fmt.Sprintf("start%v", 0)),
+				text:     string(specialRune(0, SelectionStart)),
 				position: 1,
 			},
 		},
@@ -168,27 +168,31 @@ func TestValidateRequest(t *testing.T) {
 func TestFindTokenPosition(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
-		token   string
+		uIdx    int
+		ro      RuneOffset
 		text    string
 		wantRes int
 	}{{
 		name:    "first_token",
-		token:   "0",
-		text:    fmt.Sprintf("a "+specialSequenceFormat()+" abc "+specialSequenceFormat(), "0", "1"),
+		uIdx:    0,
+		ro:      Cursor,
+		text:    fmt.Sprintf("a %s abc %s", string(specialRune(0, Cursor)), string(specialRune(1, SelectionStart))),
 		wantRes: 2,
 	}, {
 		name:    "second_token",
-		token:   "1",
-		text:    fmt.Sprintf("a "+specialSequenceFormat()+" abc "+specialSequenceFormat(), "0", "1"),
+		uIdx:    1,
+		ro:      SelectionStart,
+		text:    fmt.Sprintf("a %s abc %s", string(specialRune(0, Cursor)), string(specialRune(1, SelectionStart))),
 		wantRes: 7,
 	}, {
 		name:    "non_existing_token",
-		token:   "2",
-		text:    fmt.Sprintf("a "+specialSequenceFormat()+" abc "+specialSequenceFormat(), "0", "1"),
+		uIdx:    1,
+		ro:      SelectionEnd,
+		text:    fmt.Sprintf("a %s abc %s", string(specialRune(0, Cursor)), string(specialRune(1, SelectionStart))),
 		wantRes: 0,
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
-			res := findTokenPosition(tc.token, tc.text)
+			res := findTokenPosition(tc.uIdx, tc.ro, tc.text)
 			if res != tc.wantRes {
 				t.Errorf("findTokenPosition() returned wrong result, want: %v got: %v", tc.wantRes, res)
 			}
@@ -198,7 +202,6 @@ func TestFindTokenPosition(t *testing.T) {
 
 func TestUpdateText(t *testing.T) {
 	specialDate := time.Date(2015, 2, 13, 0, 0, 0, 0, time.UTC)
-	cursorSpecialGlyph = "|"
 
 	for _, tc := range []struct {
 		name     string
@@ -365,7 +368,7 @@ func TestUpdateText(t *testing.T) {
 					ID:             "user_3",
 					Index:          2,
 					HasSelection:   true,
-					SelectionStart: 26,
+					SelectionStart: 20,
 					SelectionEnd:   41,
 					LastEdit:       specialDate,
 				},

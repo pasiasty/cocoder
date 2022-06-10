@@ -1,14 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, OnDestroy } from '@angular/core';
 import { interval, Observable, Subject } from 'rxjs';
-import { filter, map, retry, tap } from 'rxjs/operators';
+import { filter, map, retry, sample, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { v4 as uuidv4 } from 'uuid';
 import { webSocket, WebSocketSubject } from "rxjs/webSocket";
 import { Selection } from 'src/app/common';
 import { ToastService } from './toast.service';
 
-const SILENCE_AFTER_EDITING = 1000
+const SILENCE_AFTER_EDITING = 1500
 const PING_FREQUENCY = 1000
 const PONG_THRESHOLD = 3000
 const WEBSOCKET_RECONNECT_FREQUENCY = 6000
@@ -65,7 +65,6 @@ export class ApiService implements OnDestroy {
   sessionID!: string;
   userID: string;
 
-  pingSubscription?: Subscription;
   lastPongTimestamp: number;
   lastReconnectTimestamp: number;
 
@@ -140,7 +139,7 @@ export class ApiService implements OnDestroy {
     this.lastPongTimestamp = Date.now();
     this.lastReconnectTimestamp = Date.now();
 
-    this.pingSubscription = interval(PING_FREQUENCY).subscribe(_ => {
+    interval(PING_FREQUENCY).subscribe(_ => {
       this.wsSubject?.next({
         Ping: true,
       });

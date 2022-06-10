@@ -15,6 +15,9 @@ import (
 	"github.com/pasiasty/cocoder/server/common"
 )
 
+const specialRuneStart = '\u1098'
+const specialRuneEnd = rune(int(specialRuneStart) + 300) // allows max 100 users in the single session
+
 type SessionID string
 
 type SpecialSequence struct {
@@ -28,7 +31,7 @@ func sequencesToInsert(u *common.User) []SpecialSequence {
 		{
 			userID:   u.ID,
 			position: u.Position,
-			text:     fmt.Sprintf(specialSequenceFormat(), u.Index),
+			text:     string(specialRune(u.Index, Cursor)),
 		},
 	}
 
@@ -36,11 +39,11 @@ func sequencesToInsert(u *common.User) []SpecialSequence {
 		res = append(res, SpecialSequence{
 			userID:   u.ID,
 			position: u.SelectionStart,
-			text:     fmt.Sprintf(specialSequenceFormat(), fmt.Sprintf("start%v", u.Index)),
+			text:     string(specialRune(u.Index, SelectionStart)),
 		}, SpecialSequence{
 			userID:   u.ID,
 			position: u.SelectionEnd,
-			text:     fmt.Sprintf(specialSequenceFormat(), fmt.Sprintf("end%v", u.Index)),
+			text:     string(specialRune(u.Index, SelectionEnd)),
 		})
 	}
 
@@ -77,16 +80,8 @@ func DefaultSession() *Session {
 	}
 }
 
-func specialSequenceFormat() string {
-	return cursorSpecialGlyph + "%v" + cursorSpecialGlyph
-}
-
 func cursorSpecialSequenceRe() *regexp.Regexp {
-	glyphEscaped := ""
-	for _, c := range cursorSpecialGlyph {
-		glyphEscaped += fmt.Sprintf("[%s]", string(c))
-	}
-	return regexp.MustCompile("(" + glyphEscaped + "(?:start|end)?[0-9]+" + glyphEscaped + ")")
+	return regexp.MustCompile(fmt.Sprintf(`([%s-%s])`, string(specialRuneStart), string(specialRuneEnd)))
 }
 
 func validateRequest(req *common.UpdateSessionRequest) {
@@ -135,8 +130,20 @@ func (s *Session) prepareResponse(req *common.UpdateSessionRequest) *common.Upda
 	}
 }
 
-func findTokenPosition(token string, textWithCursors string) int {
-	rawNewPosition := strings.Index(textWithCursors, fmt.Sprintf(specialSequenceFormat(), token))
+type RuneOffset int
+
+const (
+	Cursor RuneOffset = iota
+	SelectionStart
+	SelectionEnd
+)
+
+func specialRune(userIdx int, ro RuneOffset) rune {
+	return rune(int('\u1098') + (userIdx*3 + int(ro)))
+}
+
+func findTokenPosition(userIdx int, ro RuneOffset, textWithCursors string) int {
+	rawNewPosition := strings.Index(textWithCursors, string(specialRune(userIdx, ro)))
 	if rawNewPosition < 0 {
 		rawNewPosition = 0
 	}
@@ -183,11 +190,11 @@ func (s *Session) Update(req *common.UpdateSessionRequest) *common.UpdateSession
 	textWithCursors, _ := dmp.PatchApply(userPatches, s.Text)
 
 	for _, u := range s.Users {
-		u.Position = findTokenPosition(fmt.Sprintf("%d", u.Index), textWithCursors)
+		u.Position = findTokenPosition(u.Index, Cursor, textWithCursors)
 
 		if u.HasSelection {
-			u.SelectionStart = findTokenPosition(fmt.Sprintf("start%d", u.Index), textWithCursors)
-			u.SelectionEnd = findTokenPosition(fmt.Sprintf("end%d", u.Index), textWithCursors)
+			u.SelectionStart = findTokenPosition(u.Index, SelectionStart, textWithCursors)
+			u.SelectionEnd = findTokenPosition(u.Index, SelectionEnd, textWithCursors)
 		}
 	}
 

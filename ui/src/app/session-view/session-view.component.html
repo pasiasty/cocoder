@@ -1,6 +1,6 @@
 <app-page-not-found *ngIf="sessionInvalid; else normalContent"></app-page-not-found>
 <ng-template #normalContent>
-  <div class="content-container">
+  <div class="content-container" (window:mouseup)="stopDragging()" (mousemove)="keepDragging($event)">
     <app-top-bar>
       <div ngbDropdown class="d-inline-block language-dropdown" title="Select language">
         <button class="btn btn-outline-primary" ngbDropdownToggle>{{selectedLanguage}}</button>
@@ -36,7 +36,23 @@
         <i class="bi bi-file-text h5"></i>
       </div>
     </app-top-bar>
-    <app-monaco-editor class="editor-container" (invalidSession)="sessionInvalid=true"
-      (languageUpdated)="updateLanguage($event)" [hintsEnabled]="hintsEnabled"></app-monaco-editor>
+    <div class="editor-container" style="height: 100%;" #editorContainer>
+      <app-monaco-editor (invalidSession)="sessionInvalid=true" (languageUpdated)="updateLanguage($event)"
+        [hintsEnabled]="hintsEnabled" style="height: 100%;"></app-monaco-editor>
+    </div>
+    <div class="bottom-bar" #bottomBar>
+      <div class="resize-handle" (mousedown)="startDragging($event)" [style.cursor]="resizeHandleCursor">
+        <div class="handle-line"></div>
+      </div>
+      <div *ngIf="bottomBarCollapsed else collapseButtonVariant" type="button" class="btn-sm btn-default"
+        (click)="toggleCollapse()" title="Expand">
+        <i class="bi bi-caret-up h7"></i>
+      </div>
+      <ng-template #collapseButtonVariant>
+        <div type="button" class="btn-sm btn-default" (click)="toggleCollapse()" title="Collapse">
+          <i class="bi bi-caret-down h7"></i>
+        </div>
+      </ng-template>
+    </div>
   </div>
 </ng-template>

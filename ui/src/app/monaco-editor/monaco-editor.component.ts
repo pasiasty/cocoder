@@ -112,6 +112,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
       {
         theme: this.themeService.editorThemeName(),
         language: this.language,
+        automaticLayout: true,
       },
     );
     this.updateOptions();
@@ -138,10 +139,6 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
     });
 
     this.editorCreated.emit();
-  }
-
-  onResize(): void {
-    this._editor.layout();
   }
 
   async saveContent() {

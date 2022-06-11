@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnInit, Renderer2, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, QueryList, Renderer2, ViewChild, ViewChildren } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { Title } from '@angular/platform-browser';
@@ -8,7 +8,7 @@ import * as monaco from 'monaco-editor';
 import { GoogleAnalyticsService } from 'src/app/services/google-analytics.service';
 import { ClipboardService } from 'ngx-clipboard';
 import { ToastService } from 'src/app/services/toast.service';
-import { LanguageUpdate, MonacoEditorComponent } from 'src/app/monaco-editor/monaco-editor.component';
+import { LanguageUpdate, MonacoEditorComponent, Mode } from 'src/app/monaco-editor/monaco-editor.component';
 
 @Component({
   selector: 'app-session-view',
@@ -16,6 +16,9 @@ import { LanguageUpdate, MonacoEditorComponent } from 'src/app/monaco-editor/mon
   styleUrls: ['./session-view.component.scss'],
 })
 export class SessionViewComponent implements OnInit, AfterViewInit {
+
+  EditorMode = Mode;
+
   sessionInvalid = false;
   selectedLanguage!: string;
   supportsFormatting: boolean;
@@ -24,8 +27,12 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
 
   hintsEnabled = true;
 
-  @ViewChild(MonacoEditorComponent)
-  monacoEditorComponent!: MonacoEditorComponent;
+  @ViewChildren(MonacoEditorComponent)
+  monacoEditorComponents!: QueryList<MonacoEditorComponent>;
+
+  codeEditor!: MonacoEditorComponent;
+  inputEditor!: MonacoEditorComponent;
+  outputEditor!: MonacoEditorComponent;
 
   @ViewChild('bottomBar')
   bottomBar!: ElementRef<HTMLDivElement>;
@@ -43,6 +50,8 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
 
   stdoutActive = true;
   stderrActive = false;
+
+  outputEditorMode: Mode = Mode.Stdout;
 
   constructor(
     private route: ActivatedRoute,
@@ -69,6 +78,21 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+    this.monacoEditorComponents.toArray().forEach(c => {
+      switch (c.mode) {
+        case Mode.Code:
+          this.codeEditor = c;
+          break;
+        case Mode.Stdin:
+          this.inputEditor = c;
+          break;
+        case Mode.Stdout:
+        case Mode.Stderr:
+          this.outputEditor = c;
+          break;
+      }
+    });
+
     this.editorHeight = this.editorContainer.nativeElement.offsetHeight;
     this.bottomBarHeight = this.bottomBar.nativeElement.offsetHeight;
     this.fullHeight = this.editorHeight + this.bottomBarHeight;
@@ -84,12 +108,12 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   onLanguageChange(val: string) {
     this.selectedLanguage = val;
     this.apiService.updateLanguage(val);
-    this.monacoEditorComponent.SetLanguage(val);
+    this.codeEditor.SetLanguage(val);
     this.googleAnalyticsService.event('language_change', 'engagement', 'top_bar', val);
   }
 
   downloadButtonClicked(): void {
-    this.monacoEditorComponent.saveContent();
+    this.codeEditor.saveContent();
     this.googleAnalyticsService.event('download_content', 'engagement', 'top_bar');
   }
 
@@ -100,12 +124,16 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   zoomInButtonClicked(): void {
-    this.monacoEditorComponent.updateFontSize(1);
+    this.codeEditor.updateFontSize(1);
+    this.inputEditor.updateFontSize(1);
+    this.outputEditor.updateFontSize(1);
     this.googleAnalyticsService.event('zoom', 'engagement', 'top_bar', 'increase');
   }
 
   zoomOutButtonClicked(): void {
-    this.monacoEditorComponent.updateFontSize(-1);
+    this.codeEditor.updateFontSize(-1);
+    this.inputEditor.updateFontSize(-1);
+    this.outputEditor.updateFontSize(-1);
     this.googleAnalyticsService.event('zoom', 'engagement', 'top_bar', 'decrease');
   }
 
@@ -154,14 +182,17 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
         this.editorHeight = this.fullHeight - this.bottomBarHeight;
       }
 
-      this.renderer.setStyle(this.bottomBar.nativeElement, 'height', `${this.bottomBar}px`);
       this.renderer.setStyle(this.editorContainer.nativeElement, 'height', `${this.editorHeight}px`);
+      this.renderer.setStyle(this.bottomBar.nativeElement, 'height', `${this.bottomBarHeight}px`);
+
+      this.inputEditor.OnResize();
+      this.outputEditor.OnResize();
     }
   }
 
   toggleCollapse() {
     if (this.bottomBarCollapsed) {
-      this.renderer.setStyle(this.bottomBar.nativeElement, 'height', `${this.bottomBar}px`);
+      this.renderer.setStyle(this.bottomBar.nativeElement, 'height', `${this.bottomBarHeight}px`);
       this.resizeHandleCursor = 'ns-resize';
       this.renderer.setStyle(this.editorContainer.nativeElement, 'height', `${this.editorHeight}px`);
     } else {

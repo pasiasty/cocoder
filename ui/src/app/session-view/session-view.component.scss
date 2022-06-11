@@ -56,8 +56,36 @@
   height: 300px;
 }
 
-.navbar-container {
+.bottom-editors-container {
+  height: 100%;
+  width: 100%;
+  margin: 0px;
+  margin-top: 10px;
+  padding: 0px;
+  max-width: 100%;
+}
+
+.bottom-editor-container {
+  height: 100%;
+  width: 50%;
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-bottom: 90px;
+}
+
+.bottom-editor {
+  margin-top: 0px;
+  margin-bottom: 10px;
+  flex-grow: 1;
+  height: 100%;
+  padding: 0px;
+}
+
+.right-column-container {
   display: flex;
   flex-direction: row;
-  align-items: center;
+}
+
+.empty-space {
+  flex-grow: 1;
 }

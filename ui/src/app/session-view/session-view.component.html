@@ -31,47 +31,64 @@
           <i class="bi bi-chat-right-text h5"></i>
         </ng-template>
       </div>
-      <div *ngIf="supportsFormatting" type="button" class="btn btn-default" (click)="monacoEditorComponent.FormatText()"
+      <div *ngIf="supportsFormatting" type="button" class="btn btn-default" (click)="codeEditor.FormatText()"
         title="Format text">
         <i class="bi bi-file-text h5"></i>
       </div>
     </app-top-bar>
     <div class="editor-container" style="height: 100%;" #editorContainer>
       <app-monaco-editor (invalidSession)="sessionInvalid=true" (languageUpdated)="updateLanguage($event)"
-        [hintsEnabled]="hintsEnabled" style="height: 100%;"></app-monaco-editor>
+        [hintsEnabled]="hintsEnabled" style="height: 100%;" [mode]="EditorMode.Code">
+      </app-monaco-editor>
     </div>
     <div class="bottom-bar" #bottomBar>
       <div class="resize-handle" (mousedown)="startDragging($event)" [style.cursor]="resizeHandleCursor">
         <div class="handle-line"></div>
       </div>
-      <div class="navbar-container">
-        <nav class="navbar navbar-expand-lg" style="width: 50%;">
-          <div *ngIf="bottomBarCollapsed else collapseButtonVariant" type="button" class="btn btn-default"
-            (click)="toggleCollapse()" title="Expand">
-            <i class="bi bi-caret-up h7"></i>
-          </div>
-          <ng-template #collapseButtonVariant>
-            <div type="button" class="btn btn-default" (click)="toggleCollapse()" title="Collapse">
-              <i class="bi bi-caret-down h6"></i>
+      <div class="container" class="bottom-editors-container">
+        <div class="row" style="margin: 0px;">
+          <div class="column" style="width: 50%;">
+            <div *ngIf="bottomBarCollapsed else collapseButtonVariant" type="button" class="btn btn-default"
+              (click)="toggleCollapse()" title="Expand">
+              <i class="bi bi-caret-up h7"></i>
             </div>
-          </ng-template>
-          <div class="btn-group btn-group-toggle" data-toggle="buttons">
-            <label class="btn btn-secondary active">
-              <input type="radio" autocomplete="off"> STDIN
-            </label>
+            <ng-template #collapseButtonVariant>
+              <div type="button" class="btn btn-default" (click)="toggleCollapse()" title="Collapse">
+                <i class="bi bi-caret-down h6"></i>
+              </div>
+            </ng-template>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons" [hidden]="bottomBarCollapsed">
+              <label class="btn btn-secondary active">
+                <input type="radio" autocomplete="off"> STDIN
+              </label>
+            </div>
           </div>
-        </nav>
-        <nav class="navbar navbar-expand-lg" style="width: 50%;">
-          <div class="btn-group btn-group-toggle" data-toggle="buttons">
-            <label class="btn btn-secondary" [class.active]="stdoutActive" (click)="stdoutClicked()">
-              <input type="radio" name="options" id="option1" autocomplete="off"> STDOUT
-            </label>
-            <label class="btn btn-secondary" [class.active]="stderrActive" (click)="stderrClicked()">
-              <input type="radio" name="options" id="option1" autocomplete="off"> STDERR
-            </label>
+          <div class="column" style="width: 50%;" [hidden]="bottomBarCollapsed">
+            <div class="right-column-container">
+              <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label class="btn btn-secondary" [class.active]="stdoutActive" (click)="stdoutClicked()">
+                  <input type="radio" name="options" id="option1" autocomplete="off"> STDOUT
+                </label>
+                <label class="btn btn-secondary" [class.active]="stderrActive" (click)="stderrClicked()">
+                  <input type="radio" name="options" id="option1" autocomplete="off"> STDERR
+                </label>
+              </div>
+              <div class="empty-space"></div>
+              <button type="button" class="btn btn-primary"
+                style="width: fit-content; height: fit-content;">Run</button>
+            </div>
           </div>
-        </nav>
-        <button type="button" class="btn btn-primary" style="width: fit-content; height: fit-content;">Run</button>
+        </div>
+        <div class="row" style="height: 100%; margin: 0px;" [hidden]="bottomBarCollapsed">
+          <div class="column" class="bottom-editor-container">
+            <app-monaco-editor class="bottom-editor" [hintsEnabled]="false" [mode]="EditorMode.Stdin">
+            </app-monaco-editor>
+          </div>
+          <div class="column" class="bottom-editor-container">
+            <app-monaco-editor class="bottom-editor" [hintsEnabled]="false" [mode]="outputEditorMode">
+            </app-monaco-editor>
+          </div>
+        </div>
       </div>
     </div>
   </div>

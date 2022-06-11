@@ -3,11 +3,12 @@ import { first, mergeMap, sampleTime } from 'rxjs/operators';
 import { MonacoEditorService } from './monaco-editor.service';
 import * as monaco from 'monaco-editor';
 import { ThemeService } from 'src/app/services/theme.service';
-import { ApiService, GetSessionResponse, User } from 'src/app/services/api.service';
+import { ApiService, EditResponse, GetSessionResponse, User } from 'src/app/services/api.service';
 import { from, Subject } from 'rxjs';
 import { FileSaverService } from 'ngx-filesaver';
 import { Diff, DiffMatchPatch, DiffOperation } from 'diff-match-patch-typescript';
 import { Selection } from 'src/app/common';
+import { CodeAction } from 'vscode';
 
 type DecorationDescription = {
   UserID: string
@@ -20,12 +21,21 @@ export interface LanguageUpdate {
   supportsFormatting: boolean
 }
 
+export enum Mode {
+  Code,
+  Stdin,
+  Stdout,
+  Stderr,
+}
+
 @Component({
   selector: 'app-monaco-editor',
   templateUrl: './monaco-editor.component.html',
   styleUrls: ['./monaco-editor.component.scss']
 })
 export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
+
+  @Input() mode!: Mode;
 
   lastBaseText = "";
 
@@ -153,9 +163,11 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
   }
 
   updateSession() {
-    const newText = this.Text();
-    this.apiService.UpdateSession(this.lastBaseText, newText, this.Position(), this.OtherUsers(), this.Selection());
-    this.lastBaseText = newText;
+    if (this.mode == Mode.Code) {
+      const newText = this.Text();
+      this.apiService.UpdateSession(this.lastBaseText, newText, this.Position(), this.OtherUsers(), this.Selection());
+      this.lastBaseText = newText;
+    }
   }
 
   emitLanguageUpdate(language: string) {
@@ -170,17 +182,9 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
     });
   }
 
-  applyInitialState(data: GetSessionResponse | null) {
-    if (data === null) {
-      return;
-    }
-    this.emitLanguageUpdate(data.Language)
-    this.SetText(data.Text);
-    this.SetLanguage(data.Language);
-    this.lastBaseText = data.Text;
-
-    this.apiService.SessionObservable().subscribe({
-      next: data => {
+  handleSessionUpdate(data: EditResponse) {
+    switch (this.mode) {
+      case Mode.Code:
         if (data.Language) {
           this.emitLanguageUpdate(data.Language)
           this.SetLanguage(data.Language);
@@ -194,6 +198,25 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
         this.lastBaseText = data.NewText!;
 
         this.UpdateCursors(data.Users!);
+    }
+  }
+
+  applyInitialState(data: GetSessionResponse | null) {
+    if (data === null) {
+      return;
+    }
+
+    switch (this.mode) {
+      case Mode.Code:
+        this.emitLanguageUpdate(data.Language)
+        this.SetText(data.Text);
+        this.SetLanguage(data.Language);
+        this.lastBaseText = data.Text;
+    }
+
+    this.apiService.SessionObservable().subscribe({
+      next: (data: EditResponse) => {
+        this.handleSessionUpdate(data);
       },
       error: err => {
         console.log("Failed to update session:", err);
@@ -255,7 +278,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
       noSyntaxValidation: !this.hintsEnabled,
     });
 
-    this._editor!.updateOptions({
+    let options: monaco.editor.IEditorOptions & monaco.editor.IGlobalEditorOptions = {
       cursorBlinking: 'smooth',
       fontSize: this.fontSize,
       showUnused: this.hintsEnabled,
@@ -275,7 +298,19 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
       snippetSuggestions: this.hintsEnabled ? 'inline' : 'none',
       showDeprecated: this.hintsEnabled,
       suggestOnTriggerCharacters: this.hintsEnabled,
-    });
+    };
+
+    if (this.mode !== Mode.Code) {
+      options.minimap = {
+        enabled: false,
+      };
+    }
+
+    if (this.mode === Mode.Stdout || this.mode === Mode.Stderr) {
+      options.readOnly = true;
+    }
+
+    this._editor!.updateOptions(options);
   }
 
   positionToNumber(p: monaco.Position | null): number {
@@ -486,4 +521,9 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
   FormatText() {
     this._editor.getAction('editor.action.formatDocument').run();
   }
+
+  OnResize() {
+    this._editor.layout();
+  }
+
 }

@@ -256,6 +256,7 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   runClicked() {
+    this.outputEditor()!.SetOutputText('', '');
     this.isRunning = true;
     this.apiService.ExecuteCode(this.codeEditor().Text(), this.inputEditor()!.Text() + '\n').then(
       (resp: ExecutionResponse) => {

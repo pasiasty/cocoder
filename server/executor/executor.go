@@ -21,33 +21,65 @@ func New() *Executor {
 	return &Executor{}
 }
 
-func initialCommand(ctx context.Context, language, filename string) (*exec.Cmd, error) {
+func runFileContent(language string) (string, error) {
 	switch language {
 	case "python":
-		return exec.CommandContext(ctx, "python3", filename), nil
+		return "#!/bin/bash\n\npython3 /mnt/code.txt", nil
 	}
 
-	return nil, fmt.Errorf("language: %s is not supported", language)
+	return "", fmt.Errorf("language: %s is not supported", language)
+}
+
+func postprocessStdout(s string) string {
+	return strings.TrimSpace(s)
+}
+
+func postprocessStderr(s string) string {
+	s = strings.Replace(s, "WARNING: Your kernel does not support swap limit capabilities or the cgroup is not mounted. Memory limited without swap.", "", 1)
+	return postprocessStdout(s)
 }
 
 func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, language, code, stdin string) (*common.ExecutionResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	f, err := ioutil.TempFile("", string(userID))
+	d, err := ioutil.TempDir("", "")
 	if err != nil {
 		return nil, err
 	}
-	defer os.Remove(f.Name())
+	defer os.RemoveAll(d)
 
-	if _, err := f.WriteString(code); err != nil {
-		return nil, err
-	}
-
-	cmd, err := initialCommand(ctx, language, f.Name())
+	rfc, err := runFileContent(language)
 	if err != nil {
 		return nil, err
 	}
+
+	runFile, err := os.Create(fmt.Sprintf("%s/run.sh", d))
+	if err != nil {
+		return nil, err
+	}
+	if _, err := runFile.WriteString(rfc); err != nil {
+		return nil, err
+	}
+	os.Chmod(runFile.Name(), 0111)
+
+	if err := runFile.Close(); err != nil {
+		return nil, err
+	}
+
+	codeFile, err := os.Create(fmt.Sprintf("%s/code.txt", d))
+	if err != nil {
+		return nil, err
+	}
+	if _, err := codeFile.WriteString(code); err != nil {
+		return nil, err
+	}
+	if err := codeFile.Close(); err != nil {
+		return nil, err
+	}
+
+	cmd := exec.CommandContext(ctx, "docker", "run", "-v", fmt.Sprintf("%v:/mnt", d), "--rm", "-i", "--memory", "128MB", "--memory-swap", "0", "--cpus", "0.5", "--read-only", "--network", "none", "python", `/mnt/run.sh`)
+
 	cmd.Stdin = strings.NewReader(stdin)
 	stdoutBuf := &bytes.Buffer{}
 	stderrBuf := &bytes.Buffer{}
@@ -63,13 +95,13 @@ func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, lan
 		}
 		return &common.ExecutionResponse{
 			ErrorMessage: fmt.Sprintf("failed (%v)", err),
-			Stdout:       stdoutBuf.String(),
-			Stderr:       stderrBuf.String(),
+			Stdout:       postprocessStdout(stdoutBuf.String()),
+			Stderr:       postprocessStderr(stderrBuf.String()),
 		}, nil
 	}
 
 	return &common.ExecutionResponse{
-		Stdout: stdoutBuf.String(),
-		Stderr: stderrBuf.String(),
+		Stdout: postprocessStdout(stdoutBuf.String()),
+		Stderr: postprocessStderr(stderrBuf.String()),
 	}, nil
 }

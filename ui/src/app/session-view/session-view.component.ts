@@ -272,5 +272,11 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
       },
     )
   }
+
+  onKeyPressed(ev: KeyboardEvent) {
+    if (ev.altKey && ev.shiftKey && ev.key == 'X' && !this.isRunning && this.showBottomBar) {
+      this.runClicked();
+    }
+  }
 }
 

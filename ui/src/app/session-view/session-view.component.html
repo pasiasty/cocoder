@@ -1,7 +1,7 @@
 <app-page-not-found *ngIf="sessionInvalid; else normalContent"></app-page-not-found>
 <ng-template #normalContent>
   <div class="container content-container" (window:mouseup)="stopDragging()" (mousemove)="keepDragging($event)"
-    (window:resize)="onResize()" #contentContainer>
+    (window:resize)="onResize()" (window:keydown)="onKeyPressed($event)" #contentContainer>
     <div class="row" #topBarRow>
       <div class="column" style="width: 100%">
         <app-top-bar>
@@ -85,7 +85,7 @@
                   </div>
                   <div class="empty-space"></div>
                   <button *ngIf="!isRunning else runningStateButton" type="button" class="btn btn-primary"
-                    style="width: 60px;" (click)="runClicked()">Run</button>
+                    style="width: 60px;" (click)="runClicked()" title="Executes code (ALT+SHIFT+X)">Run</button>
                   <ng-template #runningStateButton>
                     <button class="btn btn-primary" type="button" style="width: 60px;" disabled>
                       <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>

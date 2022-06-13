@@ -32,6 +32,9 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
 
   hintsEnabled = true;
 
+  stdoutHighlighted = false;
+  stderrHighlighted = false;
+
   @ViewChildren(MonacoEditorComponent)
   monacoEditorComponents!: QueryList<MonacoEditorComponent>;
 
@@ -244,6 +247,7 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   stdoutClicked() {
     this.stdoutActive = true;
     this.stderrActive = false;
+    this.stdoutHighlighted = false;
 
     this.outputEditorMode = Mode.Stdout;
   }
@@ -251,6 +255,7 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   stderrClicked() {
     this.stdoutActive = false;
     this.stderrActive = true;
+    this.stderrHighlighted = false;
 
     this.outputEditorMode = Mode.Stderr;
   }
@@ -270,6 +275,11 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
         this.outputEditor()!.SetOutputText(stdout, stderr);
         this.apiService.UpdateOutputText(stdout, stderr);
         this.isRunning = false;
+
+        if (!this.stdoutActive && stdout.length > 0)
+          this.stdoutHighlighted = true;
+        if (!this.stderrActive && stderr.length > 0)
+          this.stderrHighlighted = true;
       },
     )
   }

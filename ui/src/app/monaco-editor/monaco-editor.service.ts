@@ -62,6 +62,7 @@ export class MonacoEditorService {
 
     // create the web socket
     this.apiService.openLSPWebsocket('python', this.languageOnOpenHandler('Python', ['python']));
+    this.apiService.openLSPWebsocket('cpp', this.languageOnOpenHandler('C++', ['cpp']));
   }
 
   languageOnOpenHandler(name: string, documentSelector: string[]): ((ws: WebSocket) => any) {

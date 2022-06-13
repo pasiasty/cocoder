@@ -44,6 +44,10 @@ func initialCommand(language string) (*exec.Cmd, error) {
 				"-v",
 			},
 		}, nil
+	case "cpp":
+		return &exec.Cmd{
+			Path: "/usr/bin/clangd",
+		}, nil
 	}
 
 	return nil, fmt.Errorf("language: %s is not supported", language)

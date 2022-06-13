@@ -13,6 +13,13 @@ const languagesSupportingExecution = new Set<string>([
   'python',
 ]);
 
+const languagesSupportingFormatting = new Set<string>([
+  'python',
+  'javascript',
+  'typescript',
+  'html',
+]);
+
 type DecorationDescription = {
   UserID: string
   Index: number
@@ -190,14 +197,9 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
   }
 
   emitLanguageUpdate(language: string) {
-    let supportsFormatting = false;
-    this._editor.getSupportedActions().forEach((action: monaco.editor.IEditorAction) => {
-      if (action.id === 'editor.action.formatDocument')
-        supportsFormatting = true;
-    });
     this.languageUpdated.emit({
       language: language,
-      supportsFormatting: supportsFormatting,
+      supportsFormatting: languagesSupportingFormatting.has(language),
       supportsExecution: languagesSupportingExecution.has(language),
     });
   }

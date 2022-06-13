@@ -4,7 +4,6 @@
   font-family: "Courier New", Courier, monospace;
   font-size: 1.5em;
   text-align: center;
-  margin-left: 5px;
 }
 
 :host-context(.bootstrap) {
@@ -21,7 +20,8 @@
   width: 100%;
   min-height: 56px;
   align-items: center;
-  padding: 7px;
+  padding-top: 7px;
+  padding-bottom: 7px;
 }
 
 .empty-space {

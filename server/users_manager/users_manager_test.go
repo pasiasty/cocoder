@@ -279,8 +279,10 @@ func TestUsersManagerPeriodicResponse(t *testing.T) {
 	umTrigger <- time.Now()
 
 	assertChannelGotMessage(t, ts.gotMessage, &common.UpdateSessionResponse{
-		NewText:  "some text",
-		Language: "plaintext",
+		NewText:          "some text",
+		Language:         "plaintext",
+		UpdateInputText:  true,
+		UpdateOutputText: true,
 	})
 }
 

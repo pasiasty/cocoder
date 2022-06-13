@@ -37,16 +37,25 @@ export type EditResponse = {
   NewText?: string
   Language?: string
   Users?: User[]
+
+  UpdateInputText?: boolean
+  InputText?: string
+
+  UpdateOutputText?: boolean
+  Stdout?: string
+  Stderr?: string
 }
 
 export type GetSessionResponse = {
   Text: string
   Language: string
+  InputText: string
+  Stdout: string
+  Stderr: string
 }
 
 export type ExecutionResponse = {
-  Message: string
-  Failed: boolean
+  ErrorMessage: string
   Stdout: string
   Stderr: string
 }
@@ -195,6 +204,30 @@ export class ApiService implements OnDestroy {
       Language: language,
       Users: otherUsers,
     }
+
+    this.wsSubject?.next(req);
+  }
+
+  UpdateInputText(text: string) {
+    this.lastUpdateTimestamp = Date.now();
+    const req: EditRequest = {
+      Ping: false,
+      UserID: this.userID,
+      UpdateInputText: true,
+      InputText: text,
+    };
+
+    this.wsSubject?.next(req);
+  }
+
+  UpdateOutputText(stdout: string, stderr: string) {
+    const req: EditRequest = {
+      Ping: false,
+      UserID: this.userID,
+      UpdateOutputText: true,
+      Stdout: stdout,
+      Stderr: stderr,
+    };
 
     this.wsSubject?.next(req);
   }

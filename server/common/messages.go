@@ -23,12 +23,26 @@ type UpdateSessionRequest struct {
 	UserID         string  `form:"UserID" diff:"UserID" json:"UserID"`
 	Language       string  `form:"Language" diff:"Language" json:"Language"`
 	Users          []*User `json:"Users" diff:"users"`
+
+	UpdateInputText bool   `form:"UpdateInputText" diff:"UpdateInputText" json:"UpdateInputText"`
+	InputText       string `form:"InputText" diff:"InputText" json:"InputText"`
+
+	UpdateOutputText bool   `form:"UpdateOutputText" diff:"UpdateOutputText" json:"UpdateOutputText"`
+	Stdout           string `form:"Stdout" diff:"Stdout" json:"Stdout"`
+	Stderr           string `form:"Stderr" diff:"Stderr" json:"Stderr"`
 }
 
 type UpdateSessionResponse struct {
 	Ping     bool
 	NewText  string `json:"NewText" diff:"new_text"`
 	Language string `json:"Language" diff:"language"`
+
+	UpdateInputText bool   `form:"UpdateInputText" diff:"UpdateInputText" json:"UpdateInputText"`
+	InputText       string `form:"InputText" diff:"InputText" json:"InputText"`
+
+	UpdateOutputText bool   `form:"UpdateOutputText" diff:"UpdateOutputText" json:"UpdateOutputText"`
+	Stdout           string `form:"Stdout" diff:"Stdout" json:"Stdout"`
+	Stderr           string `form:"Stderr" diff:"Stderr" json:"Stderr"`
 
 	Users []*User `json:"Users" diff:"users"`
 }
@@ -43,8 +57,7 @@ type GetSessionResponse struct {
 }
 
 type ExecutionResponse struct {
-	Message string `json:"Message"`
-	Failed  bool   `json:"Failed"`
-	Stdout  string `json:"Stdout"`
-	Stderr  string `json:"Stderr"`
+	ErrorMessage string `json:"ErrorMessage"`
+	Stdout       string `json:"Stdout"`
+	Stderr       string `json:"Stderr"`
 }

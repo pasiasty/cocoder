@@ -31,7 +31,7 @@ func initialCommand(ctx context.Context, language, filename string) (*exec.Cmd, 
 }
 
 func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, language, code, stdin string) (*common.ExecutionResponse, error) {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	f, err := ioutil.TempFile("", string(userID))
@@ -58,21 +58,18 @@ func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, lan
 	if err := cmd.Run(); err != nil {
 		if ctx.Err() != nil {
 			return &common.ExecutionResponse{
-				Message: "Execution timed out",
-				Failed:  true,
+				ErrorMessage: "Execution timed out",
 			}, nil
 		}
 		return &common.ExecutionResponse{
-			Message: fmt.Sprintf("failed (%v)", err),
-			Failed:  true,
-			Stdout:  stdoutBuf.String(),
-			Stderr:  stderrBuf.String(),
+			ErrorMessage: fmt.Sprintf("failed (%v)", err),
+			Stdout:       stdoutBuf.String(),
+			Stderr:       stderrBuf.String(),
 		}, nil
 	}
 
 	return &common.ExecutionResponse{
-		Message: "success",
-		Stdout:  stdoutBuf.String(),
-		Stderr:  stderrBuf.String(),
+		Stdout: stdoutBuf.String(),
+		Stderr: stderrBuf.String(),
 	}, nil
 }

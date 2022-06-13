@@ -84,8 +84,13 @@
                     </label>
                   </div>
                   <div class="empty-space"></div>
-                  <button type="button" class="btn btn-primary" style="width: fit-content; height: fit-content;"
-                    (click)="runClicked()">Run</button>
+                  <button *ngIf="!isRunning else runningStateButton" type="button" class="btn btn-primary"
+                    style="width: 60px;" (click)="runClicked()">Run</button>
+                  <ng-template #runningStateButton>
+                    <button class="btn btn-primary" type="button" style="width: 60px;" disabled>
+                      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    </button>
+                  </ng-template>
                 </div>
               </div>
             </div>

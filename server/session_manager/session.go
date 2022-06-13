@@ -66,9 +66,12 @@ func sequencesToInsertByPosition(m map[string]*common.User) []SpecialSequence {
 type Session struct {
 	mux sync.Mutex
 
-	Text     string    `json:"Text" diff:"Text"`
-	Language string    `json:"Language" diff:"Language"`
-	LastEdit time.Time `json:"LastEdit" diff:"LastEdit"`
+	Text      string    `json:"Text" diff:"Text"`
+	Language  string    `json:"Language" diff:"Language"`
+	InputText string    `json:"InputText" diff:"InputText"`
+	Stdout    string    `json:"Stdout" diff:"Stdout"`
+	Stderr    string    `json:"Stderr" diff:"Stderr"`
+	LastEdit  time.Time `json:"LastEdit" diff:"LastEdit"`
 
 	Users map[string]*common.User `json:"Users" diff:"Users"`
 }
@@ -123,10 +126,24 @@ func (s *Session) prepareResponse(req *common.UpdateSessionRequest) *common.Upda
 		s.Language = req.Language
 	}
 
+	if req.UpdateInputText {
+		s.InputText = req.InputText
+	}
+
+	if req.UpdateOutputText {
+		s.Stdout = req.Stdout
+		s.Stderr = req.Stderr
+	}
+
 	return &common.UpdateSessionResponse{
-		NewText:  s.Text,
-		Language: s.Language,
-		Users:    users,
+		NewText:          s.Text,
+		Language:         s.Language,
+		Users:            users,
+		UpdateInputText:  req.UpdateInputText,
+		InputText:        req.InputText,
+		UpdateOutputText: req.UpdateOutputText,
+		Stdout:           req.Stdout,
+		Stderr:           req.Stderr,
 	}
 }
 

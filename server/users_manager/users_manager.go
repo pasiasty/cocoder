@@ -320,9 +320,14 @@ func (m *UsersManager) triggerResponsesAndSessionCleanup(ctx context.Context) {
 
 			ms.toUsersHandler(ctx, &ToUsersItem{
 				resp: &common.UpdateSessionResponse{
-					NewText:  s.Text,
-					Language: s.Language,
-					Users:    users,
+					NewText:          s.Text,
+					Language:         s.Language,
+					UpdateInputText:  true,
+					InputText:        s.InputText,
+					UpdateOutputText: true,
+					Stdout:           s.Stdout,
+					Stderr:           s.Stderr,
+					Users:            users,
 				},
 			})
 		}

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { first, mergeMap, sampleTime } from 'rxjs/operators';
 import { MonacoEditorService } from './monaco-editor.service';
 import * as monaco from 'monaco-editor';
@@ -52,6 +52,9 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
 
   dmp: DiffMatchPatch;
 
+  stdout: string = '';
+  stderr: string = '';
+
   public _editor!: monaco.editor.IStandaloneCodeEditor;
   @ViewChild('editorContainer', { static: true }) _editorContainer!: ElementRef;
 
@@ -104,9 +107,13 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
     });
   }
 
-  ngOnChanges(): void {
+  ngOnChanges(changes: SimpleChanges): void {
     if (this._editor !== undefined)
       this.updateOptions();
+
+    if (changes.mode !== undefined) {
+      this.updateOutputText();
+    }
   }
 
   ngAfterViewInit(): void {
@@ -167,10 +174,18 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
   }
 
   updateSession() {
-    if (this.mode == Mode.Code) {
-      const newText = this.Text();
-      this.apiService.UpdateSession(this.lastBaseText, newText, this.Position(), this.OtherUsers(), this.Selection());
-      this.lastBaseText = newText;
+    switch (this.mode) {
+      case Mode.Code:
+        const newText = this.Text();
+        this.apiService.UpdateSession(this.lastBaseText, newText, this.Position(), this.OtherUsers(), this.Selection());
+        this.lastBaseText = newText;
+        break;
+      case Mode.Stdin:
+        if (this.lastBaseText !== this.Text()) {
+          this.lastBaseText = this.Text();
+          this.apiService.UpdateInputText(this.Text());
+        }
+        break;
     }
   }
 
@@ -203,6 +218,21 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
         this.lastBaseText = data.NewText!;
 
         this.UpdateCursors(data.Users!);
+        break;
+      case Mode.Stdin:
+        if (data.UpdateInputText) {
+          this.lastBaseText = data.InputText!;
+          this.SetText(data.InputText!);
+        }
+        break;
+      case Mode.Stdout:
+      case Mode.Stderr:
+        if (data.UpdateOutputText) {
+          this.stdout = data.Stdout!.replace('\r\n', '\n');
+          this.stderr = data.Stderr!.replace('\r\n', '\n');
+          this.updateOutputText();
+        }
+        break;
     }
   }
 
@@ -217,6 +247,17 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
         this.SetText(data.Text);
         this.SetLanguage(data.Language);
         this.lastBaseText = data.Text;
+        break;
+      case Mode.Stdin:
+        this.SetText(data.InputText);
+        this.lastBaseText = data.InputText;
+        break;
+      case Mode.Stdout:
+      case Mode.Stderr:
+        this.stdout = data.Stdout.replace('\r\n', '\n');
+        this.stderr = data.Stderr.replace('\r\n', '\n');
+        this.updateOutputText();
+        break;
     }
 
     this.apiService.SessionObservable().subscribe({
@@ -532,4 +573,23 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
       this._editor.layout();
   }
 
+  SetOutputText(stdout: string, stderr: string) {
+    this.stdout = stdout.replace('\r\n', '\n');
+    this.stderr = stderr.replace('\r\n', '\n');
+
+    this.updateOutputText();
+  }
+
+  private updateOutputText() {
+    if (this._editor === undefined)
+      return;
+    switch (this.mode) {
+      case Mode.Stdout:
+        this._editor.setValue(this.stdout);
+        break;
+      case Mode.Stderr:
+        this._editor.setValue(this.stderr);
+        break;
+    }
+  }
 }

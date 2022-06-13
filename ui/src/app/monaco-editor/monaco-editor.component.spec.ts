@@ -153,7 +153,7 @@ def something(): # local selection
     sessionObservable = new Observable<EditResponse>();
 
     apiServiceSpy.GetSession.and.returnValue(new Promise<GetSessionResponse>((resolve, reject) => {
-      resolve({ Language: "python", Text: "aaa" });
+      resolve({ Language: "python", Text: "aaa", InputText: "", Stdout: "", Stderr: "" });
     }));
     apiServiceSpy.SessionObservable.and.returnValue(sessionObservable);
     apiServiceSpy.GetUserID.and.returnValue('user-id');

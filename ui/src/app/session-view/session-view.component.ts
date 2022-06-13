@@ -2,7 +2,7 @@ import { AfterViewInit, Component, ElementRef, OnInit, QueryList, Renderer2, Vie
 import { ActivatedRoute } from '@angular/router';
 
 import { Title } from '@angular/platform-browser';
-import { ApiService } from 'src/app/services/api.service';
+import { ApiService, ExecutionResponse } from 'src/app/services/api.service';
 
 import * as monaco from 'monaco-editor';
 import { GoogleAnalyticsService } from 'src/app/services/google-analytics.service';
@@ -22,6 +22,7 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
 
   EditorMode = Mode;
 
+  isRunning = false;
   sessionInvalid = false;
   showBottomBar = false;
   selectedLanguage!: string;
@@ -96,14 +97,17 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   outputEditor(): MonacoEditorComponent | undefined {
-    return this.monacoEditorComponents.find(c => c.mode == Mode.Stdout);
+    return this.monacoEditorComponents.find(c => c.mode == Mode.Stdout || c.mode == Mode.Stderr);
   }
 
-  onResize() {
+  initializeHeights() {
     this.fullHeight = this.contentContainer.nativeElement.offsetHeight - this.topBarRow.nativeElement.offsetHeight - 30;
     this.bottomBarHeight = this.showBottomBar ? this.bottomBarMinHeight : 0;
     this.editorHeight = this.fullHeight - this.bottomBarHeight;
+  }
 
+  onResize() {
+    this.initializeHeights();
     this.applyCustomHeights();
   }
 
@@ -179,9 +183,12 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   updateLanguage(ev: LanguageUpdate) {
     this.selectedLanguage = ev.language;
     this.supportsFormatting = ev.supportsFormatting;
-    this.showBottomBar = ev.supportsExecution;
+    const newShowBottomBar = ev.supportsExecution;
 
-    this.onResize();
+    if (newShowBottomBar !== this.showBottomBar) {
+      this.showBottomBar = newShowBottomBar;
+      this.onResize();
+    }
   }
 
   startDragging(ev: MouseEvent) {
@@ -237,15 +244,33 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   stdoutClicked() {
     this.stdoutActive = true;
     this.stderrActive = false;
+
+    this.outputEditorMode = Mode.Stdout;
   }
 
   stderrClicked() {
     this.stdoutActive = false;
     this.stderrActive = true;
+
+    this.outputEditorMode = Mode.Stderr;
   }
 
   runClicked() {
-    this.outputEditor()!.SetText('test output');
+    this.isRunning = true;
+    this.apiService.ExecuteCode(this.codeEditor().Text(), this.inputEditor()!.Text() + '\n').then(
+      (resp: ExecutionResponse) => {
+        let stdout = resp.Stdout;
+        let stderr = resp.Stderr;
+        if (resp.ErrorMessage) {
+          stdout = stdout + '\n========================\n\n' + resp.ErrorMessage;
+          stderr = stderr + '\n========================\n\n' + resp.ErrorMessage;
+        }
+
+        this.outputEditor()!.SetOutputText(stdout, stderr);
+        this.apiService.UpdateOutputText(stdout, stderr);
+        this.isRunning = false;
+      },
+    )
   }
 }
 

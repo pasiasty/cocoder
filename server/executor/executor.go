@@ -24,7 +24,7 @@ func New() *Executor {
 func initialCommand(ctx context.Context, language, filename string) (*exec.Cmd, error) {
 	switch language {
 	case "python":
-		return exec.CommandContext(ctx, "python", filename), nil
+		return exec.CommandContext(ctx, "python3", filename), nil
 	}
 
 	return nil, fmt.Errorf("language: %s is not supported", language)

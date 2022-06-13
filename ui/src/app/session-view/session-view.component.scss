@@ -68,9 +68,15 @@
 .bottom-editor-container {
   height: 100%;
   width: 50%;
-  padding-left: 5px;
-  padding-right: 5px;
   padding-bottom: 90px;
+}
+
+.bottom-editor-container-left {
+  padding-right: 15px;
+}
+
+.bottom-editor-container-right {
+  padding-left: 15px;
 }
 
 .bottom-editor {
@@ -84,6 +90,7 @@
 .right-column-container {
   display: flex;
   flex-direction: row;
+  padding-left: 15px;
 }
 
 .empty-space {

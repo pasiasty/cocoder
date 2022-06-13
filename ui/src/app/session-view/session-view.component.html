@@ -74,17 +74,17 @@
                 </label>
               </div>
               <div class="empty-space"></div>
-              <button type="button" class="btn btn-primary"
-                style="width: fit-content; height: fit-content;">Run</button>
+              <button type="button" class="btn btn-primary" style="width: fit-content; height: fit-content;"
+                (click)="runClicked()">Run</button>
             </div>
           </div>
         </div>
         <div class="row" style="height: 100%; margin: 0px;" [hidden]="bottomBarCollapsed">
-          <div class="column" class="bottom-editor-container">
+          <div class="column" class="bottom-editor-container bottom-editor-container-left">
             <app-monaco-editor class="bottom-editor" [hintsEnabled]="false" [mode]="EditorMode.Stdin">
             </app-monaco-editor>
           </div>
-          <div class="column" class="bottom-editor-container">
+          <div class="column" class="bottom-editor-container bottom-editor-container-right">
             <app-monaco-editor class="bottom-editor" [hintsEnabled]="false" [mode]="outputEditorMode">
             </app-monaco-editor>
           </div>

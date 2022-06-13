@@ -213,5 +213,9 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
     this.stdoutActive = false;
     this.stderrActive = true;
   }
+
+  runClicked() {
+    this.outputEditor.SetText('test output');
+  }
 }
 

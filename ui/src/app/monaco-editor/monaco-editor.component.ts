@@ -8,7 +8,10 @@ import { from, Subject } from 'rxjs';
 import { FileSaverService } from 'ngx-filesaver';
 import { Diff, DiffMatchPatch, DiffOperation } from 'diff-match-patch-typescript';
 import { Selection } from 'src/app/common';
-import { CodeAction } from 'vscode';
+
+const languagesSupportingExecution = new Set<string>([
+  'python',
+]);
 
 type DecorationDescription = {
   UserID: string
@@ -19,6 +22,7 @@ type DecorationDescription = {
 export interface LanguageUpdate {
   language: string
   supportsFormatting: boolean
+  supportsExecution: boolean
 }
 
 export enum Mode {
@@ -122,7 +126,6 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
       {
         theme: this.themeService.editorThemeName(),
         language: this.language,
-        automaticLayout: true,
       },
     );
     this.updateOptions();
@@ -148,6 +151,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
       },
     });
 
+    this.OnResize();
     this.editorCreated.emit();
   }
 
@@ -179,6 +183,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
     this.languageUpdated.emit({
       language: language,
       supportsFormatting: supportsFormatting,
+      supportsExecution: languagesSupportingExecution.has(language),
     });
   }
 
@@ -523,7 +528,8 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
   }
 
   OnResize() {
-    this._editor.layout();
+    if (this._editor !== undefined)
+      this._editor.layout();
   }
 
 }

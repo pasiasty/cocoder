@@ -17,9 +17,13 @@ import { LanguageUpdate, MonacoEditorComponent, Mode } from 'src/app/monaco-edit
 })
 export class SessionViewComponent implements OnInit, AfterViewInit {
 
+  readonly codeEditorMinHeight = 200;
+  readonly bottomBarMinHeight = 300;
+
   EditorMode = Mode;
 
   sessionInvalid = false;
+  showBottomBar = false;
   selectedLanguage!: string;
   supportsFormatting: boolean;
 
@@ -30,15 +34,17 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   @ViewChildren(MonacoEditorComponent)
   monacoEditorComponents!: QueryList<MonacoEditorComponent>;
 
-  codeEditor!: MonacoEditorComponent;
-  inputEditor!: MonacoEditorComponent;
-  outputEditor!: MonacoEditorComponent;
+  @ViewChild('contentContainer')
+  contentContainer!: ElementRef<HTMLDivElement>;
 
-  @ViewChild('bottomBar')
-  bottomBar!: ElementRef<HTMLDivElement>;
+  @ViewChild('topBarRow')
+  topBarRow!: ElementRef<HTMLDivElement>;
 
-  @ViewChild('editorContainer')
-  editorContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('editorRow')
+  editorRow!: ElementRef<HTMLDivElement>;
+
+  @ViewChild('bottomBarRow')
+  bottomBarRow!: ElementRef<HTMLDivElement>;
 
   lastClientY: number = 0;
   isDragging: boolean = false;
@@ -78,27 +84,48 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.monacoEditorComponents.toArray().forEach(c => {
-      switch (c.mode) {
-        case Mode.Code:
-          this.codeEditor = c;
-          break;
-        case Mode.Stdin:
-          this.inputEditor = c;
-          break;
-        case Mode.Stdout:
-        case Mode.Stderr:
-          this.outputEditor = c;
-          break;
-      }
-    });
+    this.onResize();
+  }
 
-    this.editorHeight = this.editorContainer.nativeElement.offsetHeight;
-    this.bottomBarHeight = this.bottomBar.nativeElement.offsetHeight;
-    this.fullHeight = this.editorHeight + this.bottomBarHeight;
+  codeEditor(): MonacoEditorComponent {
+    return this.monacoEditorComponents.find(c => c.mode == Mode.Code)!;
+  }
 
-    this.renderer.setStyle(this.bottomBar.nativeElement, 'height', `${this.bottomBar}px`);
-    this.renderer.setStyle(this.editorContainer.nativeElement, 'height', `${this.editorHeight}px`);
+  inputEditor(): MonacoEditorComponent | undefined {
+    return this.monacoEditorComponents.find(c => c.mode == Mode.Stdin);
+  }
+
+  outputEditor(): MonacoEditorComponent | undefined {
+    return this.monacoEditorComponents.find(c => c.mode == Mode.Stdout);
+  }
+
+  onResize() {
+    this.fullHeight = this.contentContainer.nativeElement.offsetHeight - this.topBarRow.nativeElement.offsetHeight - 30;
+    this.bottomBarHeight = this.showBottomBar ? this.bottomBarMinHeight : 0;
+    this.editorHeight = this.fullHeight - this.bottomBarHeight;
+
+    this.applyCustomHeights();
+  }
+
+  applyCustomHeights() {
+    this.renderer.setStyle(this.bottomBarRow.nativeElement, 'height', `${this.bottomBarHeight}px`);
+    this.renderer.setStyle(this.editorRow.nativeElement, 'height', `${this.editorHeight}px`);
+
+    this.refreshEditors();
+  }
+
+  refreshEditors() {
+    this.codeEditor().OnResize();
+    this.inputEditor()?.OnResize();
+    this.outputEditor()?.OnResize();
+
+    // There's a delay between resizing the parent from the renderer and monaco-editor picking this change up.
+    // This 10ms sleep fixes the rendering of the parent.
+    setTimeout(() => {
+      this.codeEditor().OnResize();
+      this.inputEditor()?.OnResize();
+      this.outputEditor()?.OnResize();
+    }, 10);
   }
 
   otherLanguages(): string[] {
@@ -108,12 +135,12 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   onLanguageChange(val: string) {
     this.selectedLanguage = val;
     this.apiService.updateLanguage(val);
-    this.codeEditor.SetLanguage(val);
+    this.codeEditor().SetLanguage(val);
     this.googleAnalyticsService.event('language_change', 'engagement', 'top_bar', val);
   }
 
   downloadButtonClicked(): void {
-    this.codeEditor.saveContent();
+    this.codeEditor().saveContent();
     this.googleAnalyticsService.event('download_content', 'engagement', 'top_bar');
   }
 
@@ -124,16 +151,16 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   zoomInButtonClicked(): void {
-    this.codeEditor.updateFontSize(1);
-    this.inputEditor.updateFontSize(1);
-    this.outputEditor.updateFontSize(1);
+    this.codeEditor().updateFontSize(1);
+    this.inputEditor()?.updateFontSize(1);
+    this.outputEditor()?.updateFontSize(1);
     this.googleAnalyticsService.event('zoom', 'engagement', 'top_bar', 'increase');
   }
 
   zoomOutButtonClicked(): void {
-    this.codeEditor.updateFontSize(-1);
-    this.inputEditor.updateFontSize(-1);
-    this.outputEditor.updateFontSize(-1);
+    this.codeEditor().updateFontSize(-1);
+    this.inputEditor()?.updateFontSize(-1);
+    this.outputEditor()?.updateFontSize(-1);
     this.googleAnalyticsService.event('zoom', 'engagement', 'top_bar', 'decrease');
   }
 
@@ -152,6 +179,9 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   updateLanguage(ev: LanguageUpdate) {
     this.selectedLanguage = ev.language;
     this.supportsFormatting = ev.supportsFormatting;
+    this.showBottomBar = ev.supportsExecution;
+
+    this.onResize();
   }
 
   startDragging(ev: MouseEvent) {
@@ -173,32 +203,32 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
       this.bottomBarHeight += diff;
       this.editorHeight -= diff;
 
-      if (this.editorHeight < 200) {
-        this.editorHeight = 200;
+      if (this.editorHeight < this.codeEditorMinHeight) {
+        this.editorHeight = this.codeEditorMinHeight;
         this.bottomBarHeight = this.fullHeight - this.editorHeight;
       }
-      if (this.bottomBarHeight < 300) {
-        this.bottomBarHeight = 300;
+      if (this.bottomBarHeight < this.bottomBarMinHeight) {
+        this.bottomBarHeight = this.bottomBarMinHeight;
         this.editorHeight = this.fullHeight - this.bottomBarHeight;
       }
 
-      this.renderer.setStyle(this.editorContainer.nativeElement, 'height', `${this.editorHeight}px`);
-      this.renderer.setStyle(this.bottomBar.nativeElement, 'height', `${this.bottomBarHeight}px`);
+      this.applyCustomHeights();
 
-      this.inputEditor.OnResize();
-      this.outputEditor.OnResize();
+      this.inputEditor()!.OnResize();
+      this.outputEditor()!.OnResize();
     }
   }
 
   toggleCollapse() {
     if (this.bottomBarCollapsed) {
-      this.renderer.setStyle(this.bottomBar.nativeElement, 'height', `${this.bottomBarHeight}px`);
+      this.applyCustomHeights();
       this.resizeHandleCursor = 'ns-resize';
-      this.renderer.setStyle(this.editorContainer.nativeElement, 'height', `${this.editorHeight}px`);
     } else {
-      this.renderer.setStyle(this.bottomBar.nativeElement, 'height', `75px`);
+      this.renderer.setStyle(this.bottomBarRow.nativeElement, 'height', `75px`);
       this.resizeHandleCursor = '';
-      this.renderer.setStyle(this.editorContainer.nativeElement, 'height', `${this.fullHeight - 75}px`);
+      this.renderer.setStyle(this.editorRow.nativeElement, 'height', `${this.fullHeight - 75}px`);
+
+      this.refreshEditors();
     }
 
     this.bottomBarCollapsed = !this.bottomBarCollapsed;
@@ -215,7 +245,7 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   runClicked() {
-    this.outputEditor.SetText('test output');
+    this.outputEditor()!.SetText('test output');
   }
 }
 

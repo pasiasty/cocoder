@@ -1,92 +1,104 @@
 <app-page-not-found *ngIf="sessionInvalid; else normalContent"></app-page-not-found>
 <ng-template #normalContent>
-  <div class="content-container" (window:mouseup)="stopDragging()" (mousemove)="keepDragging($event)">
-    <app-top-bar>
-      <div ngbDropdown class="d-inline-block language-dropdown" title="Select language">
-        <button class="btn btn-outline-primary" ngbDropdownToggle>{{selectedLanguage}}</button>
-        <div ngbDropdownMenu class="dropdown-menu">
-          <button *ngFor="let language of languages" ngbDropdownItem
-            (click)="onLanguageChange(language)">{{language}}</button>
-          <hr class="solid">
-          <button *ngFor="let language of otherLanguages()" ngbDropdownItem
-            (click)="onLanguageChange(language)">{{language}}</button>
-        </div>
-      </div>
-      <div type="button" class="btn btn-default" (click)="downloadButtonClicked()" title="Download your code">
-        <i mdbRipple class="bi bi-file-earmark-arrow-down h5"></i>
-      </div>
-      <div type="button" class="btn btn-default" (click)="shareButtonClicked()" title="Share session with friends">
-        <i class="bi bi-share h5"></i>
-      </div>
-      <div type="button" class="btn btn-default" (click)="zoomInButtonClicked()" title="Zoom in">
-        <i class="bi bi-zoom-in h5"></i>
-      </div>
-      <div type="button" class="btn btn-default" (click)="zoomOutButtonClicked()" title="Zoom out">
-        <i class="bi bi-zoom-out h5"></i>
-      </div>
-      <div type="button" class="btn btn-default" (click)="notificationsButtonClicked()" [title]="notificationsTitle()">
-        <i *ngIf="hintsEnabled else notificationsDisabledVariant"
-          class="bi bi-chat-right-text-fill glowing-icon h5"></i>
-        <ng-template #notificationsDisabledVariant>
-          <i class="bi bi-chat-right-text h5"></i>
-        </ng-template>
-      </div>
-      <div *ngIf="supportsFormatting" type="button" class="btn btn-default" (click)="codeEditor.FormatText()"
-        title="Format text">
-        <i class="bi bi-file-text h5"></i>
-      </div>
-    </app-top-bar>
-    <div class="editor-container" style="height: 100%;" #editorContainer>
-      <app-monaco-editor (invalidSession)="sessionInvalid=true" (languageUpdated)="updateLanguage($event)"
-        [hintsEnabled]="hintsEnabled" style="height: 100%;" [mode]="EditorMode.Code">
-      </app-monaco-editor>
-    </div>
-    <div class="bottom-bar" #bottomBar>
-      <div class="resize-handle" (mousedown)="startDragging($event)" [style.cursor]="resizeHandleCursor">
-        <div class="handle-line"></div>
-      </div>
-      <div class="container" class="bottom-editors-container">
-        <div class="row" style="margin: 0px;">
-          <div class="column" style="width: 50%;">
-            <div *ngIf="bottomBarCollapsed else collapseButtonVariant" type="button" class="btn btn-default"
-              (click)="toggleCollapse()" title="Expand">
-              <i class="bi bi-caret-up h7"></i>
+  <div class="container content-container" (window:mouseup)="stopDragging()" (mousemove)="keepDragging($event)"
+    (window:resize)="onResize()" #contentContainer>
+    <div class="row" #topBarRow>
+      <div class="column">
+        <app-top-bar>
+          <div ngbDropdown class="d-inline-block language-dropdown" title="Select language">
+            <button class="btn btn-outline-primary" ngbDropdownToggle>{{selectedLanguage}}</button>
+            <div ngbDropdownMenu class="dropdown-menu">
+              <button *ngFor="let language of languages" ngbDropdownItem
+                (click)="onLanguageChange(language)">{{language}}</button>
+              <hr class="solid">
+              <button *ngFor="let language of otherLanguages()" ngbDropdownItem
+                (click)="onLanguageChange(language)">{{language}}</button>
             </div>
-            <ng-template #collapseButtonVariant>
-              <div type="button" class="btn btn-default" (click)="toggleCollapse()" title="Collapse">
-                <i class="bi bi-caret-down h6"></i>
-              </div>
+          </div>
+          <div type="button" class="btn btn-default" (click)="downloadButtonClicked()" title="Download your code">
+            <i mdbRipple class="bi bi-file-earmark-arrow-down h5"></i>
+          </div>
+          <div type="button" class="btn btn-default" (click)="shareButtonClicked()" title="Share session with friends">
+            <i class="bi bi-share h5"></i>
+          </div>
+          <div type="button" class="btn btn-default" (click)="zoomInButtonClicked()" title="Zoom in">
+            <i class="bi bi-zoom-in h5"></i>
+          </div>
+          <div type="button" class="btn btn-default" (click)="zoomOutButtonClicked()" title="Zoom out">
+            <i class="bi bi-zoom-out h5"></i>
+          </div>
+          <div type="button" class="btn btn-default" (click)="notificationsButtonClicked()"
+            [title]="notificationsTitle()">
+            <i *ngIf="hintsEnabled else notificationsDisabledVariant"
+              class="bi bi-chat-right-text-fill glowing-icon h5"></i>
+            <ng-template #notificationsDisabledVariant>
+              <i class="bi bi-chat-right-text h5"></i>
             </ng-template>
-            <div class="btn-group btn-group-toggle" data-toggle="buttons" [hidden]="bottomBarCollapsed">
-              <label class="btn btn-secondary active">
-                <input type="radio" autocomplete="off"> STDIN
-              </label>
-            </div>
           </div>
-          <div class="column" style="width: 50%;" [hidden]="bottomBarCollapsed">
-            <div class="right-column-container">
-              <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                <label class="btn btn-secondary" [class.active]="stdoutActive" (click)="stdoutClicked()">
-                  <input type="radio" name="options" id="option1" autocomplete="off"> STDOUT
-                </label>
-                <label class="btn btn-secondary" [class.active]="stderrActive" (click)="stderrClicked()">
-                  <input type="radio" name="options" id="option1" autocomplete="off"> STDERR
-                </label>
+          <div *ngIf="supportsFormatting" type="button" class="btn btn-default" (click)="codeEditor().FormatText()"
+            title="Format text">
+            <i class="bi bi-file-text h5"></i>
+          </div>
+        </app-top-bar>
+      </div>
+    </div>
+    <div class="row" #editorRow>
+      <div class="column" style="width: 100%; height: inherit;" [style.padding-bottom]="showBottomBar ? '0px' : '30px'">
+        <app-monaco-editor (invalidSession)="sessionInvalid=true" (languageUpdated)="updateLanguage($event)"
+          [hintsEnabled]="hintsEnabled" style="height: 100%;" [mode]="EditorMode.Code">
+        </app-monaco-editor>
+      </div>
+    </div>
+    <div class="row" #bottomBarRow>
+      <div class="column" class="bottom-bar">
+        <div *ngIf="showBottomBar" style="height: inherit;">
+          <div class="resize-handle" (mousedown)="startDragging($event)" [style.cursor]="resizeHandleCursor">
+            <div class="handle-line"></div>
+          </div>
+          <div class="container" class="bottom-editors-container">
+            <div class="row" style="margin: 0px;">
+              <div class="column" style="width: 50%;">
+                <div *ngIf="bottomBarCollapsed else collapseButtonVariant" type="button" class="btn btn-default"
+                  (click)="toggleCollapse()" title="Expand">
+                  <i class="bi bi-caret-up h7"></i>
+                </div>
+                <ng-template #collapseButtonVariant>
+                  <div type="button" class="btn btn-default" (click)="toggleCollapse()" title="Collapse">
+                    <i class="bi bi-caret-down h6"></i>
+                  </div>
+                </ng-template>
+                <div class="btn-group btn-group-toggle" data-toggle="buttons" [hidden]="bottomBarCollapsed">
+                  <label class="btn btn-secondary active">
+                    <input type="radio" autocomplete="off"> STDIN
+                  </label>
+                </div>
               </div>
-              <div class="empty-space"></div>
-              <button type="button" class="btn btn-primary" style="width: fit-content; height: fit-content;"
-                (click)="runClicked()">Run</button>
+              <div class="column" style="width: 50%;" [hidden]="bottomBarCollapsed">
+                <div class="right-column-container">
+                  <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-secondary" [class.active]="stdoutActive" (click)="stdoutClicked()">
+                      <input type="radio" name="options" id="option1" autocomplete="off"> STDOUT
+                    </label>
+                    <label class="btn btn-secondary" [class.active]="stderrActive" (click)="stderrClicked()">
+                      <input type="radio" name="options" id="option1" autocomplete="off"> STDERR
+                    </label>
+                  </div>
+                  <div class="empty-space"></div>
+                  <button type="button" class="btn btn-primary" style="width: fit-content; height: fit-content;"
+                    (click)="runClicked()">Run</button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <div class="row" style="height: 100%; margin: 0px;" [hidden]="bottomBarCollapsed">
-          <div class="column" class="bottom-editor-container bottom-editor-container-left">
-            <app-monaco-editor class="bottom-editor" [hintsEnabled]="false" [mode]="EditorMode.Stdin">
-            </app-monaco-editor>
-          </div>
-          <div class="column" class="bottom-editor-container bottom-editor-container-right">
-            <app-monaco-editor class="bottom-editor" [hintsEnabled]="false" [mode]="outputEditorMode">
-            </app-monaco-editor>
+            <div class="row" style="height: 100%; margin: 0px;" [hidden]="bottomBarCollapsed">
+              <div class="column" class="bottom-editor-container bottom-editor-container-left">
+                <app-monaco-editor class="bottom-editor" [hintsEnabled]="false" [mode]="EditorMode.Stdin">
+                </app-monaco-editor>
+              </div>
+              <div class="column" class="bottom-editor-container bottom-editor-container-right">
+                <app-monaco-editor class="bottom-editor" [hintsEnabled]="false" [mode]="outputEditorMode">
+                </app-monaco-editor>
+              </div>
+            </div>
           </div>
         </div>
       </div>

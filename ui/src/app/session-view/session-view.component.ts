@@ -2,13 +2,14 @@ import { AfterViewInit, Component, ElementRef, OnInit, QueryList, Renderer2, Vie
 import { ActivatedRoute } from '@angular/router';
 
 import { Title } from '@angular/platform-browser';
-import { ApiService, ExecutionResponse } from 'src/app/services/api.service';
+import { ApiService, EditResponse, ExecutionResponse } from 'src/app/services/api.service';
 
 import * as monaco from 'monaco-editor';
 import { GoogleAnalyticsService } from 'src/app/services/google-analytics.service';
 import { ClipboardService } from 'ngx-clipboard';
 import { ToastService } from 'src/app/services/toast.service';
 import { LanguageUpdate, MonacoEditorComponent, Mode } from 'src/app/monaco-editor/monaco-editor.component';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-session-view',
@@ -85,6 +86,17 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
       this.apiService.StartSession(params.session_id);
       this.titleService.setTitle('coCoder ' + params.session_id.substring(params.session_id.length - 6));
     })
+
+    this.apiService.SessionObservable().pipe(filter((resp: EditResponse) => { return !!resp.UpdateRunningState })).subscribe({
+      next: (resp: EditResponse) => {
+        this.isRunning = resp.Running!;
+
+        if (!this.stdoutActive && resp.Stdout!.length > 0)
+          this.stdoutHighlighted = true;
+        if (!this.stderrActive && resp.Stderr!.length > 0)
+          this.stderrHighlighted = true;
+      }
+    });
   }
 
   ngAfterViewInit(): void {
@@ -263,6 +275,8 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   runClicked() {
     this.outputEditor()!.SetOutputText('', '');
     this.isRunning = true;
+    this.apiService.TriggerExecution();
+
     this.apiService.ExecuteCode(this.codeEditor().Text(), this.inputEditor()!.Text() + '\n').then(
       (resp: ExecutionResponse) => {
         let stdout = resp.Stdout;
@@ -273,13 +287,8 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
         }
 
         this.outputEditor()!.SetOutputText(stdout, stderr);
-        this.apiService.UpdateOutputText(stdout, stderr);
+        this.apiService.CompleteExecution(stdout, stderr);
         this.isRunning = false;
-
-        if (!this.stdoutActive && stdout.length > 0)
-          this.stdoutHighlighted = true;
-        if (!this.stderrActive && stderr.length > 0)
-          this.stderrHighlighted = true;
       },
     )
   }

@@ -30,12 +30,16 @@ type UpdateSessionRequest struct {
 	UpdateOutputText bool   `form:"UpdateOutputText" diff:"UpdateOutputText" json:"UpdateOutputText"`
 	Stdout           string `form:"Stdout" diff:"Stdout" json:"Stdout"`
 	Stderr           string `form:"Stderr" diff:"Stderr" json:"Stderr"`
+
+	UpdateRunningState bool `form:"UpdateRunningState" diff:"UpdateRunningState" json:"UpdateRunningState"`
+	Running            bool `form:"Running" diff:"Running" json:"Running"`
 }
 
 type UpdateSessionResponse struct {
 	Ping     bool
-	NewText  string `json:"NewText" diff:"new_text"`
-	Language string `json:"Language" diff:"language"`
+	NewText  string  `json:"NewText" diff:"new_text"`
+	Language string  `json:"Language" diff:"language"`
+	Users    []*User `json:"Users" diff:"users"`
 
 	UpdateInputText bool   `form:"UpdateInputText" diff:"UpdateInputText" json:"UpdateInputText"`
 	InputText       string `form:"InputText" diff:"InputText" json:"InputText"`
@@ -44,7 +48,8 @@ type UpdateSessionResponse struct {
 	Stdout           string `form:"Stdout" diff:"Stdout" json:"Stdout"`
 	Stderr           string `form:"Stderr" diff:"Stderr" json:"Stderr"`
 
-	Users []*User `json:"Users" diff:"users"`
+	UpdateRunningState bool `form:"UpdateRunningState" diff:"UpdateRunningState" json:"UpdateRunningState"`
+	Running            bool `form:"Running" diff:"Running" json:"Running"`
 }
 
 type UpdateLanguageRequest struct {

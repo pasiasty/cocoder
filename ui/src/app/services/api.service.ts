@@ -44,6 +44,9 @@ export type EditResponse = {
   UpdateOutputText?: boolean
   Stdout?: string
   Stderr?: string
+
+  UpdateRunningState?: boolean
+  Running?: boolean
 }
 
 export type GetSessionResponse = {
@@ -220,13 +223,29 @@ export class ApiService implements OnDestroy {
     this.wsSubject?.next(req);
   }
 
-  UpdateOutputText(stdout: string, stderr: string) {
+  CompleteExecution(stdout: string, stderr: string) {
     const req: EditRequest = {
       Ping: false,
       UserID: this.userID,
       UpdateOutputText: true,
       Stdout: stdout,
       Stderr: stderr,
+      UpdateRunningState: true,
+      Running: false,
+    };
+
+    this.wsSubject?.next(req);
+  }
+
+  TriggerExecution() {
+    const req: EditRequest = {
+      Ping: false,
+      UserID: this.userID,
+      UpdateOutputText: true,
+      Stdout: '',
+      Stderr: '',
+      UpdateRunningState: true,
+      Running: true,
     };
 
     this.wsSubject?.next(req);

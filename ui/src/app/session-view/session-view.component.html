@@ -69,23 +69,19 @@
                     <i class="bi bi-caret-down h6"></i>
                   </div>
                 </ng-template>
-                <div class="btn-group btn-group-toggle" data-toggle="buttons" [hidden]="bottomBarCollapsed">
+                <div class="btn-group" [hidden]="bottomBarCollapsed">
                   <label class="btn btn-secondary active">
-                    <input type="radio" autocomplete="off"> STDIN
+                    STDIN
                   </label>
                 </div>
               </div>
               <div class="column" style="width: 50%;" [hidden]="bottomBarCollapsed">
                 <div class="right-column-container">
-                  <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                    <label class="btn btn-secondary" [class.active]="stdoutActive"
-                      [class.highlighted]="stdoutHighlighted" (click)="stdoutClicked()">
-                      <input type="radio" name="options" id="option1" autocomplete="off"> STDOUT
-                    </label>
-                    <label class="btn btn-secondary" [class.active]="stderrActive"
-                      [class.highlighted]="stderrHighlighted" (click)="stderrClicked()">
-                      <input type="radio" name="options" id="option1" autocomplete="off"> STDERR
-                    </label>
+                  <div class="btn-group">
+                    <app-highlightable-button [isActive]="stdoutActive" [isHighlighted]="stdoutHighlighted"
+                      (buttonClicked)="stdoutClicked()">STDOUT</app-highlightable-button>
+                    <app-highlightable-button [isActive]="stderrActive" [isHighlighted]="stderrHighlighted"
+                      (buttonClicked)="stderrClicked()">STDERR</app-highlightable-button>
                   </div>
                   <div class="empty-space"></div>
                   <button *ngIf="!isRunning else runningStateButton" type="button" class="btn btn-primary"

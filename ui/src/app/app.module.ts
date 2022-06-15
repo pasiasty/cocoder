@@ -20,6 +20,7 @@ import { MonacoEditorComponent } from './monaco-editor/monaco-editor.component';
 import { PrivacyViewComponent } from './privacy-view/privacy-view.component';
 import { CookiesViewComponent } from './cookies-view/cookies-view.component';
 import { AngularResizeEventModule } from 'angular-resize-event';
+import { HighlightableButtonComponent } from './highlightable-button/highlightable-button.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -43,7 +44,8 @@ const routes: Routes = [
     ProgressiveImgLoaderComponent,
     MonacoEditorComponent,
     PrivacyViewComponent,
-    CookiesViewComponent
+    CookiesViewComponent,
+    HighlightableButtonComponent
   ],
   imports: [
     BrowserModule,

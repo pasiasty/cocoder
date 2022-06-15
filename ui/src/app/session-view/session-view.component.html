@@ -35,7 +35,7 @@
               <i class="bi bi-chat-right-text h5"></i>
             </ng-template>
           </div>
-          <div *ngIf="supportsFormatting" type="button" class="btn btn-default" (click)="codeEditor().FormatText()"
+          <div *ngIf="supportsFormatting" type="button" class="btn btn-default" (click)="codeEditor()!.FormatText()"
             title="Format text">
             <i class="bi bi-file-text h5"></i>
           </div>
@@ -46,8 +46,7 @@
       [@expandCollapse]="{ value: this.bottomBarCollapsed ? 'expanded' : 'collapsed', params: { expandedHeight: this.fullHeight - 50, collapsedHeight: this.editorHeight }}"
       class="row" #editorRow (resized)="editorRowResized()">
       <div class="column" style="width: 100%; height: inherit;" [style.padding-bottom]="showBottomBar ? '0px' : '30px'">
-        <app-monaco-editor (invalidSession)="sessionInvalid=true" (languageUpdated)="updateLanguage($event)"
-          [hintsEnabled]="hintsEnabled" style="height: 100%;" [mode]="EditorMode.Code">
+        <app-monaco-editor [hintsEnabled]="hintsEnabled" style="height: 100%;" [mode]="EditorMode.Code">
         </app-monaco-editor>
       </div>
     </div>

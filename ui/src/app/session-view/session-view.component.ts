@@ -1,16 +1,27 @@
-import { AfterViewInit, Component, ElementRef, OnInit, QueryList, Renderer2, ViewChild, ViewChildren } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, Renderer2, ViewChild, ViewChildren } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { Title } from '@angular/platform-browser';
-import { ApiService, EditResponse, ExecutionResponse } from 'src/app/services/api.service';
+import { ApiService, EditResponse, ExecutionResponse, GetSessionResponse } from 'src/app/services/api.service';
 
 import * as monaco from 'monaco-editor';
 import { GoogleAnalyticsService } from 'src/app/services/google-analytics.service';
 import { ClipboardService } from 'ngx-clipboard';
 import { ToastService } from 'src/app/services/toast.service';
-import { LanguageUpdate, MonacoEditorComponent, Mode } from 'src/app/monaco-editor/monaco-editor.component';
+import { MonacoEditorComponent, Mode } from 'src/app/monaco-editor/monaco-editor.component';
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { single, filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+
+const languagesSupportingExecution = new Set<string>([
+  'python',
+]);
+
+const languagesSupportingFormatting = new Set<string>([
+  'python',
+  'javascript',
+  'typescript',
+  'html',
+]);
 
 @Component({
   selector: 'app-session-view',
@@ -29,7 +40,7 @@ import { single, filter } from 'rxjs/operators';
   templateUrl: './session-view.component.html',
   styleUrls: ['./session-view.component.scss'],
 })
-export class SessionViewComponent implements OnInit, AfterViewInit {
+export class SessionViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly codeEditorMinHeight = 200;
   readonly bottomBarMinHeight = 300;
@@ -39,10 +50,10 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   isRunning = false;
   sessionInvalid = false;
   showBottomBar = false;
-  selectedLanguage!: string;
+  selectedLanguage: string = 'plaintext';
   supportsFormatting: boolean;
 
-  languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "r");
+  languages = new Array("plaintext", "python", "java", "go", "cpp", "c", "typescript", "javascript", "html");
 
   hintsEnabled = true;
 
@@ -77,6 +88,8 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
 
   outputEditorMode: Mode = Mode.Stdout;
 
+  sessionSubscription?: Subscription;
+
   constructor(
     private route: ActivatedRoute,
     private titleService: Title,
@@ -98,18 +111,6 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
     this.route.params.subscribe(params => {
       this.apiService.StartSession(params.session_id);
       this.titleService.setTitle('coCoder ' + params.session_id.substring(params.session_id.length - 6));
-    })
-
-    this.apiService.SessionObservable().pipe(filter((resp: EditResponse) => { return !!resp.UpdateRunningState })).subscribe({
-      next: (resp: EditResponse) => {
-        const runJustStopped = this.isRunning && !resp.Running!;
-        this.isRunning = resp.Running!;
-
-        if (!runJustStopped)
-          return;
-
-        this.highlightButtonsIfNecessary(resp.Stdout!, resp.Stderr!);
-      }
     });
   }
 
@@ -119,10 +120,43 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
     setTimeout(() => {
       this.onResize();
     }, 10);
+
+    this.apiService.GetSession().then((resp: GetSessionResponse) => {
+      this.codeEditor()?.setInitialSessionState(resp);
+      this.inputEditor()?.setInitialSessionState(resp);
+      this.outputEditor()?.setInitialSessionState(resp);
+
+      this.sessionSubscription = this.apiService.SessionObservable().subscribe({
+        next: (resp: EditResponse) => {
+          if (resp.Language) {
+            this.updateLanguage(resp.Language);
+          }
+          if (resp.UpdateRunningState) {
+            const runJustStopped = this.isRunning && !resp.Running!;
+            this.isRunning = resp.Running!;
+
+            if (!runJustStopped)
+              return;
+
+            this.highlightButtonsIfNecessary(resp.Stdout!, resp.Stderr!);
+          }
+          this.codeEditor()?.handleSessionUpdate(resp);
+          this.inputEditor()?.handleSessionUpdate(resp);
+          this.outputEditor()?.handleSessionUpdate(resp);
+        }
+      });
+    }, (reason: any) => {
+      console.log(`Failed to get session: ${reason}`);
+      this.sessionInvalid = true;
+    });
   }
 
-  codeEditor(): MonacoEditorComponent {
-    return this.monacoEditorComponents.find(c => c.mode == Mode.Code)!;
+  ngOnDestroy(): void {
+    this.sessionSubscription?.unsubscribe();
+  }
+
+  codeEditor(): MonacoEditorComponent | undefined {
+    return this.monacoEditorComponents.find(c => c.mode == Mode.Code);
   }
 
   inputEditor(): MonacoEditorComponent | undefined {
@@ -152,14 +186,14 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   refreshEditors() {
-    this.codeEditor().OnResize();
+    this.codeEditor()?.OnResize();
     this.inputEditor()?.OnResize();
     this.outputEditor()?.OnResize();
 
     // There's a delay between resizing the parent from the renderer and monaco-editor picking this change up.
     // This 10ms sleep fixes the rendering of the parent.
     setTimeout(() => {
-      this.codeEditor().OnResize();
+      this.codeEditor()?.OnResize();
       this.inputEditor()?.OnResize();
       this.outputEditor()?.OnResize();
     }, 10);
@@ -172,12 +206,12 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   onLanguageChange(val: string) {
     this.selectedLanguage = val;
     this.apiService.updateLanguage(val);
-    this.codeEditor().SetLanguage(val);
+    this.codeEditor()!.SetLanguage(val);
     this.googleAnalyticsService.event('language_change', 'engagement', 'top_bar', val);
   }
 
   downloadButtonClicked(): void {
-    this.codeEditor().saveContent();
+    this.codeEditor()!.saveContent();
     this.googleAnalyticsService.event('download_content', 'engagement', 'top_bar');
   }
 
@@ -188,14 +222,14 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   zoomInButtonClicked(): void {
-    this.codeEditor().updateFontSize(1);
+    this.codeEditor()?.updateFontSize(1);
     this.inputEditor()?.updateFontSize(1);
     this.outputEditor()?.updateFontSize(1);
     this.googleAnalyticsService.event('zoom', 'engagement', 'top_bar', 'increase');
   }
 
   zoomOutButtonClicked(): void {
-    this.codeEditor().updateFontSize(-1);
+    this.codeEditor()?.updateFontSize(-1);
     this.inputEditor()?.updateFontSize(-1);
     this.outputEditor()?.updateFontSize(-1);
     this.googleAnalyticsService.event('zoom', 'engagement', 'top_bar', 'decrease');
@@ -213,10 +247,10 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
       localStorage.setItem('hints_enabled', 'disabled');
   }
 
-  updateLanguage(ev: LanguageUpdate) {
-    this.selectedLanguage = ev.language;
-    this.supportsFormatting = ev.supportsFormatting;
-    const newShowBottomBar = ev.supportsExecution;
+  updateLanguage(language: string) {
+    this.selectedLanguage = language;
+    this.supportsFormatting = languagesSupportingFormatting.has(language);
+    const newShowBottomBar = languagesSupportingExecution.has(language);
 
     if (newShowBottomBar !== this.showBottomBar) {
       this.showBottomBar = newShowBottomBar;
@@ -254,8 +288,8 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
 
       this.applyCustomHeights();
 
-      this.inputEditor()!.OnResize();
-      this.outputEditor()!.OnResize();
+      this.inputEditor()?.OnResize();
+      this.outputEditor()?.OnResize();
     }
   }
 
@@ -280,11 +314,11 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   runClicked() {
-    this.outputEditor()!.SetOutputText('', '');
+    this.outputEditor()?.SetOutputText('', '');
     this.isRunning = true;
     this.apiService.TriggerExecution();
 
-    this.apiService.ExecuteCode(this.codeEditor().Text(), this.inputEditor()!.Text() + '\n').then(
+    this.apiService.ExecuteCode(this.codeEditor()!.Text(), this.inputEditor()?.Text() + '\n').then(
       (resp: ExecutionResponse) => {
         let stdout = resp.Stdout;
         let stderr = resp.Stderr;
@@ -293,7 +327,7 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
           stderr = stderr + '\n========================\n\n' + resp.ErrorMessage;
         }
 
-        this.outputEditor()!.SetOutputText(stdout, stderr);
+        this.outputEditor()?.SetOutputText(stdout, stderr);
         this.apiService.CompleteExecution(stdout, stderr);
         this.isRunning = false;
         this.highlightButtonsIfNecessary(stdout, stderr);
@@ -308,7 +342,7 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   editorRowResized() {
-    this.codeEditor().OnResize();
+    this.codeEditor()?.OnResize();
   }
 
   highlightButtonsIfNecessary(stdout: string, stderr: string) {

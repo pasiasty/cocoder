@@ -9,28 +9,11 @@ import { FileSaverService } from 'ngx-filesaver';
 import { Diff, DiffMatchPatch, DiffOperation } from 'diff-match-patch-typescript';
 import { Selection } from 'src/app/common';
 
-const languagesSupportingExecution = new Set<string>([
-  'python',
-]);
-
-const languagesSupportingFormatting = new Set<string>([
-  'python',
-  'javascript',
-  'typescript',
-  'html',
-]);
-
 type DecorationDescription = {
   UserID: string
   Index: number
   Decoration: monaco.editor.IModelDeltaDecoration
 };
-
-export interface LanguageUpdate {
-  language: string
-  supportsFormatting: boolean
-  supportsExecution: boolean
-}
 
 export enum Mode {
   Code,
@@ -62,18 +45,18 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
   stdout: string = '';
   stderr: string = '';
 
-  sessionUpdatesSubscription?: Subscription;
   themeChangesSubscription?: Subscription;
   editsSubjectSubscription?: Subscription;
 
   public _editor!: monaco.editor.IStandaloneCodeEditor;
   @ViewChild('editorContainer', { static: true }) _editorContainer!: ElementRef;
 
-  @Output() invalidSession = new EventEmitter<void>();
   @Output() editorCreated = new EventEmitter<void>();
-  @Output() languageUpdated = new EventEmitter<LanguageUpdate>();
 
   @Input() hintsEnabled: boolean = true;
+
+  initialSessionState: Promise<GetSessionResponse>;
+  initialSessionStateResolver!: (resp: GetSessionResponse) => void;
 
   constructor(
     private monacoEditorService: MonacoEditorService,
@@ -96,34 +79,29 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
     }
 
     this.dmp = new DiffMatchPatch();
+
+    this.initialSessionState = new Promise<GetSessionResponse>((resolve) => {
+      this.initialSessionStateResolver = resolve;
+    });
+  }
+
+  setInitialSessionState(resp: GetSessionResponse) {
+    this.initialSessionStateResolver(resp);
   }
 
   ngOnInit(): void {
-    const initialStateObservable = from(this.apiService.GetSession().then((data: GetSessionResponse) => {
-      return data;
-    },
-      err => {
-        console.log("Failed to get session:", err);
-        this.invalidSession.emit();
-        return null;
+    this.editorCreated.asObservable().subscribe({
+      next: async () => {
+        this.applyInitialState(await this.initialSessionState);
       },
-    ));
-
-    this.editorCreated.asObservable().pipe(
-      mergeMap(() => initialStateObservable)
-    ).subscribe({
-      next: (data: GetSessionResponse | null) => {
-        this.applyInitialState(data);
-      }
     });
   }
 
   ngOnDestroy(): void {
     this.themeChangesSubscription?.unsubscribe();
     this.editsSubject?.unsubscribe();
-    this.sessionUpdatesSubscription?.unsubscribe();
-    this._editor.getModel()?.dispose();
-    this._editor.dispose();
+    this._editor?.getModel()?.dispose();
+    this._editor?.dispose();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -213,19 +191,10 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
     }
   }
 
-  emitLanguageUpdate(language: string) {
-    this.languageUpdated.emit({
-      language: language,
-      supportsFormatting: languagesSupportingFormatting.has(language),
-      supportsExecution: languagesSupportingExecution.has(language),
-    });
-  }
-
   handleSessionUpdate(data: EditResponse) {
     switch (this.mode) {
       case Mode.Code:
         if (data.Language) {
-          this.emitLanguageUpdate(data.Language)
           this.SetLanguage(data.Language);
         }
 
@@ -262,7 +231,6 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
 
     switch (this.mode) {
       case Mode.Code:
-        this.emitLanguageUpdate(data.Language)
         this.SetText(data.Text);
         this.SetLanguage(data.Language);
         this.lastBaseText = data.Text;
@@ -278,15 +246,6 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
         this.updateOutputText();
         break;
     }
-
-    this.sessionUpdatesSubscription = this.apiService.SessionObservable().subscribe({
-      next: (data: EditResponse) => {
-        this.handleSessionUpdate(data);
-      },
-      error: err => {
-        console.log("Failed to update session:", err);
-      },
-    });
   }
 
   GetLanguageExtension(): string {

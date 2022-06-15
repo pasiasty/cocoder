@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnInit, QueryList, Renderer2, ViewChild, ViewChildren } from '@angular/core';
+import { AfterViewChecked, AfterViewInit, Component, ElementRef, OnInit, QueryList, Renderer2, ViewChild, ViewChildren } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { Title } from '@angular/platform-browser';
@@ -9,9 +9,24 @@ import { GoogleAnalyticsService } from 'src/app/services/google-analytics.servic
 import { ClipboardService } from 'ngx-clipboard';
 import { ToastService } from 'src/app/services/toast.service';
 import { LanguageUpdate, MonacoEditorComponent, Mode } from 'src/app/monaco-editor/monaco-editor.component';
+import { animate, state, style, transition, trigger } from '@angular/animations';
+import { interval } from 'rxjs';
+import { single } from 'rxjs/operators';
 
 @Component({
   selector: 'app-session-view',
+  animations: [
+    trigger('expandCollapse', [
+      state('expanded', style({ height: '{{ expandedHeight }}px' }), { params: { expandedHeight: 500 } }),
+      state('collapsed', style({ height: '{{ collapsedHeight }}px' }), { params: { collapsedHeight: 100 } }),
+      transition('expanded => collapsed', [
+        animate('0.3s ease-out'),
+      ]),
+      transition('collapsed => expanded', [
+        animate('0.3s ease-out'),
+      ]),
+    ]),
+  ],
   templateUrl: './session-view.component.html',
   styleUrls: ['./session-view.component.scss'],
 })
@@ -85,7 +100,11 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.onResize();
+    // workaround because otherwise Angular complains that the expression has been modified while
+    // evaluating the template: https://angular.io/errors/NG0100.
+    setTimeout(() => {
+      this.onResize();
+    }, 10);
   }
 
   codeEditor(): MonacoEditorComponent {
@@ -227,17 +246,6 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
   }
 
   toggleCollapse() {
-    if (this.bottomBarCollapsed) {
-      this.applyCustomHeights();
-      this.resizeHandleCursor = 'ns-resize';
-    } else {
-      this.renderer.setStyle(this.bottomBarRow.nativeElement, 'height', `75px`);
-      this.resizeHandleCursor = '';
-      this.renderer.setStyle(this.editorRow.nativeElement, 'height', `${this.fullHeight - 75}px`);
-
-      this.refreshEditors();
-    }
-
     this.bottomBarCollapsed = !this.bottomBarCollapsed;
   }
 
@@ -277,6 +285,10 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
     if (ev.altKey && ev.shiftKey && ev.key == 'X' && !this.isRunning && this.showBottomBar) {
       this.runClicked();
     }
+  }
+
+  editorRowResized() {
+    this.codeEditor().OnResize();
   }
 }
 

@@ -19,6 +19,7 @@ import { ProgressiveImgLoaderComponent } from './progressive-img-loader/progress
 import { MonacoEditorComponent } from './monaco-editor/monaco-editor.component';
 import { PrivacyViewComponent } from './privacy-view/privacy-view.component';
 import { CookiesViewComponent } from './cookies-view/cookies-view.component';
+import { AngularResizeEventModule } from 'angular-resize-event';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -47,6 +48,7 @@ const routes: Routes = [
   imports: [
     BrowserModule,
     AppRoutingModule,
+    AngularResizeEventModule,
     BrowserAnimationsModule,
     RouterModule.forRoot(routes),
     HttpClientModule,

@@ -13,6 +13,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ToastsContainerComponent } from 'src/app/toasts-container/toasts-container.component';
 import { MonacoEditorService } from 'src/app/monaco-editor/monaco-editor.service';
 import { MonacoEditorComponent } from 'src/app/monaco-editor/monaco-editor.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @Component({
   template: `
@@ -35,6 +36,7 @@ describe('SessionViewComponent', () => {
         RouterTestingModule,
         HttpClientTestingModule,
         NgbModule,
+        BrowserAnimationsModule,
       ],
       declarations: [
         TestHostComponent,

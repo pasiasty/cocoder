@@ -24,6 +24,7 @@
     "@forevolve/bootstrap-dark": "^2.1.0",
     "@ng-bootstrap/ng-bootstrap": "^11.0.0",
     "@types/popper.js": "^1.11.0",
+    "angular-resize-event": "^3.1.1",
     "bootstrap": "^4.6.0",
     "bootstrap-icons": "^1.8.1",
     "diff-match-patch-typescript": "^1.0.8",

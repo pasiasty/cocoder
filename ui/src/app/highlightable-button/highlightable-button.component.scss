@@ -1,4 +1,27 @@
 
-.highlighted {
-    color: rgb(216, 216, 121) !important;
-  }
+.parent {
+  position: relative;
+  width: 100px;
+  height: 40px;
+}
+
+.highlight-dot {
+  position: absolute;
+  vertical-align: middle;
+  top: 16px;
+  right: 10px;
+  height: 6px;
+  width: 6px;
+  background-color: rgb(222, 215, 93);
+  box-shadow: 0 0 1px 1px rgb(222, 215, 93);
+  border-radius: 50%;
+  display: inline-block;
+  z-index: 100;
+}
+
+.button {
+  position: absolute;
+  width: 100%;
+  padding-right: 80px !important;
+  z-index: 50;
+}

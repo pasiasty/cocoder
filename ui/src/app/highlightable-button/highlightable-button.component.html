@@ -1,3 +1,6 @@
-<label class="btn btn-secondary" [class.active]="isActive" [class.highlighted]="isHighlighted" (click)="onClicked()">
-  <ng-content></ng-content>
-</label>
+<div class="parent">
+  <span class="highlight-dot" [hidden]="!isHighlighted"></span>
+  <label class="btn btn-secondary button" [class.active]="isActive" (click)="onClicked()">
+    <ng-content></ng-content>
+  </label>
+</div>

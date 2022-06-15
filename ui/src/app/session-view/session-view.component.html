@@ -68,10 +68,8 @@
                     <i class="bi bi-caret-down h6"></i>
                   </div>
                 </ng-template>
-                <div class="btn-group" [hidden]="bottomBarCollapsed">
-                  <label class="btn btn-secondary active">
-                    STDIN
-                  </label>
+                <div class="btn-group" style="vertical-align: top;" [hidden]="bottomBarCollapsed">
+                  <app-highlightable-button [isActive]="true">STDOUT</app-highlightable-button>
                 </div>
               </div>
               <div class="column" style="width: 50%;" [hidden]="bottomBarCollapsed">

@@ -4,7 +4,6 @@ import { Subject } from 'rxjs';
 import { MonacoLanguageClient, CloseAction, ErrorAction, MonacoServices, MessageTransports } from 'monaco-languageclient';
 import { toSocket, WebSocketMessageReader, WebSocketMessageWriter } from '@codingame/monaco-jsonrpc';
 
-import * as monaco from 'monaco-editor';
 import { ApiService } from '../services/api.service';
 
 @Injectable({
@@ -58,7 +57,7 @@ export class MonacoEditorService {
 
   private registerLanguages() {
     // install Monaco language client services
-    MonacoServices.install(monaco);
+    MonacoServices.install();
 
     // create the web socket
     this.apiService.openLSPWebsocket('python', this.languageOnOpenHandler('Python', ['python']));

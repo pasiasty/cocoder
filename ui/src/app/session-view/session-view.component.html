@@ -78,10 +78,12 @@
               <div class="column" style="width: 50%;" [hidden]="bottomBarCollapsed">
                 <div class="right-column-container">
                   <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                    <label class="btn btn-secondary" [class.active]="stdoutActive" (click)="stdoutClicked()">
+                    <label class="btn btn-secondary" [class.active]="stdoutActive"
+                      [class.highlighted]="stdoutHighlighted" (click)="stdoutClicked()">
                       <input type="radio" name="options" id="option1" autocomplete="off"> STDOUT
                     </label>
-                    <label class="btn btn-secondary" [class.active]="stderrActive" (click)="stderrClicked()">
+                    <label class="btn btn-secondary" [class.active]="stderrActive"
+                      [class.highlighted]="stderrHighlighted" (click)="stderrClicked()">
                       <input type="radio" name="options" id="option1" autocomplete="off"> STDERR
                     </label>
                   </div>

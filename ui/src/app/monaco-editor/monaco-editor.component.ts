@@ -1,16 +1,23 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { first, mergeMap, sampleTime } from 'rxjs/operators';
 import { MonacoEditorService } from './monaco-editor.service';
 import * as monaco from 'monaco-editor';
 import { ThemeService } from 'src/app/services/theme.service';
 import { ApiService, EditResponse, GetSessionResponse, User } from 'src/app/services/api.service';
-import { from, Subject } from 'rxjs';
+import { from, Subject, Subscription } from 'rxjs';
 import { FileSaverService } from 'ngx-filesaver';
 import { Diff, DiffMatchPatch, DiffOperation } from 'diff-match-patch-typescript';
 import { Selection } from 'src/app/common';
 
 const languagesSupportingExecution = new Set<string>([
   'python',
+]);
+
+const languagesSupportingFormatting = new Set<string>([
+  'python',
+  'javascript',
+  'typescript',
+  'html',
 ]);
 
 type DecorationDescription = {
@@ -37,7 +44,7 @@ export enum Mode {
   templateUrl: './monaco-editor.component.html',
   styleUrls: ['./monaco-editor.component.scss']
 })
-export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
+export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, OnDestroy {
 
   @Input() mode!: Mode;
 
@@ -54,6 +61,10 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
 
   stdout: string = '';
   stderr: string = '';
+
+  sessionUpdatesSubscription?: Subscription;
+  themeChangesSubscription?: Subscription;
+  editsSubjectSubscription?: Subscription;
 
   public _editor!: monaco.editor.IStandaloneCodeEditor;
   @ViewChild('editorContainer', { static: true }) _editorContainer!: ElementRef;
@@ -107,6 +118,14 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
     });
   }
 
+  ngOnDestroy(): void {
+    this.themeChangesSubscription?.unsubscribe();
+    this.editsSubject?.unsubscribe();
+    this.sessionUpdatesSubscription?.unsubscribe();
+    this._editor.getModel()?.dispose();
+    this._editor.dispose();
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (this._editor !== undefined)
       this.updateOptions();
@@ -135,6 +154,11 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
         language: this.language,
       },
     );
+
+    // This is a workaround for: https://github.com/TypeFox/monaco-languageclient/issues/378
+    const m = monaco.editor.createModel('', this.language, monaco.Uri.parse(`file:///${this.mode}/1`));
+    this._editor.setModel(m);
+
     this.updateOptions();
     this.BindEvents();
     this.SetUserID(this.apiService.GetUserID());
@@ -190,14 +214,9 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
   }
 
   emitLanguageUpdate(language: string) {
-    let supportsFormatting = false;
-    this._editor.getSupportedActions().forEach((action: monaco.editor.IEditorAction) => {
-      if (action.id === 'editor.action.formatDocument')
-        supportsFormatting = true;
-    });
     this.languageUpdated.emit({
       language: language,
-      supportsFormatting: supportsFormatting,
+      supportsFormatting: languagesSupportingFormatting.has(language),
       supportsExecution: languagesSupportingExecution.has(language),
     });
   }
@@ -260,7 +279,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
         break;
     }
 
-    this.apiService.SessionObservable().subscribe({
+    this.sessionUpdatesSubscription = this.apiService.SessionObservable().subscribe({
       next: (data: EditResponse) => {
         this.handleSessionUpdate(data);
       },
@@ -294,11 +313,11 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges {
       this.editsSubject.next();
     });
 
-    this.themeService.themeChanges().subscribe(() => {
+    this.themeChangesSubscription = this.themeService.themeChanges().subscribe(() => {
       this.SetTheme(this.themeService.editorThemeName());
     });
 
-    this.editsSubject.pipe(
+    this.editsSubjectSubscription = this.editsSubject.pipe(
       sampleTime(50),
     ).subscribe({
       next: () => {

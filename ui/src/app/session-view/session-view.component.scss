@@ -92,3 +92,8 @@
 .empty-space {
   flex-grow: 1;
 }
+
+.highlighted {
+  color: rgb(216, 216, 121) !important;
+  content: "something";
+}

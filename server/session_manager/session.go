@@ -136,14 +136,16 @@ func (s *Session) prepareResponse(req *common.UpdateSessionRequest) *common.Upda
 	}
 
 	return &common.UpdateSessionResponse{
-		NewText:          s.Text,
-		Language:         s.Language,
-		Users:            users,
-		UpdateInputText:  req.UpdateInputText,
-		InputText:        req.InputText,
-		UpdateOutputText: req.UpdateOutputText,
-		Stdout:           req.Stdout,
-		Stderr:           req.Stderr,
+		NewText:            s.Text,
+		Language:           s.Language,
+		Users:              users,
+		UpdateInputText:    req.UpdateInputText,
+		InputText:          req.InputText,
+		UpdateOutputText:   req.UpdateOutputText,
+		Stdout:             req.Stdout,
+		Stderr:             req.Stderr,
+		UpdateRunningState: req.UpdateRunningState,
+		Running:            req.Running,
 	}
 }
 

@@ -102,12 +102,13 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
 
     this.apiService.SessionObservable().pipe(filter((resp: EditResponse) => { return !!resp.UpdateRunningState })).subscribe({
       next: (resp: EditResponse) => {
+        const runJustStopped = this.isRunning && !resp.Running!;
         this.isRunning = resp.Running!;
 
-        if (!this.stdoutActive && resp.Stdout!.length > 0)
-          this.stdoutHighlighted = true;
-        if (!this.stderrActive && resp.Stderr!.length > 0)
-          this.stderrHighlighted = true;
+        if (!runJustStopped)
+          return;
+
+        this.highlightButtonsIfNecessary(resp.Stdout!, resp.Stderr!);
       }
     });
   }
@@ -295,6 +296,7 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
         this.outputEditor()!.SetOutputText(stdout, stderr);
         this.apiService.CompleteExecution(stdout, stderr);
         this.isRunning = false;
+        this.highlightButtonsIfNecessary(stdout, stderr);
       },
     )
   }
@@ -307,6 +309,14 @@ export class SessionViewComponent implements OnInit, AfterViewInit {
 
   editorRowResized() {
     this.codeEditor().OnResize();
+  }
+
+  highlightButtonsIfNecessary(stdout: string, stderr: string) {
+    if (!this.stdoutActive && stdout.length > 0)
+      this.stdoutHighlighted = true;
+    if (!this.stderrActive && stderr.length > 0) {
+      this.stderrHighlighted = true;
+    }
   }
 }
 

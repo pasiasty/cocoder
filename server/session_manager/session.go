@@ -71,6 +71,7 @@ type Session struct {
 	InputText string    `json:"InputText" diff:"InputText"`
 	Stdout    string    `json:"Stdout" diff:"Stdout"`
 	Stderr    string    `json:"Stderr" diff:"Stderr"`
+	Running   bool      `json:"Running" diff:"Running"`
 	LastEdit  time.Time `json:"LastEdit" diff:"LastEdit"`
 
 	Users map[string]*common.User `json:"Users" diff:"Users"`
@@ -133,6 +134,10 @@ func (s *Session) prepareResponse(req *common.UpdateSessionRequest) *common.Upda
 	if req.UpdateOutputText {
 		s.Stdout = req.Stdout
 		s.Stderr = req.Stderr
+	}
+
+	if req.UpdateRunningState {
+		s.Running = req.Running
 	}
 
 	return &common.UpdateSessionResponse{

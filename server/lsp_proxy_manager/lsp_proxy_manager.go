@@ -34,14 +34,8 @@ func pylsPath() string {
 	return shortcut
 }
 
-func goplsPath() string {
-	relative := "./gopls"
-
-	if _, err := os.Stat(relative); err == nil {
-		return relative
-	}
-
-	return "gopls"
+func execInContainer(entrypoint string) *exec.Cmd {
+	return exec.Command("docker", "run", "--rm", "-i", "--memory", "128MB", "--memory-swap", "0", "--cpus", "0.5", "--network", "none", "mpasek/cocoder-executor", entrypoint)
 }
 
 func initialCommand(language string) (*exec.Cmd, error) {
@@ -50,9 +44,9 @@ func initialCommand(language string) (*exec.Cmd, error) {
 	case "python":
 		return exec.Command(pylsPath()), nil
 	case "cpp":
-		return exec.Command("docker", "run", "--rm", "-i", "--memory", "128MB", "--memory-swap", "0", "--cpus", "0.5", "--network", "none", "mpasek/cocoder-executor", "clangd"), nil
+		return execInContainer("clangd"), nil
 	case "go":
-		return exec.Command(goplsPath()), nil
+		return execInContainer("/root/go/bin/gopls"), nil
 	}
 	return nil, fmt.Errorf("language: %s is not supported", language)
 }

@@ -8,4 +8,6 @@ RUN apt install clang -y
 
 RUN apt clean
 
+RUN GO111MODULE=on go get golang.org/x/tools/gopls@latest
+
 CMD /bin/bash

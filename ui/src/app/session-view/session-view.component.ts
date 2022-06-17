@@ -19,7 +19,6 @@ const languagesSupportingExecution = new Set<string>([
 ]);
 
 const languagesSupportingFormatting = new Set<string>([
-  'python',
   'javascript',
   'typescript',
   'html',

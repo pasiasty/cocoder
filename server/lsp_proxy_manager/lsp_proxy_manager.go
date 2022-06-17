@@ -24,15 +24,19 @@ func New() *LSPProxyManager {
 	return &LSPProxyManager{}
 }
 
-func execInContainer(entrypoint string) *exec.Cmd {
-	return exec.Command("docker", "run", "--rm", "-i", "--memory", "128MB", "--memory-swap", "0", "--cpus", "0.5", "--network", "none", "mpasek/cocoder-executor", entrypoint)
+func execInContainer(entrypoint string, extraArgs ...string) *exec.Cmd {
+	args := []string{
+		"run", "--rm", "-i", "mpasek/cocoder-executor", entrypoint,
+	}
+	args = append(args, extraArgs...)
+	return exec.Command("docker", args...)
 }
 
 func initialCommand(language string) (*exec.Cmd, error) {
 
 	switch language {
 	case "python":
-		return execInContainer("/usr/local/bin/pyls"), nil
+		return execInContainer("/usr/local/bin/pyright-python-langserver", "--stdio"), nil
 	case "cpp":
 		return execInContainer("clangd"), nil
 	case "go":

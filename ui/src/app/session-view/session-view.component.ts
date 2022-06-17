@@ -193,14 +193,6 @@ export class SessionViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.codeEditor()?.OnResize();
     this.inputEditor()?.OnResize();
     this.outputEditor()?.OnResize();
-
-    // There's a delay between resizing the parent from the renderer and monaco-editor picking this change up.
-    // This 10ms sleep fixes the rendering of the parent.
-    setTimeout(() => {
-      this.codeEditor()?.OnResize();
-      this.inputEditor()?.OnResize();
-      this.outputEditor()?.OnResize();
-    }, 10);
   }
 
   otherLanguages(): string[] {
@@ -291,9 +283,6 @@ export class SessionViewComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       this.applyCustomHeights();
-
-      this.inputEditor()?.OnResize();
-      this.outputEditor()?.OnResize();
     }
   }
 

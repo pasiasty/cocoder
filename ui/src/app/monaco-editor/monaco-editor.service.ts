@@ -6,6 +6,8 @@ import { toSocket, WebSocketMessageReader, WebSocketMessageWriter } from '@codin
 
 import { ApiService } from '../services/api.service';
 
+import * as monaco from 'monaco-editor';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -57,7 +59,7 @@ export class MonacoEditorService {
 
   private registerLanguages() {
     // install Monaco language client services
-    MonacoServices.install();
+    MonacoServices.install(monaco);
 
     // create the web socket
     this.apiService.openLSPWebsocket('python', this.languageOnOpenHandler('Python', ['python']));

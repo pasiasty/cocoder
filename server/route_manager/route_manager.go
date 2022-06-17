@@ -116,6 +116,21 @@ func NewRouterManager(ctx context.Context, c *redis.Client) *RouteManager {
 		c.JSON(http.StatusOK, resp)
 	})
 
+	g.POST("/format/:user_id/:language", func(c *gin.Context) {
+		language := string(session_manager.SessionID(c.Param("language")))
+		userID := users_manager.UserID(c.Param("user_id"))
+
+		code := c.PostForm("code")
+
+		resp, err := e.Format(c, userID, language, code)
+		if err != nil {
+			fmt.Printf("Failed to format: %v\n", err)
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		c.JSON(http.StatusOK, resp)
+	})
+
 	return &RouteManager{
 		r:  r,
 		sm: sm,

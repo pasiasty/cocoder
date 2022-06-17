@@ -63,6 +63,10 @@ export type ExecutionResponse = {
   Stderr: string
 }
 
+export type FormatResponse = {
+  Code: string
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -269,5 +273,11 @@ export class ApiService implements OnDestroy {
     formData.set('code', code);
     formData.set('stdin', stdin);
     return this.httpClient.post<ExecutionResponse>(`${environment.api}execute/${this.userID}/${this.selectedLanguage}`, formData).toPromise();
+  }
+
+  FormatCode(code: string): Promise<FormatResponse> {
+    const formData = new FormData();
+    formData.set('code', code);
+    return this.httpClient.post<FormatResponse>(`${environment.api}format/${this.userID}/${this.selectedLanguage}`, formData).toPromise();
   }
 }

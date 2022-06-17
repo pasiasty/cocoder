@@ -66,3 +66,7 @@ type ExecutionResponse struct {
 	Stdout       string `json:"Stdout"`
 	Stderr       string `json:"Stderr"`
 }
+
+type FormatResponse struct {
+	Code string `json:"Code"`
+}

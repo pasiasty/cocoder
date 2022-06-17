@@ -599,7 +599,13 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
   }
 
   FormatText() {
-    this._editor.getAction('editor.action.formatDocument').run();
+    if (this.language == "python") {
+      this.apiService.FormatCode(this.Text()).then(resp => {
+        this._editor.setValue(resp.Code);
+      });
+    } else {
+      this._editor.getAction('editor.action.formatDocument').run();
+    }
   }
 
   OnResize() {

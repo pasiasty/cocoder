@@ -15,4 +15,7 @@ COPY requirements.txt /tmp/requirements.txt
 
 RUN pip3 install -r /tmp/requirements.txt
 
+# triggers node install
+RUN /usr/local/bin/pyright-python --help
+
 CMD /bin/bash

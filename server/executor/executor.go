@@ -27,7 +27,7 @@ type commandDefinition struct {
 	usesSTDIN bool
 }
 
-var languageDefinitions = map[string]languageDefinition{
+var executeLanguageDefs = map[string]languageDefinition{
 	"python": {
 		timeout:   10 * time.Second,
 		extension: "py",
@@ -74,7 +74,21 @@ var languageDefinitions = map[string]languageDefinition{
 	},
 }
 
-func runCommand(ctx context.Context, cd commandDefinition, d string, stdin string) (*common.ExecutionResponse, error) {
+var formatLanguageDefs = map[string]languageDefinition{
+	"python": {
+		extension: "py",
+		timeout:   10 * time.Second,
+		commands: []commandDefinition{
+			{name: "format",
+				cmd:       "black -q ./code.py && cat ./code.py",
+				readonly:  false,
+				usesSTDIN: false,
+			},
+		},
+	},
+}
+
+func runCommand(ctx context.Context, cd commandDefinition, d string, stdin string, inContainer bool) (*common.ExecutionResponse, error) {
 	rfc := fmt.Sprintf("#!/bin/bash\n\n%s", cd.cmd)
 
 	runFilename := fmt.Sprintf("run_%s.sh", cd.name)
@@ -92,26 +106,33 @@ func runCommand(ctx context.Context, cd commandDefinition, d string, stdin strin
 		return nil, err
 	}
 
-	args := []string{
-		"run",
-		"-v",
-		fmt.Sprintf("%v:/mnt", d),
-		"--rm",
-		"-i",
-		"--memory",
-		"128MB",
-		"--memory-swap",
-		"0",
-		"--cpus",
-		"0.5",
-	}
+	var cmd *exec.Cmd
 
-	if cd.readonly {
-		args = append(args, "--read-only")
-	}
+	if inContainer {
+		args := []string{
+			"run",
+			"-v",
+			fmt.Sprintf("%v:/mnt", d),
+			"--rm",
+			"-i",
+			"--memory",
+			"128MB",
+			"--memory-swap",
+			"0",
+			"--cpus",
+			"0.5",
+		}
 
-	args = append(args, "--network", "none", "mpasek/cocoder-executor", fmt.Sprintf("/mnt/%s", runFilename))
-	cmd := exec.CommandContext(ctx, "docker", args...)
+		if cd.readonly {
+			args = append(args, "--read-only")
+		}
+
+		args = append(args, "--network", "none", "mpasek/cocoder-executor", fmt.Sprintf("/mnt/%s", runFilename))
+		cmd = exec.CommandContext(ctx, "docker", args...)
+	} else {
+		cmd = exec.CommandContext(ctx, "bash", "-c", cd.cmd)
+		cmd.Dir = d
+	}
 
 	if cd.usesSTDIN {
 		cmd.Stdin = strings.NewReader(stdin)
@@ -158,12 +179,7 @@ func postprocessStderr(s string) string {
 	return postprocessStdout(s)
 }
 
-func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, language, code, stdin string) (*common.ExecutionResponse, error) {
-	ld, ok := languageDefinitions[language]
-	if !ok {
-		return nil, fmt.Errorf("language: %s is not supported", language)
-	}
-
+func (e *Executor) executeCommands(ctx context.Context, userID users_manager.UserID, ld languageDefinition, code, stdin string, inContainer bool) (*common.ExecutionResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, ld.timeout)
 	defer cancel()
 
@@ -187,7 +203,7 @@ func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, lan
 	var lastRes *common.ExecutionResponse = nil
 
 	for _, cd := range ld.commands {
-		resp, err := runCommand(ctx, cd, d, stdin)
+		resp, err := runCommand(ctx, cd, d, stdin, inContainer)
 		if err != nil {
 			return nil, err
 		}
@@ -198,4 +214,27 @@ func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, lan
 	}
 
 	return lastRes, nil
+}
+
+func (e *Executor) Format(ctx context.Context, userID users_manager.UserID, language, code string) (*common.FormatResponse, error) {
+	ld, ok := formatLanguageDefs[language]
+	if !ok {
+		return nil, fmt.Errorf("language: %s is not supported", language)
+	}
+
+	resp, err := e.executeCommands(ctx, userID, ld, code, "", false)
+	if err != nil {
+		return nil, err
+	}
+
+	return &common.FormatResponse{Code: resp.Stdout}, nil
+}
+
+func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, language, code, stdin string) (*common.ExecutionResponse, error) {
+	ld, ok := executeLanguageDefs[language]
+	if !ok {
+		return nil, fmt.Errorf("language: %s is not supported", language)
+	}
+
+	return e.executeCommands(ctx, userID, ld, code, stdin, true)
 }

@@ -31,7 +31,7 @@
     "file-saver": "^2.0.5",
     "monaco-editor": "0.33.0",
     "monaco-editor-workers": "0.33.0",
-    "monaco-languageclient": "^1.1.0",
+    "monaco-languageclient": "^2.0.0-dev",
     "ngx-clipboard": "^15.0.1",
     "ngx-cookie-service": "^13.1.2",
     "ngx-filesaver": "^13.0.0",

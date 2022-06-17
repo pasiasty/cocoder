@@ -22,6 +22,45 @@ export enum Mode {
   Stderr,
 }
 
+class ModelsStore {
+  models: Map<string, monaco.editor.ITextModel>;
+  languageExtensions: Map<string, string>;
+
+  private codeEditorUri(userID: string, mode: Mode, language: string): monaco.Uri {
+    return monaco.Uri.parse(`file:///tmp/${userID}_${mode}_code.${this.languageExtensions.get(language)}`)
+  }
+
+  constructor(userID: string, mode: Mode) {
+    this.languageExtensions = new Map<string, string>(Object.entries({
+      "plaintext": "txt",
+      "python": "py",
+      "cpp": "cpp",
+      "go": "go",
+    }));
+
+    if (mode == Mode.Code) {
+      this.models = new Map<string, monaco.editor.ITextModel>(Object.entries({
+        'plaintext': monaco.editor.createModel('', 'plaintext', this.codeEditorUri(userID, mode, 'plaintext')),
+        'python': monaco.editor.createModel('', 'python', this.codeEditorUri(userID, mode, 'python')),
+        'cpp': monaco.editor.createModel('', 'cpp', this.codeEditorUri(userID, mode, 'cpp')),
+        'go': monaco.editor.createModel('', 'go', this.codeEditorUri(userID, mode, 'go')),
+      }));
+    }
+    else {
+      this.models = new Map<string, monaco.editor.ITextModel>(Object.entries({
+        'plaintext': monaco.editor.createModel('', 'plaintext', this.codeEditorUri(userID, mode, 'plaintext')),
+      }));
+    }
+  }
+
+  getModel(language: string): monaco.editor.ITextModel {
+    if (this.models.has(language)) {
+      return this.models.get(language)!;
+    }
+    return this.models.get('plaintext')!;
+  }
+}
+
 @Component({
   selector: 'app-monaco-editor',
   templateUrl: './monaco-editor.component.html',
@@ -47,6 +86,8 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
 
   themeChangesSubscription?: Subscription;
   editsSubjectSubscription?: Subscription;
+
+  models!: ModelsStore;
 
   public _editor!: monaco.editor.IStandaloneCodeEditor;
   @ViewChild('editorContainer', { static: true }) _editorContainer!: ElementRef;
@@ -95,6 +136,10 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
         this.applyInitialState(await this.initialSessionState);
       },
     });
+
+    this.SetUserID(this.apiService.GetUserID());
+
+    this.models = new ModelsStore(this.userID, this.mode);
   }
 
   ngOnDestroy(): void {
@@ -133,13 +178,10 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
       },
     );
 
-    // This is a workaround for: https://github.com/TypeFox/monaco-languageclient/issues/378
-    const m = monaco.editor.createModel('', this.language, monaco.Uri.parse(`file:///${this.mode}/1`));
-    this._editor.setModel(m);
+    this._editor.setModel(this.models.getModel(this.language));
 
     this.updateOptions();
     this.BindEvents();
-    this.SetUserID(this.apiService.GetUserID());
 
     this._editor.addAction({
       id: "custom.editor.action.deleteLines",
@@ -498,7 +540,9 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
       return;
 
     this.language = l;
-    monaco.editor.setModelLanguage(this._editor!.getModel()!, l);
+    const m = this.models.getModel(l);
+    m.setValue(this.Text());
+    this._editor.setModel(m);
     this.editsSubject.next();
   }
 

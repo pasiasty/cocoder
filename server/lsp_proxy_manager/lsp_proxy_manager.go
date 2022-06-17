@@ -48,6 +48,11 @@ func initialCommand(language string) (*exec.Cmd, error) {
 		return &exec.Cmd{
 			Path: "/usr/bin/clangd",
 		}, nil
+	case "go":
+		return &exec.Cmd{
+			Path: "./gopls",
+			Args: []string{},
+		}, nil
 	}
 
 	return nil, fmt.Errorf("language: %s is not supported", language)

@@ -11,7 +11,7 @@ require (
 	github.com/go-playground/assert/v2 v2.0.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gomodule/redigo/redis v0.0.1 // indirect
-	github.com/google/go-cmp v0.5.5
+	github.com/google/go-cmp v0.5.7
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/onsi/ginkgo v1.16.5 // indirect
@@ -19,4 +19,5 @@ require (
 	github.com/r3labs/diff/v2 v2.15.1
 	github.com/sergi/go-diff v1.2.0
 	github.com/yuin/gopher-lua v0.0.0-20220504180219-658193537a64 // indirect
+	golang.org/x/tools/gopls v0.8.4 // indirect
 )

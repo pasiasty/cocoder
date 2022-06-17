@@ -22,6 +22,7 @@ const languagesSupportingFormatting = new Set<string>([
   'typescript',
   'html',
   'cpp',
+  'go',
 ]);
 
 @Component({

@@ -38,23 +38,12 @@ func initialCommand(language string) (*exec.Cmd, error) {
 
 	switch language {
 	case "python":
-		return &exec.Cmd{
-			Path: pylsPath(),
-			Args: []string{
-				"-v",
-			},
-		}, nil
+		return exec.Command(pylsPath()), nil
 	case "cpp":
-		return &exec.Cmd{
-			Path: "/usr/bin/clangd",
-		}, nil
+		return exec.Command("docker", "run", "--rm", "-i", "--memory", "128MB", "--memory-swap", "0", "--cpus", "0.5", "--network", "none", "mpasek/cocoder-executor", "clangd"), nil
 	case "go":
-		return &exec.Cmd{
-			Path: "./gopls",
-			Args: []string{},
-		}, nil
+		return exec.Command("gopls"), nil
 	}
-
 	return nil, fmt.Errorf("language: %s is not supported", language)
 }
 

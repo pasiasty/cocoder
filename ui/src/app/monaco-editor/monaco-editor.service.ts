@@ -71,6 +71,7 @@ export class MonacoEditorService {
     this.apiService.openLSPWebsocket('python', this.languageOnOpenHandler('Python', ['python']));
     this.apiService.openLSPWebsocket('cpp', this.languageOnOpenHandler('C++', ['cpp']));
     this.apiService.openLSPWebsocket('go', this.languageOnOpenHandler('Golang', ['go']));
+    this.apiService.openLSPWebsocket('java', this.languageOnOpenHandler('Java', ['java']));
 
     window.onbeforeunload = () => {
       this.cds.forEach(v => {

@@ -41,6 +41,8 @@ func initialCommand(language string) (*exec.Cmd, error) {
 		return execInContainer("clangd"), nil
 	case "go":
 		return execInContainer("/root/go/bin/gopls"), nil
+	case "java":
+		return exec.Command("python3.9", "/home/mpasek/Downloads/java_fun/bin/jdtls", "-data", "~/something", "-configuration", "~/.cache/jdtls"), nil
 	}
 	return nil, fmt.Errorf("language: %s is not supported", language)
 }
@@ -82,6 +84,7 @@ func (c *Connection) passToServerLoop(ctx context.Context) {
 				continue
 			}
 
+			fmt.Printf("Req: %s\n\n", string(msg))
 			msgEnc := fmt.Sprintf("%v", string(msg))
 
 			reqStanza := "Content-Length: %v\r\n" + "Content-Type: application/vscode-jsonrpc; charset=utf8\r\n\r\n%v"
@@ -131,6 +134,8 @@ func (c *Connection) readFromServerLoop(ctx context.Context) {
 				log.Printf("Failed to get the response: %v\n", err)
 				continue
 			}
+
+			fmt.Printf("Resp: %s\n\n", string(resp))
 
 			c.mux.Lock()
 			if err := c.conn.WriteMessage(websocket.TextMessage, resp); err != nil {

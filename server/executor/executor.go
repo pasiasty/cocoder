@@ -78,8 +78,9 @@ func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, lan
 		return nil, err
 	}
 
-	cmd := exec.CommandContext(ctx, "docker", "run", "-v", fmt.Sprintf("%v:/mnt", d), "--rm", "-i", "--memory", "128MB", "--memory-swap", "0", "--cpus", "0.5", "--read-only", "--network", "none", "python", `/mnt/run.sh`)
+	// cmd := exec.CommandContext(ctx, "docker", "run", "-v", fmt.Sprintf("%v:/mnt", d), "--rm", "-i", "--memory", "128MB", "--memory-swap", "0", "--cpus", "0.5", "--read-only", "--network", "none", "python", `/mnt/run.sh`)
 
+	cmd := exec.CommandContext(ctx, "python3", codeFile.Name())
 	cmd.Stdin = strings.NewReader(stdin)
 	stdoutBuf := &bytes.Buffer{}
 	stderrBuf := &bytes.Buffer{}

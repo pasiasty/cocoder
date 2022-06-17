@@ -24,16 +24,6 @@ func New() *LSPProxyManager {
 	return &LSPProxyManager{}
 }
 
-func pylsPath() string {
-	absolute := "/usr/local/bin/pyls"
-	shortcut := "pyls"
-
-	if _, err := os.Stat(absolute); err == nil {
-		return absolute
-	}
-	return shortcut
-}
-
 func execInContainer(entrypoint string) *exec.Cmd {
 	return exec.Command("docker", "run", "--rm", "-i", "--memory", "128MB", "--memory-swap", "0", "--cpus", "0.5", "--network", "none", "mpasek/cocoder-executor", entrypoint)
 }
@@ -42,7 +32,7 @@ func initialCommand(language string) (*exec.Cmd, error) {
 
 	switch language {
 	case "python":
-		return exec.Command(pylsPath()), nil
+		return execInContainer("/usr/local/bin/pyls"), nil
 	case "cpp":
 		return execInContainer("clangd"), nil
 	case "go":

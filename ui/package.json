@@ -56,6 +56,7 @@
     "@types/uuid": "^8.3.4",
     "@types/vscode": "1.67.0",
     "@types/wicg-file-system-access": "^2020.9.5",
+    "@vscode/test-electron": "^2.1.4",
     "jasmine-core": "~3.8.0",
     "karma": "~6.3.0",
     "karma-chrome-launcher": "~3.1.0",

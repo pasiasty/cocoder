@@ -42,6 +42,7 @@ type testServer struct {
 
 	connections []*websocket.Conn
 	gotMessage  chan testMessage
+	connected   chan bool
 
 	server *httptest.Server
 }
@@ -53,6 +54,7 @@ func (s *testServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.Close()
 
+	s.connected <- true
 	s.connections = append(s.connections, c)
 	for {
 		mt, message, err := c.ReadMessage()
@@ -87,6 +89,7 @@ func (s *testServer) Close() {
 func prepareTestServer() *testServer {
 	res := &testServer{
 		gotMessage: make(chan testMessage),
+		connected:  make(chan bool, 128),
 	}
 	res.server = httptest.NewServer(res)
 
@@ -154,6 +157,7 @@ func TestUserRead(t *testing.T) {
 		NewText: "abc",
 	}
 
+	<-ts.connected
 	if err := ts.connections[0].WriteJSON(req); err != nil {
 		t.Fatalf("Failed to write: %v", err)
 	}
@@ -183,6 +187,7 @@ func TestUserPing(t *testing.T) {
 		Ping: true,
 	}
 
+	<-ts.connected
 	if err := ts.connections[0].WriteJSON(req); err != nil {
 		t.Fatalf("Failed to write: %v", err)
 	}
@@ -213,6 +218,7 @@ func TestSessionBroadcast(t *testing.T) {
 		NewText: "abc",
 	}
 
+	<-ts.connected
 	if err := ts.connections[0].WriteJSON(req); err != nil {
 		t.Fatalf("Failed to write: %v", err)
 	}

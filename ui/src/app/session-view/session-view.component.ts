@@ -21,7 +21,6 @@ const languagesSupportingFormatting = new Set<string>([
   'javascript',
   'typescript',
   'html',
-  'cpp',
 ]);
 
 @Component({

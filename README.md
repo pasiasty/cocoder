@@ -16,7 +16,7 @@ You'll need `npm`, `golang` and `docker` installed on your machine. You should r
 cd server && go run application.go
 ```
 
-in order to spin up the backend of the service. Running:
+in order to spin up the backend of the service. Executing:
 
 ```
 cd ui && npm i && ng serve

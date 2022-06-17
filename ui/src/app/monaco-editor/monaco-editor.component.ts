@@ -59,6 +59,12 @@ class ModelsStore {
     }
     return this.models.get('plaintext')!;
   }
+
+  dispose() {
+    this.models.forEach(m => {
+      m.dispose();
+    });
+  }
 }
 
 @Component({
@@ -147,6 +153,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
     this.editsSubject?.unsubscribe();
     this._editor?.getModel()?.dispose();
     this._editor?.dispose();
+    this.models.dispose();
   }
 
   ngOnChanges(changes: SimpleChanges): void {

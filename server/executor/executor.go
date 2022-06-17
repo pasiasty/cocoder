@@ -14,47 +14,72 @@ import (
 	"github.com/pasiasty/cocoder/server/users_manager"
 )
 
-type Executor struct {
+type languageDefinition struct {
+	extension string
+	commands  []commandDefinition
+	timeout   time.Duration
 }
 
-func New() *Executor {
-	return &Executor{}
+type commandDefinition struct {
+	name      string
+	cmd       string
+	readonly  bool
+	usesSTDIN bool
 }
 
-func runFileContent(language string) (string, error) {
-	switch language {
-	case "python":
-		return "#!/bin/bash\n\npython3 /mnt/code.txt", nil
-	}
-
-	return "", fmt.Errorf("language: %s is not supported", language)
+var languageDefinitions = map[string]languageDefinition{
+	"python": {
+		timeout:   10 * time.Second,
+		extension: "py",
+		commands: []commandDefinition{
+			{
+				name:      "run",
+				cmd:       "python3 /mnt/code.py",
+				readonly:  true,
+				usesSTDIN: true,
+			},
+		},
+	},
+	"cpp": {
+		timeout:   15 * time.Second,
+		extension: "cpp",
+		commands: []commandDefinition{
+			{
+				name: "compile",
+				cmd:  "clang++ /mnt/code.cpp -o /mnt/code",
+			},
+			{
+				name:      "run",
+				cmd:       "/mnt/code",
+				readonly:  true,
+				usesSTDIN: true,
+			},
+		},
+	},
+	"go": {
+		timeout:   15 * time.Second,
+		extension: "go",
+		commands: []commandDefinition{
+			{
+				name: "compile",
+				cmd:  "cd /mnt && go build code.go",
+			},
+			{
+				name:      "run",
+				cmd:       "/mnt/code",
+				readonly:  true,
+				usesSTDIN: true,
+			},
+		},
+	},
 }
 
-func postprocessStdout(s string) string {
-	return strings.TrimSpace(s)
-}
+func runCommand(ctx context.Context, cd commandDefinition, d string, stdin string) (*common.ExecutionResponse, error) {
+	rfc := fmt.Sprintf("#!/bin/bash\n\n%s", cd.cmd)
 
-func postprocessStderr(s string) string {
-	s = strings.Replace(s, "WARNING: Your kernel does not support swap limit capabilities or the cgroup is not mounted. Memory limited without swap.", "", 1)
-	return postprocessStdout(s)
-}
+	runFilename := fmt.Sprintf("run_%s.sh", cd.name)
 
-func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, language, code, stdin string) (*common.ExecutionResponse, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
-	d, err := ioutil.TempDir("", "")
-	if err != nil {
-		return nil, err
-	}
-	defer os.RemoveAll(d)
-
-	rfc, err := runFileContent(language)
-	if err != nil {
-		return nil, err
-	}
-
-	runFile, err := os.Create(fmt.Sprintf("%s/run.sh", d))
+	runFile, err := os.Create(fmt.Sprintf("%s/%s", d, runFilename))
 	if err != nil {
 		return nil, err
 	}
@@ -67,19 +92,31 @@ func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, lan
 		return nil, err
 	}
 
-	codeFile, err := os.Create(fmt.Sprintf("%s/code.txt", d))
-	if err != nil {
-		return nil, err
-	}
-	if _, err := codeFile.WriteString(code); err != nil {
-		return nil, err
-	}
-	if err := codeFile.Close(); err != nil {
-		return nil, err
+	args := []string{
+		"run",
+		"-v",
+		fmt.Sprintf("%v:/mnt", d),
+		"--rm",
+		"-i",
+		"--memory",
+		"128MB",
+		"--memory-swap",
+		"0",
+		"--cpus",
+		"0.5",
 	}
 
-	cmd := exec.CommandContext(ctx, "docker", "run", "-v", fmt.Sprintf("%v:/mnt", d), "--rm", "-i", "--memory", "128MB", "--memory-swap", "0", "--cpus", "0.5", "--read-only", "--network", "none", "mpasek/cocoder-executor", `/mnt/run.sh`)
-	cmd.Stdin = strings.NewReader(stdin)
+	if cd.readonly {
+		args = append(args, "--read-only")
+	}
+
+	args = append(args, "--network", "none", "mpasek/cocoder-executor", fmt.Sprintf("/mnt/%s", runFilename))
+	cmd := exec.CommandContext(ctx, "docker", args...)
+
+	if cd.usesSTDIN {
+		cmd.Stdin = strings.NewReader(stdin)
+	}
+
 	stdoutBuf := &bytes.Buffer{}
 	stderrBuf := &bytes.Buffer{}
 
@@ -93,7 +130,7 @@ func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, lan
 			}, nil
 		}
 		return &common.ExecutionResponse{
-			ErrorMessage: fmt.Sprintf("failed (%v)", err),
+			ErrorMessage: fmt.Sprintf("%s has failed (%v)", cd.name, err),
 			Stdout:       postprocessStdout(stdoutBuf.String()),
 			Stderr:       postprocessStderr(stderrBuf.String()),
 		}, nil
@@ -103,4 +140,62 @@ func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, lan
 		Stdout: postprocessStdout(stdoutBuf.String()),
 		Stderr: postprocessStderr(stderrBuf.String()),
 	}, nil
+}
+
+type Executor struct {
+}
+
+func New() *Executor {
+	return &Executor{}
+}
+
+func postprocessStdout(s string) string {
+	return strings.TrimSpace(s)
+}
+
+func postprocessStderr(s string) string {
+	s = strings.Replace(s, "WARNING: Your kernel does not support swap limit capabilities or the cgroup is not mounted. Memory limited without swap.", "", 1)
+	return postprocessStdout(s)
+}
+
+func (e *Executor) Execute(ctx context.Context, userID users_manager.UserID, language, code, stdin string) (*common.ExecutionResponse, error) {
+	ld, ok := languageDefinitions[language]
+	if !ok {
+		return nil, fmt.Errorf("language: %s is not supported", language)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, ld.timeout)
+	defer cancel()
+
+	d, err := ioutil.TempDir("", "")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(d)
+
+	codeFile, err := os.Create(fmt.Sprintf("%s/code.%s", d, ld.extension))
+	if err != nil {
+		return nil, err
+	}
+	if _, err := codeFile.WriteString(code); err != nil {
+		return nil, err
+	}
+	if err := codeFile.Close(); err != nil {
+		return nil, err
+	}
+
+	var lastRes *common.ExecutionResponse = nil
+
+	for _, cd := range ld.commands {
+		resp, err := runCommand(ctx, cd, d, stdin)
+		if err != nil {
+			return nil, err
+		}
+		if resp.ErrorMessage != "" {
+			return resp, err
+		}
+		lastRes = resp
+	}
+
+	return lastRes, nil
 }

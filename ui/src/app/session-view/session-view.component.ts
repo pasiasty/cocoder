@@ -14,6 +14,8 @@ import { Subscription } from 'rxjs';
 
 const languagesSupportingExecution = new Set<string>([
   'python',
+  'cpp',
+  'go',
 ]);
 
 const languagesSupportingFormatting = new Set<string>([

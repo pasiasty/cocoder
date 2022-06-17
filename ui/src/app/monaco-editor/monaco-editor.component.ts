@@ -357,6 +357,7 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
       showUnused: this.hintsEnabled,
       scrollbar: {
         verticalScrollbarSize: 0,
+        vertical: 'hidden',
       },
       parameterHints: {
         enabled: this.hintsEnabled,
@@ -376,6 +377,10 @@ export class MonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, 
     if (this.mode !== Mode.Code) {
       options.minimap = {
         enabled: false,
+      };
+      options.scrollbar = {
+        verticalScrollbarSize: 10,
+        vertical: 'visible',
       };
     }
 

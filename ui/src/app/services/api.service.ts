@@ -272,7 +272,7 @@ export class ApiService implements OnDestroy {
     const formData = new FormData();
     formData.set('code', code);
     formData.set('stdin', stdin);
-    return this.httpClient.post<ExecutionResponse>(`${environment.api}execute/${this.userID}/${this.selectedLanguage}`, formData).toPromise();
+    return this.httpClient.post<ExecutionResponse>(`${environment.api}execute/${this.sessionID}/${this.userID}/${this.selectedLanguage}`, formData).toPromise();
   }
 
   FormatCode(code: string): Promise<FormatResponse> {

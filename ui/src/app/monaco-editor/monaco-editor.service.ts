@@ -7,6 +7,12 @@ import { toSocket, WebSocketMessageReader, WebSocketMessageWriter } from '@codin
 import * as monaco from 'monaco-editor';
 import { ApiService } from '../services/api.service';
 
+interface ClientDefinition {
+  writer: WebSocketMessageWriter;
+  reader: WebSocketMessageReader;
+  client: MonacoLanguageClient;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -15,6 +21,8 @@ export class MonacoEditorService {
   loaded: boolean = false;
 
   public loadingFinished: Subject<void> = new Subject<void>();
+
+  cds: Map<string, ClientDefinition> = new Map<string, ClientDefinition>();
 
   constructor(
     private apiService: ApiService,
@@ -63,6 +71,14 @@ export class MonacoEditorService {
     this.apiService.openLSPWebsocket('python', this.languageOnOpenHandler('Python', ['python']));
     this.apiService.openLSPWebsocket('cpp', this.languageOnOpenHandler('C++', ['cpp']));
     this.apiService.openLSPWebsocket('go', this.languageOnOpenHandler('Golang', ['go']));
+
+    window.onbeforeunload = () => {
+      this.cds.forEach(v => {
+        v.client.stop();
+        v.reader.dispose();
+        v.writer.dispose();
+      });
+    };
   }
 
   languageOnOpenHandler(name: string, documentSelector: string[]): ((ws: WebSocket) => any) {
@@ -77,6 +93,12 @@ export class MonacoEditorService {
       });
       languageClient.start();
       reader.onClose(() => languageClient.stop());
+
+      this.cds.set(name, {
+        client: languageClient,
+        reader: reader,
+        writer: writer,
+      });
     };
   }
 

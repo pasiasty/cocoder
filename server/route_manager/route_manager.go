@@ -11,6 +11,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
 
+	"github.com/pasiasty/cocoder/server/common"
 	"github.com/pasiasty/cocoder/server/executor"
 	lsp_proxy "github.com/pasiasty/cocoder/server/lsp_proxy_manager"
 	"github.com/pasiasty/cocoder/server/session_manager"
@@ -100,9 +101,10 @@ func NewRouterManager(ctx context.Context, c *redis.Client) *RouteManager {
 		}
 	})
 
-	g.POST("/execute/:user_id/:language", func(c *gin.Context) {
-		language := string(session_manager.SessionID(c.Param("language")))
+	g.POST("/execute/:session_id/:user_id/:language", func(c *gin.Context) {
+		sessionID := session_manager.SessionID(c.Param("session_id"))
 		userID := users_manager.UserID(c.Param("user_id"))
+		language := string(session_manager.SessionID(c.Param("language")))
 
 		code := c.PostForm("code")
 		stdin := c.PostForm("stdin")
@@ -113,6 +115,14 @@ func NewRouterManager(ctx context.Context, c *redis.Client) *RouteManager {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
+
+		sm.UpdateSession(ctx, sessionID, &common.UpdateSessionRequest{
+			UpdateOutputText:   true,
+			Stdout:             resp.Stdout,
+			Stderr:             resp.Stderr,
+			UpdateRunningState: true,
+			Running:            false,
+		})
 		c.JSON(http.StatusOK, resp)
 	})
 

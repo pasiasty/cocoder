@@ -95,6 +95,10 @@ func validateRequest(req *common.UpdateSessionRequest) {
 }
 
 func (s *Session) updateRequestingUser(req *common.UpdateSessionRequest) {
+	if req.UserID == "" {
+		return
+	}
+
 	if user, ok := s.Users[req.UserID]; ok {
 		user.Position = req.CursorPos
 		user.HasSelection = req.HasSelection

@@ -25,8 +25,9 @@ var wsupgrader = websocket.Upgrader{
 }
 
 type RouteManager struct {
-	r  *gin.Engine
-	sm *session_manager.SessionManager
+	r    *gin.Engine
+	sm   *session_manager.SessionManager
+	lspm *lsp_proxy.LSPProxyManager
 }
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -142,11 +143,16 @@ func NewRouterManager(ctx context.Context, c *redis.Client) *RouteManager {
 	})
 
 	return &RouteManager{
-		r:  r,
-		sm: sm,
+		r:    r,
+		sm:   sm,
+		lspm: lspm,
 	}
 }
 
 func (m *RouteManager) Router() *gin.Engine {
 	return m.r
+}
+
+func (m *RouteManager) Dispose() {
+	m.lspm.Dispose()
 }

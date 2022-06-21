@@ -18,10 +18,13 @@ import (
 )
 
 type LSPProxyManager struct {
+	connections map[users_manager.UserID]*Connection
 }
 
 func New() *LSPProxyManager {
-	return &LSPProxyManager{}
+	return &LSPProxyManager{
+		connections: make(map[users_manager.UserID]*Connection),
+	}
 }
 
 func execInContainer(entrypoint string, extraArgs ...string) *exec.Cmd {
@@ -40,9 +43,9 @@ func initialCommand(userID users_manager.UserID, language string) (*exec.Cmd, er
 	case "cpp":
 		return execInContainer("clangd"), nil
 	case "go":
-		return execInContainer("/root/go/bin/gopls"), nil
+		return execInContainer("/usr/local/bin/run_gopls", string(userID)), nil
 	case "java":
-		return exec.Command("python", "/opt/jdtls/bin/jdtls", "-data", fmt.Sprintf("/tmp/java/%s/", userID), "-configuration", "/opt/jdtls/config_linux"), nil
+		return execInContainer("/usr/local/bin/run_jdtls", string(userID)), nil
 	}
 	return nil, fmt.Errorf("language: %s is not supported", language)
 }
@@ -84,7 +87,6 @@ func (c *Connection) passToServerLoop(ctx context.Context) {
 				continue
 			}
 
-			fmt.Printf("Req: %s\n\n", string(msg))
 			msgEnc := fmt.Sprintf("%v", string(msg))
 
 			reqStanza := "Content-Length: %v\r\n" + "Content-Type: application/vscode-jsonrpc; charset=utf8\r\n\r\n%v"
@@ -135,8 +137,6 @@ func (c *Connection) readFromServerLoop(ctx context.Context) {
 				continue
 			}
 
-			fmt.Printf("Resp: %s\n\n", string(resp))
-
 			c.mux.Lock()
 			if err := c.conn.WriteMessage(websocket.TextMessage, resp); err != nil {
 				log.Printf("Failed to send the response to the websocket: %v\n", err)
@@ -155,6 +155,12 @@ func (c *Connection) close() {
 
 	c.process.Kill()
 	c.conn.Close()
+}
+
+func (m *LSPProxyManager) Dispose() {
+	for _, c := range m.connections {
+		c.close()
+	}
 }
 
 func (m *LSPProxyManager) Connect(ctx context.Context, conn *websocket.Conn, language string, userID users_manager.UserID) error {
@@ -187,6 +193,8 @@ func (m *LSPProxyManager) Connect(ctx context.Context, conn *websocket.Conn, lan
 
 	go c.passToServerLoop(ctx)
 	go c.readFromServerLoop(ctx)
+
+	m.connections[userID] = c
 
 	log.Printf("Opened LSP connection for user: %q language: %q\n", c.userID, c.language)
 	return nil

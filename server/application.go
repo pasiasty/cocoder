@@ -38,6 +38,8 @@ func main() {
 	})
 
 	m := route_manager.NewRouterManager(ctx, redisClient)
+	defer m.Dispose()
+
 	r := m.Router()
 	r.LoadHTMLGlob("templates/*.tmpl.html")
 

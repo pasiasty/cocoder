@@ -94,6 +94,9 @@ export class MonacoEditorService {
       });
       languageClient.start();
       reader.onClose(() => languageClient.stop());
+      reader.onError(() => reader.dispose());
+      writer.onClose(() => languageClient.stop());
+      writer.onError(() => writer.dispose());
 
       this.cds.set(name, {
         client: languageClient,

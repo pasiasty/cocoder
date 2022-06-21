@@ -27,7 +27,7 @@ class ModelsStore {
   languageExtensions: Map<string, string>;
 
   private codeEditorUri(userID: string, mode: Mode, language: string): monaco.Uri {
-    return monaco.Uri.parse(`file:///tmp/${userID}_${mode}_code.${this.languageExtensions.get(language)}`)
+    return monaco.Uri.parse(`file:///tmp/${language}/${userID}/${mode}_code.${this.languageExtensions.get(language)}`)
   }
 
   constructor(userID: string, mode: Mode) {
@@ -36,6 +36,7 @@ class ModelsStore {
       "python": "py",
       "cpp": "cpp",
       "go": "go",
+      "java": "java",
     }));
 
     if (mode == Mode.Code) {
@@ -44,6 +45,7 @@ class ModelsStore {
         'python': monaco.editor.createModel('', 'python', this.codeEditorUri(userID, mode, 'python')),
         'cpp': monaco.editor.createModel('', 'cpp', this.codeEditorUri(userID, mode, 'cpp')),
         'go': monaco.editor.createModel('', 'go', this.codeEditorUri(userID, mode, 'go')),
+        'java': monaco.editor.createModel('', 'java', this.codeEditorUri(userID, mode, 'java')),
       }));
     }
     else {

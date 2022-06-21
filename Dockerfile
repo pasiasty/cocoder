@@ -33,4 +33,7 @@ RUN pip3 install -r /tmp/requirements.txt
 # triggers node install
 RUN /usr/local/bin/pyright-python --help
 
+COPY scripts/run_jdtls.sh /usr/local/bin/run_jdtls
+COPY scripts/run_gopls.sh /usr/local/bin/run_gopls
+
 CMD /bin/bash

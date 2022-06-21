@@ -32,7 +32,7 @@ func execInContainer(entrypoint string, extraArgs ...string) *exec.Cmd {
 	return exec.Command("docker", args...)
 }
 
-func initialCommand(language string) (*exec.Cmd, error) {
+func initialCommand(userID users_manager.UserID, language string) (*exec.Cmd, error) {
 
 	switch language {
 	case "python":
@@ -42,7 +42,7 @@ func initialCommand(language string) (*exec.Cmd, error) {
 	case "go":
 		return execInContainer("/root/go/bin/gopls"), nil
 	case "java":
-		return exec.Command("python3.9", "/home/mpasek/Downloads/java_fun/bin/jdtls", "-data", "~/something", "-configuration", "~/.cache/jdtls"), nil
+		return exec.Command("python", "/opt/jdtls/bin/jdtls", "-data", fmt.Sprintf("/tmp/java/%s/", userID), "-configuration", "/opt/jdtls/config_linux"), nil
 	}
 	return nil, fmt.Errorf("language: %s is not supported", language)
 }
@@ -158,7 +158,7 @@ func (c *Connection) close() {
 }
 
 func (m *LSPProxyManager) Connect(ctx context.Context, conn *websocket.Conn, language string, userID users_manager.UserID) error {
-	cmd, err := initialCommand(language)
+	cmd, err := initialCommand(userID, language)
 	if err != nil {
 		return err
 	}

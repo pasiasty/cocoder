@@ -26,7 +26,7 @@ will spin up the frontend. After running these commands coCoder will be availabl
 
 ### Execution environment
 
-The execution environment for user provided code is ran in docker container. The image of this container can be found in the [Dockerfile](Dockerfile) in this project. The updates of this file **are not** performed automatically. In order to propagate such changes you should do the following things:
+The execution environment for user provided code is ran in a docker container. The image of this container can be found in the [Dockerfile](Dockerfile) in this project. The updates of this file **are not** performed automatically. In order to propagate such changes you should do the following things:
 
 1. Build new image locally: `docker build . -t mpasek/cocoder-executor:latest`
 1. Push it to dockerhub: `docker image push mpasek/cocoder-executor:latest`

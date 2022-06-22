@@ -25,6 +25,7 @@ const languagesSupportingFormatting = new Set<string>([
   'html',
   'cpp',
   'go',
+  'java',
 ]);
 
 @Component({
